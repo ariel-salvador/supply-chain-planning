@@ -17,7 +17,8 @@ registry: ../knowledge/assumptions.csv
 time:
   freq: W-SUN        # weekly buckets, Mon-Sun
   start: "2027-01-04"
-  horizon: 26
+  horizon: 26        # MPS / MRP weeks
+  sop_months: 12     # S&OP span (monthly)
 
 derived:
   # kg rBLG secreted per kg powder (no UF/DF or drying loss, as in Behm 2022)
@@ -28,6 +29,8 @@ derived:
   fermentation_lead_time_weeks: ceil(fermentation_cycle_h / hours_per_week)
   # rBLG per batch: vessel x final working volume (Humbird 2011) x titre = 12,000 kg
   batch_rblg_kg: main_bioreactor_volume * max_working_volume_fraction * final_titre_rblg
+  # powder capacity per week: reactors x available hours / batch cycle x batch / (rBLG per kg powder)
+  powder_capacity_per_week: mock_production_reactors * hours_per_week * plant_uptime / fermentation_cycle_h * batch_rblg_kg / rblg_kg_per_kg_product
   # starch -> glucose mass gain on hydrolysis
   hydrolysis_mass_gain: glucose_molar_mass / anhydroglucose_molar_mass
   # theoretical minimum corn per kg glucose: 100% hydrolysis, no refining losses
@@ -94,3 +97,15 @@ demand:
   seasonal_peak_month: mock_demand_peak_month
   noise_cv: mock_demand_noise_cv
   seed: 42                    # RNG seed (structural)
+  orders:                     # MOCK order book for MPS / ATP
+    booked_first: mock_orders_booked_week0
+    decay: mock_orders_decay
+
+sop:
+  strategy: chase             # chase | level
+  target_cover_months: mock_sop_target_cover_months
+  capacity_per_week: powder_capacity_per_week      # rough-cut: fermenters are the constraint (ADR 0006)
+
+mps:
+  demand_time_fence: mock_demand_time_fence
+  planning_time_fence: mock_pwd_lead_time + fermentation_lead_time_weeks   # cumulative lead time

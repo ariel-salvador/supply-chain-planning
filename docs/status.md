@@ -1,37 +1,40 @@
 # Status (handoff)
 
-_Last updated: 2026-09-18 · branch `m1-foundation` (local only, not pushed)_
+_Last updated: 2026-09-18 · branch `m2-sop-mps` (branched from `m1-foundation`; local only, not pushed)_
 
 ## Current milestone
-**M1: FRED pull, mock demand, BOM, basic MRP. Done.** The harness and knowledge base
-are in place. Next is M2 (S&OP → MPS) once the P1 research gaps are triaged.
+**M2: S&OP → MPS. Done, waiting for the user's review.** M1 (FRED pull, mock demand, BOM, MRP)
+is done, along with the harness, licensing (ADR 0005), and the Humbird research block.
 
-## Done
-- Engine `src/ppsim/`: assumptions registry + config loader (process math must rest on
-  `cited` ids; planning/demand numbers must be ids; `used_in` checked), BOM (low-level
-  codes, explosion), MRP (LFL/FOQ/POQ, min/multiple, safety stock, past-due), FRED CSV
-  fetch + cache (`data/raw/`), seeded mock demand, feedstock cost rollup, CLI.
-- Case 1 `products/blg_whey_protein.yaml` (glucose base, `sucrose` variant). The M1 run
-  gives 0.880 kg rBLG and 4.38 kg sugar per kg powder, and a feedstock-only cost of about
-  $1.50/kg (glucose, corn basis) or $1.43/kg (sucrose), at July 2026 FRED prices
-  [estimate].
-- Knowledge base: 43 rows in `assumptions.csv` (28 cited, 15 mock), 4 notes, 4 topics,
-  backlog, 4 ADRs, INDEX.
-- Harness: CLAUDE.md, skills `/research`, `/log-session`, `/pre-push-check`
-  (`scripts/pre_push_check.py`), `scripts/fetch_data.py`.
-- 75 offline tests pass. The pre-push check is clean with `--all`.
+## Done (this block)
+- **Research:** Humbird et al. 2011 (NREL): final working volume 80 % (fed-batch from
+  50 %), seed-vessel cycle 48 h, uptime 96 %, and the 12,000 kg/batch cross-check. The
+  note and 8 cited rows are saved. Fermentation is now planned in whole 12,000 kg batches.
+- **M2 engine:** `sop.py` (week↔month split by days, chase/level plan, cover targets on
+  daily rate, capacity cap and flags) and `mps.py` (DTF/PTF, capacity-aware catch-up,
+  PAB, discrete ATP with look-ahead, mock order book). MRP now accepts the MPS as fixed
+  receipts. Config has `time.sop_months`, `demand.orders`, `sop:` and `mps:`.
+- **Case 1 run** [mock demand]: the chase plan meets target every month at 58–83 %
+  utilization with 3 mock reactors. The MPS stays within capacity, and there are no
+  warnings.
+- **Records:** ADR 0006 (fermenters as rough-cut constraint), ADR 0007 (S&OP → MPS
+  linkage). Topic, architecture and README updated.
+- 97 offline tests pass. Registry has 56 rows (36 cited, 20 mock).
 
 ## In progress
-- Nothing open.
+- Nothing open. Waiting for the user's review of M2.
 
 ## Next 3 steps
-1. `/research` the bioreactor working volume and cycle times (Humbird 2011), which
-   unblocks batch sizing.
-2. M2: monthly S&OP plan → weekly MPS (time fences, ATP) feeding MRP.
-3. First static charts in `reports/` (feedstock cost history with IMF/FRED citation,
-   MRP plan).
+1. **RCCP (M4) at batch level:** whole-batch rounding gives 4 fermentation starts in
+   week 2027-01-11 against 3.36 available. Load batch starts against reactors and
+   resolve (level or shift).
+2. **M3 purchasing:** planned sugar releases become a PO schedule and spend using FRED
+   price history.
+3. **First static charts** in `reports/` (S&OP plan, MPS/ATP, feedstock cost with
+   IMF/FRED citation).
 
 ## Open questions
-- (resolved) License: MIT code + CC BY 4.0 docs/knowledge (ADR 0005).
-- Behm yield interpretation (ADR 0004): currently total protein.
-- See `knowledge/backlog.md` for the full list.
+- DSP throughput and cycle times are still unsourced (backlog P1). Until then DSP is
+  assumed unconstrained (ADR 0006).
+- Offline time: Behm 24 h (base) vs Humbird 48 h. Uptime of 96 % comes from an ethanol plant.
+- See `knowledge/backlog.md`.

@@ -48,5 +48,10 @@ humbird_protein_per_batch,Protein per 300 m3 batch (cross-check for derived batc
 seed_vessel_cycle_time,Seed fermentor cycle time incl. cleaning and sterilization,48,h,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 39 (2 days)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
 humbird_seed_trains,Seed trains (3 vessels each) in reference design,4,count,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
 humbird_production_reactors,Production reactors served by those seed trains,9,count,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
-plant_uptime,Plant uptime (8410 operating h/yr),0.96,fraction,,,"Humbird et al. 2011 NREL/TP-5100-47764 §2.1 p. 11 (ethanol biorefinery basis)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,low,cited,
+plant_uptime,Plant uptime (8410 operating h/yr),0.96,fraction,,,"Humbird et al. 2011 NREL/TP-5100-47764 §2.1 p. 11 (ethanol biorefinery basis)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,low,cited,blg_whey_protein
 humbird_protein_yield_on_glucose,Total enzyme protein yield on glucose (reference design),0.24,kg/kg,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 18 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+mock_production_reactors,Number of 300 m3 production reactors in the mock plant,3,count,,,mock plant design choice,,,low,mock,blg_whey_protein
+mock_sop_target_cover_months,S&OP target ending inventory (months of next month's demand),0.5,month,,,mock planning policy,,,low,mock,blg_whey_protein
+mock_demand_time_fence,MPS demand time fence,1,week,,,mock planning policy,,,low,mock,blg_whey_protein
+mock_orders_booked_week0,Share of current-week forecast already booked as customer orders,0.95,fraction,,,mock order book,,,low,mock,blg_whey_protein
+mock_orders_decay,Booked share multiplier per week of lead time,0.70,fraction,,,mock order book,,,low,mock,blg_whey_protein

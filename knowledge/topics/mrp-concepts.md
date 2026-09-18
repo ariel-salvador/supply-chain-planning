@@ -29,8 +29,27 @@ here so readers can check the engine against the textbook. No model numbers.
 
 Hand-checked examples live in `tests/test_mrp.py`.
 
+## S&OP and MPS (M2, `sop.py`, `mps.py`)
+
+- **S&OP (monthly):** aggregate demand → production plan meeting a target ending
+  inventory (months of cover of next month's rate), `chase` or `level`, capped by
+  capacity; flags stockouts, capacity limits and below-target months.
+- **Disaggregation:** monthly plan → weeks in proportion to forecast; straddling weeks
+  are split by days.
+- **MPS record:** forecast, customer orders, projected demand, firm MPS, planned MPS,
+  projected available balance (PAB), available-to-promise (ATP), zone.
+- **Time fences:** DTF (orders-only demand inside) and PTF (no new planned MPS inside;
+  PTF ≥ DTF). Zones are frozen, slushy and liquid.
+- **ATP (discrete, look-ahead):** at each receipt week, the receipt (plus on hand in
+  week 0) minus orders until the next receipt; negatives are borrowed from earlier
+  receipt weeks.
+- **Link to MRP:** the MPS becomes the finished item's planned receipts; MRP explodes
+  it to components.
+
+Decisions: ADR 0006 (capacity basis), ADR 0007 (linkage details).
+
 ## Next layers
 
-- **S&OP → MPS (M2):** monthly aggregate plan broken down to weekly MPS, with time
-  fences (frozen/slushy/liquid) and available-to-promise.
 - **Purchasing (M3):** planned releases of purchased items become POs, priced from FRED.
+- **RCCP (M4):** batch starts per week against reactors (whole-batch rounding can
+  overload single weeks); DSP once sourced.

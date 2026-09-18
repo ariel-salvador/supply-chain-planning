@@ -26,9 +26,11 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 
 - **Built (M1):** assumptions registry → config → mock demand → BOM → MRP, plus FRED
   prices → feedstock cost per kg.
-- **Planned:** S&OP (monthly aggregate) → MPS (weekly, time fences, ATP) feeding MRP;
-  purchasing turns planned releases of purchased items into POs priced from FRED; RCCP
-  loads bioreactor hours and DSP against capacity.
+- **Built (M2):** S&OP (monthly, chase/level, capacity-capped) → MPS (weekly, time
+  fences, PAB, ATP) → MRP with the MPS as the finished item's planned receipts
+  (ADR 0007).
+- **Planned:** purchasing turns planned releases of purchased items into POs priced
+  from FRED; RCCP loads batch starts and DSP against capacity.
 
 ## Engine modules
 
@@ -37,6 +39,8 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 | `registry.py` | load/validate `assumptions.csv` (status, confidence, citation fields) |
 | `config.py` | load product YAML; safe expression evaluator; enforce cited-only process math, id-only planning numbers, `used_in` |
 | `demand.py` | seeded mock demand (trend × seasonality × noise), always labeled mock |
+| `sop.py` | week↔month weights, aggregation/disaggregation, chase/level plan with capacity |
+| `mps.py` | projected demand (DTF), planning-fence catch-up (PTF), PAB, ATP, mock order book |
 | `bom.py` | low-level codes, cycle detection, explosion, summed requirements |
 | `mrp.py` | netting, lot sizing (LFL / FOQ / POQ / min / multiple), safety stock, lead-time offset, past-due |
 | `fred.py` | FRED CSV download + cache with retrieval metadata |

@@ -129,3 +129,28 @@ def test_blg_batch_size_matches_humbird_reference():
     ref = load_registry(REGISTRY)["humbird_protein_per_batch"].value
     assert cfg.derived["batch_rblg_kg"] == pytest.approx(ref)  # 300 m3 x 0.80 x 50 g/L
     assert cfg.items["BLG-FERM"].planning.lot_sizing.multiple == pytest.approx(ref)
+
+
+def test_sop_and_mps_must_come_together(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["time"]["sop_months"] = 3
+    raw["sop"] = {"strategy": "chase", "target_cover_months": 0}
+    with pytest.raises(ConfigError, match="together"):
+        parse_config(raw, registry)
+
+
+def test_fences_validated(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["time"]["sop_months"] = 3
+    raw["sop"] = {"strategy": "chase", "target_cover_months": 0}
+    raw["mps"] = {"demand_time_fence": "m_lt", "planning_time_fence": 0}
+    with pytest.raises(ConfigError, match="planning_time_fence"):
+        parse_config(raw, registry)
+
+
+def test_blg_sop_mps_config():
+    cfg = load_config(BLG)
+    assert cfg.sop.strategy == "chase" and cfg.sop_months == 12
+    assert (cfg.mps.demand_time_fence, cfg.mps.planning_time_fence) == (1, 2)
+    # 3 reactors x 168 h x 0.96 / 144 h x 12,000 kg / 0.880 kg/kg
+    assert cfg.sop.capacity_per_week == pytest.approx(3 * 168 * 0.96 / 144 * 12000 / (0.858 / 0.975))

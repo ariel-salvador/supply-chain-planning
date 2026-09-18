@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import Dict, List, Mapping, Sequence
+from typing import Dict, List, Mapping, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -72,8 +72,13 @@ def mrp_item(
     gross: np.ndarray,
     planning: Planning,
     labels: Sequence,
+    fixed_receipts: Optional[np.ndarray] = None,
 ) -> MrpRecord:
-    """Net, lot-size and offset one item."""
+    """Net, lot-size and offset one item.
+
+    With ``fixed_receipts`` (e.g. an MPS for a finished item) netting still reports
+    net requirements, but planned receipts are taken as given instead of lot-sized.
+    """
     h = len(gross)
     sched = np.zeros(h)
     warnings: List[str] = []
@@ -95,11 +100,18 @@ def mrp_item(
         available = prev + sched[t] - gross[t]
         if available < ss - _EPS:
             net[t] = ss - available
-            # later buckets' requirement net of open orders (for periods of supply)
-            future = gross[t + 1 :] - sched[t + 1 :]
-            por[t] = lot_size(net[t], planning.lot_sizing, future)
+            if fixed_receipts is None:
+                # later buckets' requirement net of open orders (for periods of supply)
+                future = gross[t + 1 :] - sched[t + 1 :]
+                por[t] = lot_size(net[t], planning.lot_sizing, future)
+        if fixed_receipts is not None:
+            por[t] = fixed_receipts[t]
         poh[t] = available + por[t]
         prev = poh[t]
+    if fixed_receipts is not None:
+        short = [str(labels[t]) for t in range(h) if poh[t] < -_EPS]
+        if short:
+            warnings.append(f"{item}: fixed schedule leaves projected on hand negative in {', '.join(short)}")
 
     lt = planning.lead_time
     rel = np.zeros(h)
@@ -128,8 +140,16 @@ def run_mrp(
     bom: Sequence[BomLine],
     independent_demand: Mapping[str, Sequence[float]],
     labels: Sequence,
+    fixed_receipts: Optional[Mapping[str, Sequence[float]]] = None,
 ) -> Dict[str, MrpRecord]:
-    """Run MRP for every item in ``items`` over ``len(labels)`` buckets."""
+    """Run MRP for every item in ``items`` over ``len(labels)`` buckets.
+
+    ``fixed_receipts`` maps items (typically MPS items) to their planned receipts.
+    """
+    fixed_receipts = fixed_receipts or {}
+    for i, r in fixed_receipts.items():
+        if i not in items or len(r) != len(labels):
+            raise ValueError(f"fixed receipts for {i!r} must cover {len(labels)} buckets of a planned item")
     h = len(labels)
     for i, d in independent_demand.items():
         if i not in items:
@@ -148,7 +168,8 @@ def run_mrp(
 
     out: Dict[str, MrpRecord] = {}
     for item in sorted(items, key=lambda i: (llc[i], i)):
-        rec = mrp_item(item, gross[item], items[item], labels)
+        fixed = fixed_receipts.get(item)
+        rec = mrp_item(item, gross[item], items[item], labels, None if fixed is None else np.asarray(fixed, dtype=float))
         out[item] = rec
         releases = rec.table.loc["planned_order_releases"].to_numpy().copy()
         # past-due releases still consume components: charge them to the first bucket
