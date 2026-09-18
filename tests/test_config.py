@@ -119,3 +119,13 @@ def test_variant_substitutes_component():
     assert [b.component for b in cfg.bom] == ["BLG-FERM", "SUCROSE"]
     with pytest.raises(ConfigError):
         apply_variant(cfg, "nope")
+
+
+def test_blg_batch_size_matches_humbird_reference():
+    from ppsim.registry import load_registry
+    from conftest import REGISTRY
+
+    cfg = load_config(BLG)
+    ref = load_registry(REGISTRY)["humbird_protein_per_batch"].value
+    assert cfg.derived["batch_rblg_kg"] == pytest.approx(ref)  # 300 m3 x 0.80 x 50 g/L
+    assert cfg.items["BLG-FERM"].planning.lot_sizing.multiple == pytest.approx(ref)

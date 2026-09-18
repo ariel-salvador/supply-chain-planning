@@ -26,8 +26,8 @@ derived:
   sugar_kg_per_kg_rblg: 1 / (protein_yield_on_sugar * rblg_fraction_of_secreted_protein)
   fermentation_cycle_h: production_time + turnaround_time
   fermentation_lead_time_weeks: ceil(fermentation_cycle_h / hours_per_week)
-  # upper bound: working volume is not sourced yet (backlog)
-  batch_rblg_kg_at_full_volume: main_bioreactor_volume * final_titre_rblg
+  # rBLG per batch: vessel x final working volume (Humbird 2011) x titre = 12,000 kg
+  batch_rblg_kg: main_bioreactor_volume * max_working_volume_fraction * final_titre_rblg
   # starch -> glucose mass gain on hydrolysis
   hydrolysis_mass_gain: glucose_molar_mass / anhydroglucose_molar_mass
   # theoretical minimum corn per kg glucose: 100% hydrolysis, no refining losses
@@ -52,7 +52,7 @@ items:
     planning:
       lead_time: fermentation_lead_time_weeks          # from cited cycle time
       scheduled_receipts: {0: mock_ferm_open_batch}
-      lot_sizing: {rule: lot_for_lot}                  # batch sizing arrives with RCCP
+      lot_sizing: {rule: lot_for_lot, multiple: batch_rblg_kg}   # whole batches only
 
   - id: GLUCOSE
     name: Glucose (corn-derived), carbon source - Behm scenario 1

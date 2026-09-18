@@ -7,6 +7,10 @@
 - **Decision:** Treat 0.223 as total protein, so sugar per kg rBLG = 1/(0.223 × 0.90)
   = 4.98 kg [estimate, derived from cited values].
 - **Alternatives:** treat it as rBLG only, giving 4.48 kg/kg (about 10 % less sugar).
+- **Supporting evidence (added 2026-09-18):** Behm calls 0.223 "in line with" Humbird
+  et al. 2011, whose 0.24 kg/kg (Table 18) is explicitly *total* enzyme protein
+  (`humbird_protein_yield_on_glucose`). This supports the total-protein reading but
+  doesn't prove it.
 - **Consequences:** This is the conservative reading (more sugar, higher feedstock cost).
   The alternative is a one-line change in `products/blg_whey_protein.yaml`. It's tracked
   in the backlog.

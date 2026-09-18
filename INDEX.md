@@ -24,6 +24,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `knowledge/topics/mrp-concepts.md`: MRP logic as implemented. Read before changing `mrp.py`.
 - `knowledge/topics/commodity-feedstocks.md`: FRED series, corn→glucose and cents/lb conversions, cost/kg. Read for purchasing (M3).
 - `knowledge/notes/behm-2022-rblg-lca.md`: primary Case 1 source (rBLG by *T. reesei*, CC BY).
+- `knowledge/notes/humbird-2011-nrel-biochemical-design.md`: NREL *T. reesei* enzyme area: working volume, cycle, seed train, nutrients, uptime.
 - `knowledge/notes/epa-ap42-corn-wet-milling.md`: corn → starch yield.
 - `knowledge/notes/fred-imf-commodity-prices.md`: series, units, license, fetch quirks.
 - `knowledge/notes/unit-constants.md`: lb/kg, molar masses.
