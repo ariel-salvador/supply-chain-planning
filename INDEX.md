@@ -17,6 +17,9 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0006-fermenters-as-rough-cut-constraint.md`: capacity basis for S&OP/MPS; DSP assumed unconstrained until sourced.
 - `docs/decisions/0007-sop-to-mps-linkage.md`: month/week split, cover targets, time fences, catch-up, MPS → MRP.
 - `docs/decisions/0008-mock-quantities-for-consumables.md`: [mock] BOM lines allowed only for consumables (membranes).
+- `docs/decisions/0009-odoo-community-scope.md`: why Odoo Community; S&OP/MPS/capacity stay in Python (verified limits).
+- `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
+- `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.
 
 ## Knowledge
@@ -39,6 +42,8 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `src/ppsim/`: engine (see architecture.md for the module map).
 - `scripts/fetch_data.py`: dataset provenance and license; fetches into `data/raw/`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
+- `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`).
+- `docker-compose.yml`, `Makefile`, `.env.example`, `odoo/bootstrap.py`: local Odoo stack.
 - `data/processed/README.md`: what may be committed there.
 - `tests/`: offline pytest suite.
 

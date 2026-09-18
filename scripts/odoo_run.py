@@ -59,7 +59,7 @@ def main() -> int:
 
     OUT.parent.mkdir(parents=True, exist_ok=True)
     with OUT.open("w", newline="") as f:
-        w = csv.DictWriter(f, fieldnames=COLUMNS)
+        w = csv.DictWriter(f, fieldnames=COLUMNS, lineterminator="\n")
         w.writeheader()
         w.writerows(rows)
     mos = sum(r["kind"] == "MO" and not r["open_at_start"] for r in rows)
