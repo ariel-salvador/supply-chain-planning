@@ -79,4 +79,11 @@ Process background: [`knowledge/topics/precision-fermentation-process.md`](knowl
 
 ## License
 
-TBD.
+- **Code** (everything outside `docs/` and `knowledge/`): [MIT](LICENSE).
+- **Documentation and research content** (`docs/`, `knowledge/`):
+  [CC BY 4.0](LICENSE-docs). Reuse is welcome with attribution to
+  *agenttofu0, production-planning-simulator*.
+- **Third-party material is not covered by either license.** Cited papers, EPA
+  documents and the IMF/FRED price series keep their own terms. The price data is
+  not redistributed here, and published charts must cite "International Monetary
+  Fund, retrieved from FRED, Federal Reserve Bank of St. Louis."

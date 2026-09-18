@@ -22,5 +22,5 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 ## P3
 - [ ] Filter-press cake dry content (40 %) → add to the registry when the biomass side
   stream is modelled.
-- [ ] Choose a repo license.
+- [x] ~~Choose a repo license~~ (ADR 0005)
 - [ ] A second product config, to prove the engine is product-agnostic.

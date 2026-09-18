@@ -32,6 +32,6 @@ are in place. Next is M2 (S&OP → MPS) once the P1 research gaps are triaged.
    MRP plan).
 
 ## Open questions
-- License for the repo (TBD).
+- (resolved) License: MIT code + CC BY 4.0 docs/knowledge (ADR 0005).
 - Behm yield interpretation (ADR 0004): currently total protein.
 - See `knowledge/backlog.md` for the full list.

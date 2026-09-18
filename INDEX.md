@@ -13,6 +13,8 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0002-assumptions-registry.md`: why every number is a registry id, and what the loader enforces.
 - `docs/decisions/0003-fred-data-not-committed.md`: IMF copyright, runtime fetch, citation on charts.
 - `docs/decisions/0004-blg-yield-interpretation.md`: 0.223 g/g read as total protein (conservative).
+- `docs/decisions/0005-licensing.md`: MIT for code, CC BY 4.0 for docs/ and knowledge/; holder is the GitHub handle.
+- `LICENSE`, `LICENSE-docs`: license texts and scope.
 
 ## Knowledge
 - `knowledge/assumptions.csv`: every model number with status/source/url. Read before using or adding a number.
