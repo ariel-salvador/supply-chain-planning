@@ -56,6 +56,7 @@ items:
     name: rBLG protein powder (85.8% rBLG)
     type: finished
     uom: kg
+    batch_size: powder_kg_per_batch                     # ERP BOM base: powder from one batch
     planning:
       lead_time: mock_pwd_lead_time
       on_hand: mock_pwd_on_hand
@@ -67,6 +68,7 @@ items:
     name: rBLG secreted in harvested broth (kg rBLG)
     type: intermediate
     uom: kg
+    batch_size: batch_rblg_kg                           # ERP BOM base: one 300 m3 batch
     planning:
       lead_time: fermentation_lead_time_weeks          # from cited cycle time
       scheduled_receipts: {0: mock_ferm_open_batch}
@@ -184,6 +186,11 @@ vendors:                       # used by the Odoo demo; all FICTIONAL
     name: "Example Membranes GmbH (fictional)"
     fictional: true
     supplies: [UFDF-MEMBRANE-SET]
+
+customers:                     # used by the Odoo demo; FICTIONAL
+  - id: c_demo
+    name: "Example Food Brands Inc. (fictional)"
+    fictional: true
 
 variants:
   sucrose:                    # Behm et al. scenario 2: same process, sucrose feed

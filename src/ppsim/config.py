@@ -144,6 +144,7 @@ class Item:
     planning: Planning
     price: Optional[PriceLink] = None
     category: str = "process"  # process | consumable | packaging
+    batch_size: Optional[float] = None  # base quantity for an ERP bill of materials
 
 
 @dataclass(frozen=True)
@@ -210,6 +211,7 @@ class ProductConfig:
     sop_months: int = 0
     company: Optional[Party] = None
     vendors: Dict[str, Party] = field(default_factory=dict)
+    customers: Dict[str, Party] = field(default_factory=dict)
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -360,6 +362,7 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             planning=_load_planning(it.get("planning") or {}, f"{where}.planning", r),
             price=price,
             category=category,
+            batch_size=None if it.get("batch_size") is None else r.planning(it["batch_size"], f"{where}.batch_size"),
         )
 
     bom = []
@@ -456,12 +459,17 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         return Party(_req(raw_p, "id", where), _req(raw_p, "name", where), supplies)
 
     company = _party(raw["company"], "company") if raw.get("company") else None
-    vendors: Dict[str, Party] = {}
-    for i, v in enumerate(raw.get("vendors") or []):
-        p = _party(v, f"vendors[{i}]")
-        if p.id in vendors:
-            raise ConfigError(f"vendors[{i}]: duplicate id {p.id!r}")
-        vendors[p.id] = p
+    def _parties(key: str) -> Dict[str, Party]:
+        out: Dict[str, Party] = {}
+        for i, v in enumerate(raw.get(key) or []):
+            p = _party(v, f"{key}[{i}]")
+            if p.id in out:
+                raise ConfigError(f"{key}[{i}]: duplicate id {p.id!r}")
+            out[p.id] = p
+        return out
+
+    vendors = _parties("vendors")
+    customers = _parties("customers")
 
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
@@ -485,6 +493,7 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         sop_months=sop_months,
         company=company,
         vendors=vendors,
+        customers=customers,
         path=path,
     )
 
