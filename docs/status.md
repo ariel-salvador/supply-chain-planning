@@ -3,9 +3,8 @@
 _Last updated: 2026-09-18 · branch `m-odoo` (from `main` after the M2 merge; local only, not pushed). Repo is private._
 
 ## Current milestone
-**ERP: Case 1 in Odoo 19 Community.** It's built and reproducible (`make odoo-demo`,
-about 1 min). Screenshots are pending, because they need the user to sign in to the
-Odoo UI. M1 and M2 are merged to `main` (PR #1, #2).
+**ERP: Case 1 in Odoo 19 Community.** It's built, reproducible (`make odoo-demo`,
+about 1 min) and documented with 6 screenshots. M1 and M2 are merged to `main` (PR #1, #2).
 
 ## Done (this block)
 - **Docker:** OrbStack 2.2.3 installed via Homebrew with the user's OK. The Makefile
@@ -28,14 +27,17 @@ Odoo UI. M1 and M2 are merged to `main` (PR #1, #2).
 - **Records:** ADR 0009 (why Odoo Community), `docs/odoo/README.md`, README section
   "Hands-on ERP". Registry has 69 rows. 100 tests pass, and the pre-push check is clean.
 
+- **Screenshots:** 6 in `docs/odoo/` (BOM, reorder rules, MO list after the
+  replenishment run, MO, RFQ, comparison), added to the README. They were captured in
+  the in-app browser after the user signed in, using an html-to-image render posted to
+  a temporary localhost receiver (not in the repo). Each was reviewed and has no emails,
+  usernames or paths. The warehouse was renamed "Demo Plant (fictional)".
+
 ## In progress
-- Screenshots (BOM, reorder rules, replenishment, MO, RFQ, comparison) for
-  `docs/odoo/`. **Blocked:** the user needs to sign in to Odoo in the browser pane
-  (I don't enter passwords).
+- Nothing open. Waiting for the user's review of the `m-odoo` branch.
 
 ## Next 3 steps
-1. Screenshots once the user has signed in. Crop them to the app window, check them
-   for usernames, paths and emails, then add them to the README section.
+1. User review, then (with the user's OK) push `m-odoo` and merge.
 2. Optional Odoo variant: a short horizon plus a rolling daily scheduler, to show how
    Community time-phases.
 3. Back to the main track: RCCP at batch level (M4), purchasing (M3), and the static

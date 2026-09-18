@@ -45,14 +45,17 @@ filestore live in Docker volumes and are never committed.
 
 ## What each screen shows (screenshots in this folder)
 
+Captured from the local demo at 1200×720 (1.5× pixel ratio), cropped to the Odoo app.
+They were checked for usernames, emails and file paths before committing.
+
 | File | Screen | Shows |
 |---|---|---|
 | `bom.png` | Manufacturing → Products → Bills of Materials | Two-level BOM per batch with cited quantities |
 | `reorder-rules.png` | Inventory → Operations → Replenishment | Min/max = safety stock and the batch/lot units |
-| `replenishment-run.png` | Replenishment after the scheduler | Forecasts and orders triggered |
+| `replenishment-run.png` | Manufacturing → Manufacturing Orders, after the scheduler | Every planned MO starts *today* (reorder rules replenish the whole window now) |
 | `mo.png` | A generated manufacturing order | Batch-multiple quantity and components reserved |
 | `po.png` | A generated RFQ | Fictional vendor, lead-time due date, grouped lines |
-| `comparison.png` | `comparison.md` rendered | Odoo vs engine quantities and timing |
+| `comparison.png` | [`comparison.md`](comparison.md) rendered | Odoo vs engine quantities and timing |
 
 ## What I learned
 

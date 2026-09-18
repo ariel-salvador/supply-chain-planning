@@ -96,6 +96,7 @@ def main() -> int:
     }
     wh = o.search_read("stock.warehouse", [], ["lot_stock_id"], limit=1)[0]
     stock_loc = wh["lot_stock_id"][0]
+    o.write("stock.warehouse", [wh["id"]], {"name": "Demo Plant (fictional)"})
     tmpl, prod, repl_uom = {}, {}, {}
     for iid in planned:
         it = cfg.items[iid]
