@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+.pytest_cache/
+build/
+dist/
+
+# Runtime data: FRED/IMF series are copyrighted (citation required) - fetch, don't commit
+data/cache/
+outputs/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
