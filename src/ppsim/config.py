@@ -1,7 +1,14 @@
 """Load and validate a product config (YAML).
 
-A product config is the only place product-specific facts live. The loader enforces
-the repo's sourcing rule: every process parameter must cite a declared public source.
+Product configs contain structure (items, BOM, policies) and *references* to the
+assumptions registry (``knowledge/assumptions.csv``), never raw model numbers.
+The loader enforces the repo's rules:
+
+- process quantities (``derived`` used by the BOM, BOM ``qty_per``, price conversions)
+  may only use ``cited`` assumptions;
+- planning and demand numbers must be registry references (only 0 may be literal);
+- the only numeric literals allowed inside expressions are 0 and 1;
+- every referenced assumption lists this product in its ``used_in`` column.
 """
 from __future__ import annotations
 
@@ -10,17 +17,21 @@ import math
 import operator
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, List, Mapping, Optional, Set
 
 import yaml
+
+from .registry import Assumption, load_registry
 
 
 class ConfigError(ValueError):
     pass
 
 
+DEFAULT_REGISTRY = "../knowledge/assumptions.csv"  # relative to the product file
+
 # ---------------------------------------------------------------------------
-# Safe arithmetic over named parameters (used for derived values and BOM qty_per)
+# Safe arithmetic over named values
 # ---------------------------------------------------------------------------
 
 _BINOPS = {
@@ -32,6 +43,16 @@ _BINOPS = {
 }
 _UNARY = {ast.USub: operator.neg, ast.UAdd: operator.pos}
 _FUNCS = {"min": min, "max": max, "ceil": math.ceil, "floor": math.floor}
+ALLOWED_LITERALS = (0, 1)
+
+
+def _parse(expr: Any) -> ast.Expression:
+    if isinstance(expr, bool) or not isinstance(expr, (str, int, float)):
+        raise ConfigError(f"expected number or expression, got {expr!r}")
+    try:
+        return ast.parse(str(expr), mode="eval")
+    except SyntaxError as e:
+        raise ConfigError(f"bad expression {expr!r}: {e}") from None
 
 
 def evaluate(expr: Any, names: Mapping[str, float]) -> float:
@@ -42,13 +63,11 @@ def evaluate(expr: Any, names: Mapping[str, float]) -> float:
     """
     if isinstance(expr, (int, float)) and not isinstance(expr, bool):
         return float(expr)
-    if not isinstance(expr, str):
-        raise ConfigError(f"expected number or expression, got {expr!r}")
 
     def _eval(node: ast.AST) -> float:
         if isinstance(node, ast.Expression):
             return _eval(node.body)
-        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)) and not isinstance(node.value, bool):
             return float(node.value)
         if isinstance(node, ast.Name):
             if node.id not in names:
@@ -67,34 +86,28 @@ def evaluate(expr: Any, names: Mapping[str, float]) -> float:
             return float(_FUNCS[node.func.id](*(_eval(a) for a in node.args)))
         raise ConfigError(f"unsupported syntax in expression {expr!r}")
 
-    try:
-        tree = ast.parse(expr, mode="eval")
-    except SyntaxError as e:
-        raise ConfigError(f"bad expression {expr!r}: {e}") from None
-    return _eval(tree)
+    return _eval(_parse(expr))
+
+
+def expr_names(expr: Any) -> Set[str]:
+    """Variable names referenced by an expression (function names excluded)."""
+    tree = _parse(expr)
+    funcs = {id(n.func) for n in ast.walk(tree) if isinstance(n, ast.Call)}
+    return {n.id for n in ast.walk(tree) if isinstance(n, ast.Name) and id(n) not in funcs}
+
+
+def expr_literals(expr: Any) -> List[float]:
+    tree = _parse(expr)
+    return [
+        n.value
+        for n in ast.walk(tree)
+        if isinstance(n, ast.Constant) and isinstance(n.value, (int, float)) and not isinstance(n.value, bool)
+    ]
 
 
 # ---------------------------------------------------------------------------
 # Data model
 # ---------------------------------------------------------------------------
-
-
-@dataclass(frozen=True)
-class Source:
-    key: str
-    citation: str
-    url: str
-    license: Optional[str] = None
-
-
-@dataclass(frozen=True)
-class Parameter:
-    name: str
-    value: float
-    unit: str
-    source: str
-    locator: str
-    note: Optional[str] = None
 
 
 @dataclass(frozen=True)
@@ -113,13 +126,12 @@ class Planning:
     on_hand: float = 0.0
     scheduled_receipts: Dict[int, float] = field(default_factory=dict)  # bucket -> qty
     lot_sizing: LotSizing = LotSizing()
-    basis: str = "assumption"
 
 
 @dataclass(frozen=True)
 class PriceLink:
     series: str  # FRED series id
-    usd_per_uom: str  # expression of `series` (the price) and parameters/derived values
+    usd_per_uom: str  # expression of `series` (the price) and cited values
 
 
 @dataclass(frozen=True)
@@ -160,8 +172,7 @@ class ProductConfig:
     freq: str
     start: str
     horizon: int
-    sources: Dict[str, Source]
-    parameters: Dict[str, Parameter]
+    assumptions: Dict[str, Assumption]  # only the ones this product references
     derived: Dict[str, float]
     items: Dict[str, Item]
     bom: List[BomLine]
@@ -171,8 +182,8 @@ class ProductConfig:
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
-        """All parameter and derived values, by name, for expression evaluation."""
-        out = {k: p.value for k, p in self.parameters.items()}
+        """All referenced assumption values and derived values, by name."""
+        out = {k: a.value for k, a in self.assumptions.items()}
         out.update(self.derived)
         return out
 
@@ -188,81 +199,110 @@ def _req(d: Mapping[str, Any], key: str, where: str) -> Any:
     return d[key]
 
 
-def _load_planning(raw: Mapping[str, Any], where: str, names: Mapping[str, float]) -> Planning:
+class _Resolver:
+    """Evaluates config expressions against the registry and records what was used."""
+
+    def __init__(self, registry: Mapping[str, Assumption]):
+        self.registry = registry
+        self.derived: Dict[str, float] = {}
+        self.derived_deps: Dict[str, Set[str]] = {}  # derived name -> registry ids it rests on
+        self.used: Set[str] = set()
+
+    def names(self) -> Dict[str, float]:
+        out = {k: a.value for k, a in self.registry.items()}
+        out.update(self.derived)
+        return out
+
+    def _deps(self, expr: Any, where: str, extra: Set[str]) -> Set[str]:
+        """Registry ids an expression rests on (through derived values)."""
+        bad = [v for v in expr_literals(expr) if v not in ALLOWED_LITERALS]
+        if bad:
+            raise ConfigError(f"{where}: numeric literal(s) {bad} in {expr!r}; reference an assumption id instead")
+        deps: Set[str] = set()
+        for n in expr_names(expr) - extra:
+            if n in self.derived:
+                deps |= self.derived_deps[n]
+            elif n in self.registry:
+                deps.add(n)
+            else:
+                raise ConfigError(f"{where}: unknown assumption id {n!r}")
+        return deps
+
+    def process(self, expr: Any, where: str, extra: Optional[Mapping[str, float]] = None) -> float:
+        extra = dict(extra or {})
+        deps = self._deps(expr, where, set(extra))
+        uncited = sorted(d for d in deps if self.registry[d].status != "cited")
+        if uncited:
+            raise ConfigError(f"{where}: process quantities must rest on cited assumptions; not cited: {uncited}")
+        self.used |= deps
+        return evaluate(expr, {**self.names(), **extra})
+
+    def planning(self, expr: Any, where: str) -> float:
+        if expr is None:
+            return 0.0
+        if isinstance(expr, (int, float)) and not isinstance(expr, bool):
+            if expr != 0:
+                raise ConfigError(f"{where}: raw number {expr!r}; reference an assumption id instead")
+            return 0.0
+        self.used |= self._deps(expr, where, set())
+        return evaluate(expr, self.names())
+
+    def add_derived(self, name: str, expr: Any) -> None:
+        where = f"derived.{name}"
+        if name in self.registry or name in self.derived:
+            raise ConfigError(f"{where}: name already defined")
+        self.derived_deps[name] = self._deps(expr, where, set())
+        self.derived[name] = evaluate(expr, self.names())
+
+
+def _whole(v: float, where: str) -> int:
+    if v != int(v) or v < 0:
+        raise ConfigError(f"{where}: must be a non-negative whole number (got {v})")
+    return int(v)
+
+
+def _load_planning(raw: Mapping[str, Any], where: str, r: _Resolver) -> Planning:
     ls_raw = raw.get("lot_sizing") or {}
+    rule = ls_raw.get("rule", "lot_for_lot")
+    if rule not in ("lot_for_lot", "fixed_order_quantity", "periods_of_supply"):
+        raise ConfigError(f"{where}: unknown lot sizing rule {rule!r}")
     lot = LotSizing(
-        rule=ls_raw.get("rule", "lot_for_lot"),
-        quantity=float(ls_raw.get("quantity", 0)),
-        periods=int(ls_raw.get("periods", 1)),
-        minimum=float(ls_raw.get("minimum", 0)),
-        multiple=float(ls_raw.get("multiple", 0)),
+        rule=rule,
+        quantity=r.planning(ls_raw.get("quantity"), f"{where}.lot_sizing.quantity"),
+        periods=_whole(r.planning(ls_raw.get("periods"), f"{where}.lot_sizing.periods"), where) or 1,
+        minimum=r.planning(ls_raw.get("minimum"), f"{where}.lot_sizing.minimum"),
+        multiple=r.planning(ls_raw.get("multiple"), f"{where}.lot_sizing.multiple"),
     )
-    if lot.rule not in ("lot_for_lot", "fixed_order_quantity", "periods_of_supply"):
-        raise ConfigError(f"{where}: unknown lot sizing rule {lot.rule!r}")
     if lot.rule == "fixed_order_quantity" and lot.quantity <= 0:
         raise ConfigError(f"{where}: fixed_order_quantity needs quantity > 0")
-    if lot.periods < 1:
-        raise ConfigError(f"{where}: lot sizing periods must be >= 1")
-    basis = raw.get("basis", "assumption")
-    if basis not in ("assumption", "derived"):
-        raise ConfigError(f"{where}: basis must be 'assumption' or 'derived'")
-    # lead_time may be an expression of cited parameters (basis: derived)
-    lt = evaluate(raw.get("lead_time", 0), names)
-    if lt != int(lt) or lt < 0:
-        raise ConfigError(f"{where}: lead_time must be a non-negative whole number of buckets (got {lt})")
-    lead_time = int(lt)
     return Planning(
-        lead_time=lead_time,
-        safety_stock=float(raw.get("safety_stock", 0)),
-        on_hand=float(raw.get("on_hand", 0)),
-        scheduled_receipts={int(k): float(v) for k, v in (raw.get("scheduled_receipts") or {}).items()},
+        lead_time=_whole(r.planning(raw.get("lead_time"), f"{where}.lead_time"), f"{where}.lead_time"),
+        safety_stock=r.planning(raw.get("safety_stock"), f"{where}.safety_stock"),
+        on_hand=r.planning(raw.get("on_hand"), f"{where}.on_hand"),
+        scheduled_receipts={
+            int(k): r.planning(v, f"{where}.scheduled_receipts[{k}]")
+            for k, v in (raw.get("scheduled_receipts") or {}).items()
+        },
         lot_sizing=lot,
-        basis=basis,
     )
 
 
-def load_config(path: "str | Path") -> ProductConfig:
+def load_config(path: "str | Path", registry: "str | Path | None" = None) -> ProductConfig:
     path = Path(path)
     with path.open() as f:
         raw = yaml.safe_load(f)
-    return parse_config(raw, path=path)
+    reg_path = Path(registry) if registry else (path.parent / raw.get("registry", DEFAULT_REGISTRY))
+    return parse_config(raw, load_registry(reg_path), path=path)
 
 
-def parse_config(raw: Mapping[str, Any], path: Optional[Path] = None) -> ProductConfig:
+def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], path: Optional[Path] = None) -> ProductConfig:
     prod = _req(raw, "product", "config")
     time = _req(raw, "time", "config")
+    pid = _req(prod, "id", "product")
+    r = _Resolver(registry)
 
-    sources = {}
-    for key, s in (raw.get("sources") or {}).items():
-        where = f"sources.{key}"
-        sources[key] = Source(key, _req(s, "citation", where), _req(s, "url", where), s.get("license"))
-
-    parameters = {}
-    for name, p in (raw.get("parameters") or {}).items():
-        where = f"parameters.{name}"
-        src = _req(p, "source", where)
-        if src not in sources:
-            raise ConfigError(f"{where}: source {src!r} is not declared under 'sources'")
-        value = p.get("value")
-        if isinstance(value, bool) or not isinstance(value, (int, float)):
-            raise ConfigError(f"{where}: value must be a number (derived values go under 'derived')")
-        parameters[name] = Parameter(
-            name=name,
-            value=float(value),
-            unit=_req(p, "unit", where),
-            source=src,
-            locator=_req(p, "locator", where),
-            note=p.get("note"),
-        )
-
-    # Derived values: evaluated in declaration order, may reference earlier ones.
-    names: Dict[str, float] = {k: v.value for k, v in parameters.items()}
-    derived: Dict[str, float] = {}
-    for name, d in (raw.get("derived") or {}).items():
-        if name in names:
-            raise ConfigError(f"derived.{name}: name already defined")
-        expr = _req(d, "expr", f"derived.{name}")
-        derived[name] = names[name] = evaluate(expr, names)
+    for name, expr in (raw.get("derived") or {}).items():
+        r.add_derived(name, expr)
 
     items: Dict[str, Item] = {}
     for it in _req(raw, "items", "config"):
@@ -277,14 +317,13 @@ def parse_config(raw: Mapping[str, Any], path: Optional[Path] = None) -> Product
         if it.get("price"):
             pr = it["price"]
             price = PriceLink(series=_req(pr, "series", f"{where}.price"), usd_per_uom=_req(pr, "usd_per_uom", f"{where}.price"))
-            # validate expression now, with a dummy price value
-            evaluate(price.usd_per_uom, {**names, price.series: 1.0})
+            r.process(price.usd_per_uom, f"{where}.price", extra={price.series: 1.0})
         items[iid] = Item(
             id=iid,
             name=it.get("name", iid),
             type=typ,
             uom=_req(it, "uom", where),
-            planning=_load_planning(it.get("planning") or {}, f"{where}.planning", names),
+            planning=_load_planning(it.get("planning") or {}, f"{where}.planning", r),
             price=price,
         )
 
@@ -296,7 +335,7 @@ def parse_config(raw: Mapping[str, Any], path: Optional[Path] = None) -> Product
             if ref not in items:
                 raise ConfigError(f"{where}: unknown item {ref!r}")
         expr = _req(line, "qty_per", where)
-        qty = evaluate(expr, names)
+        qty = r.process(expr, where)
         if qty <= 0:
             raise ConfigError(f"{where}: qty_per must be > 0 (got {qty})")
         bom.append(BomLine(parent, comp, qty, str(expr)))
@@ -310,12 +349,12 @@ def parse_config(raw: Mapping[str, Any], path: Optional[Path] = None) -> Product
     demand = DemandSpec(
         item=demand_item,
         mock=True,
-        base_per_period=float(_req(dm, "base_per_period", "demand")),
-        annual_growth=float(dm.get("annual_growth", 0)),
-        seasonal_amplitude=float(dm.get("seasonal_amplitude", 0)),
-        seasonal_peak_month=int(dm.get("seasonal_peak_month", 1)),
-        noise_cv=float(dm.get("noise_cv", 0)),
-        seed=int(dm.get("seed", 0)),
+        base_per_period=r.planning(_req(dm, "base_per_period", "demand"), "demand.base_per_period"),
+        annual_growth=r.planning(dm.get("annual_growth"), "demand.annual_growth"),
+        seasonal_amplitude=r.planning(dm.get("seasonal_amplitude"), "demand.seasonal_amplitude"),
+        seasonal_peak_month=int(r.planning(dm.get("seasonal_peak_month"), "demand.seasonal_peak_month") or 1),
+        noise_cv=r.planning(dm.get("noise_cv"), "demand.noise_cv"),
+        seed=int(dm.get("seed", 0)),  # RNG seed: structural, not a model number
     )
 
     variants: Dict[str, Dict[str, str]] = {}
@@ -326,16 +365,23 @@ def parse_config(raw: Mapping[str, Any], path: Optional[Path] = None) -> Product
                 raise ConfigError(f"variants.{vname}: unknown item in {old!r} -> {new!r}")
         variants[vname] = subs
 
+    # derived values count as used only when something references them; record their deps too
+    for deps in r.derived_deps.values():
+        r.used |= deps
+
+    missing = sorted(a for a in r.used if pid not in registry[a].used_in)
+    if missing:
+        raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
+
     return ProductConfig(
-        id=_req(prod, "id", "product"),
+        id=pid,
         name=_req(prod, "name", "product"),
         mock=bool(prod.get("mock", True)),
         freq=_req(time, "freq", "time"),
         start=str(_req(time, "start", "time")),
         horizon=int(_req(time, "horizon", "time")),
-        sources=sources,
-        parameters=parameters,
-        derived=derived,
+        assumptions={k: registry[k] for k in sorted(r.used)},
+        derived=dict(r.derived),
         items=items,
         bom=bom,
         demand=demand,

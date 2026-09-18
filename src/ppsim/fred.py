@@ -18,7 +18,7 @@ import pandas as pd
 
 CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id={series}"
 SERIES_URL = "https://fred.stlouisfed.org/series/{series}"
-DEFAULT_CACHE = Path("data/cache/fred")
+DEFAULT_CACHE = Path("data/raw/fred")
 
 
 class FredError(RuntimeError):

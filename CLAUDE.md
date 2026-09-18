@@ -1,55 +1,44 @@
 # CLAUDE.md
 
-Guidance for Claude Code (and humans) working in this repo.
+Product-agnostic **production planning simulator**: S&OP → MPS → MRP → purchasing →
+rough-cut capacity. Case 1 is a **mock** precision-fermentation plant making
+recombinant beta-lactoglobulin (rBLG) whey protein. Feedstock prices are real (FRED),
+process parameters are cited, and demand is mock. This repo will be **public**.
 
-## What this is
+## Reading order (read the least you need)
 
-A portfolio project: a **product-agnostic production planning simulator** that chains
-S&OP → MPS → MRP → purchasing → rough-cut capacity planning (RCCP).
-Case 1 is a **mock** precision-fermentation plant making recombinant
-beta-lactoglobulin (rBLG) whey protein powder.
+1. `docs/status.md`: handoff. Current milestone, next steps, open questions. **Always first.**
+2. `INDEX.md`: map of every doc and note.
+3. `knowledge/topics/*`, then `knowledge/notes/*`, then original sources.
 
-## Hard rules
+## House rules
 
-1. **No personal info, no employer data.** Nothing from any real company's internal
-   systems, plans, costs, or processes. If a number can't be traced to a public source,
-   it doesn't go in as a process parameter.
-2. **Process parameters must cite a public source.** Every entry under `parameters:` in a
-   product config needs `source` (a key in that file's `sources:`) and `locator`
-   (table/section/page). The loader rejects configs that violate this — don't weaken
-   that check. Derived values go under `derived:` as expressions of cited parameters.
-3. **Mock data is labeled as mock.** Demand, starting inventory, lot sizes, safety stock
-   and non-process lead times are *planning assumptions*, not facts. They live under
-   `demand:` / `items[].planning` with `basis: assumption`, and every output that
-   depends on them says so.
-4. **Engine ≠ UI.** `src/ppsim/` must not import plotting or web libraries. Charts and
-   any future UI live in `reports/` (or a separate app) and consume engine outputs
-   (DataFrames / CSVs). Static charts come first.
-5. **Product-agnostic engine.** No product-specific names, numbers, or branches in
-   `src/ppsim/`. A new product = a new folder under `products/` with a `product.yaml`
-   and a `SOURCES.md`.
-6. **FRED/IMF data is not committed.** The commodity series are copyrighted by the IMF
-   and redistributed by FRED with a citation requirement. Fetch at runtime into
-   `data/cache/` (gitignored); cite the series in any published chart.
-7. **Git:** work on branches, commit locally, **never push without asking.**
+1. **Every number traces to an id in `knowledge/assumptions.csv`** labeled `cited`,
+   `estimate` or `mock`. Product configs reference ids, never raw values. In prose, tag
+   numbers [source], [estimate] or [mock]. The loader rejects BOM or price math that
+   rests on anything other than `cited` rows.
+2. **Save as you go.** Findings go to notes, parameters to `assumptions.csv`, and
+   decisions to `docs/decisions/`. Tell the user in one line what you saved.
+3. **Public-safe:** no personal info; no employer data or processes (published
+   parameters only, never figures from anyone's workplace); no secrets or API keys; no
+   copyrighted full texts; check a dataset's license before committing it (FRED/IMF
+   series are *not* committable).
+4. **Engine ≠ UI.** `src/ppsim/` has no plotting or web imports. Reports read outputs.
+   A new product is a new `products/<id>.yaml`, with no product logic in the engine.
+5. **Git:** work on branches and commit locally after meaningful changes. **Never push
+   or change repo visibility without asking.** Run `/pre-push-check` before any push.
+6. Run **`/log-session`** at the end of every work block and before any long task.
 
 ## Layout
 
 ```
-src/ppsim/          engine (pure Python + pandas; no plotting)
-  config.py         load + validate product YAML; safe expression evaluator
-  fred.py           FRED CSV download with on-disk cache (no API key)
-  demand.py         seeded mock demand generator
-  bom.py            BOM model, low-level codes, multi-level explosion
-  mrp.py            time-phased MRP records (lot-for-lot, FOQ, POQ, min/multiple)
-  feedstock.py      map FRED price series onto purchased items
-  pipeline.py       runs the milestone chain, writes CSVs
-  cli.py            `python -m ppsim ...`
-products/<id>/      one folder per product: product.yaml + SOURCES.md
-tests/              pytest; no network (FRED tests use fixtures)
-reports/            (later) static chart scripts that read outputs/
-data/cache/         runtime FRED cache (gitignored)
-outputs/            run outputs (gitignored)
+src/ppsim/            engine: registry, config, bom, mrp, demand, fred, feedstock, pipeline, cli
+products/<id>.yaml    product configs (structure + assumption ids)
+knowledge/            assumptions.csv, notes/, topics/, backlog.md
+docs/                 status.md, architecture.md, decisions/
+scripts/              fetch_data.py (dataset provenance), pre_push_check.py
+data/raw/             download cache (gitignored)   data/processed/  license-permitting only
+tests/                pytest, offline
 ```
 
 ## Commands
@@ -57,17 +46,20 @@ outputs/            run outputs (gitignored)
 ```bash
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest -q
-.venv/bin/python -m ppsim run products/blg_whey_protein/product.yaml --out outputs/blg
-.venv/bin/python -m ppsim run products/blg_whey_protein/product.yaml --offline   # cache only
+.venv/bin/python scripts/fetch_data.py
+.venv/bin/python -m ppsim run products/blg_whey_protein.yaml [--variant sucrose] [--offline]
+.venv/bin/python scripts/pre_push_check.py
 ```
+
+## Skills (`.claude/skills/`)
+
+- `/research <question>`: sourced research → notes, assumptions rows, topics, backlog.
+- `/log-session`: update status.md, INDEX.md and backlog, then commit locally.
+- `/pre-push-check`: tests, uncited/unlabeled numbers, email/phone/key scan, and a private
+  deny-list scan (location-only output; never read or echo the deny-list).
 
 ## Conventions
 
-- Python ≥ 3.9 (system Python on the dev machine is 3.9): use
-  `from __future__ import annotations`, no `match`, no `X | Y` at runtime.
-- Quantities in the item's `uom` (kg for everything in Case 1). Periods are pandas
-  `Period`s at the config's `time.freq`; the engine works on integer bucket indices.
-- MRP rows use the textbook names: gross requirements, scheduled receipts, projected
-  on hand, net requirements, planned order receipts, planned order releases.
-- Keep functions pure (inputs → DataFrame). I/O only in `fred.py`, `pipeline.py`, `cli.py`.
-- Add a test for every planning rule you add; hand-checkable textbook examples preferred.
+- Python ≥ 3.9: `from __future__ import annotations`; no `match`; no runtime `X | Y`.
+- Weekly buckets are pandas Periods; the engine uses integer bucket indices.
+- MRP row names follow the textbook. Every planning rule gets a hand-checkable test.

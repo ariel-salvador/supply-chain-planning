@@ -2,51 +2,81 @@ import copy
 
 import pytest
 
-from ppsim.config import ConfigError, apply_variant, evaluate, load_config, parse_config
+from ppsim.config import ConfigError, apply_variant, evaluate, expr_names, load_config, parse_config
 from conftest import BLG
 
 
-def test_minimal_config_parses(minimal_raw):
-    cfg = parse_config(minimal_raw)
-    assert cfg.derived["k2"] == 4
+def test_minimal_config_parses(minimal_raw, registry):
+    cfg = parse_config(minimal_raw, registry)
+    assert cfg.derived["k2"] == 6
     assert cfg.bom[0].qty_per == 2
     assert cfg.items["B"].planning.lead_time == 1
+    assert cfg.items["A"].planning.on_hand == 5
+    assert set(cfg.assumptions) == {"k", "c3", "m_lt", "m_base", "m_oh"}
 
 
-@pytest.mark.parametrize("field", ["source", "locator", "unit"])
-def test_parameter_without_citation_fields_is_rejected(minimal_raw, field):
+def test_raw_planning_number_rejected(minimal_raw, registry):
     raw = copy.deepcopy(minimal_raw)
-    del raw["parameters"]["k"][field]
-    with pytest.raises(ConfigError, match=field):
-        parse_config(raw)
+    raw["items"][0]["planning"]["on_hand"] = 500
+    with pytest.raises(ConfigError, match="raw number"):
+        parse_config(raw, registry)
 
 
-def test_parameter_citing_undeclared_source_is_rejected(minimal_raw):
+def test_zero_is_allowed_literally(minimal_raw, registry):
     raw = copy.deepcopy(minimal_raw)
-    raw["parameters"]["k"]["source"] = "nope"
-    with pytest.raises(ConfigError, match="not declared"):
-        parse_config(raw)
+    raw["items"][0]["planning"]["safety_stock"] = 0
+    assert parse_config(raw, registry).items["A"].planning.safety_stock == 0
 
 
-def test_parameter_value_must_be_a_number(minimal_raw):
+@pytest.mark.parametrize("expr", ["k * 2", "k / 1000", "0.5 * k"])
+def test_numeric_literals_in_expressions_rejected(minimal_raw, registry, expr):
     raw = copy.deepcopy(minimal_raw)
-    raw["parameters"]["k"]["value"] = "1 + 1"
-    with pytest.raises(ConfigError, match="derived"):
-        parse_config(raw)
+    raw["bom"][0]["qty_per"] = expr
+    with pytest.raises(ConfigError, match="literal"):
+        parse_config(raw, registry)
 
 
-def test_demand_must_be_explicitly_mock(minimal_raw):
+def test_bom_quantity_must_rest_on_cited(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["bom"][0]["qty_per"] = "k * m_lt"
+    with pytest.raises(ConfigError, match="cited"):
+        parse_config(raw, registry)
+
+
+def test_bom_quantity_via_derived_mock_rejected(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["derived"]["bad"] = "k * m_base"
+    raw["bom"][0]["qty_per"] = "bad"
+    with pytest.raises(ConfigError, match="m_base"):
+        parse_config(raw, registry)
+
+
+def test_unknown_assumption_id(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["bom"][0]["qty_per"] = "nope"
+    with pytest.raises(ConfigError, match="unknown assumption"):
+        parse_config(raw, registry)
+
+
+def test_used_in_must_list_product(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["bom"][0]["qty_per"] = "other"
+    with pytest.raises(ConfigError, match="used_in"):
+        parse_config(raw, registry)
+
+
+def test_demand_must_be_explicitly_mock(minimal_raw, registry):
     raw = copy.deepcopy(minimal_raw)
     raw["demand"]["mock"] = False
     with pytest.raises(ConfigError, match="mock"):
-        parse_config(raw)
+        parse_config(raw, registry)
 
 
-def test_fractional_lead_time_is_rejected(minimal_raw):
+def test_fractional_lead_time_is_rejected(minimal_raw, registry):
     raw = copy.deepcopy(minimal_raw)
-    raw["items"][1]["planning"]["lead_time"] = "k / 3"
+    raw["items"][1]["planning"]["lead_time"] = "m_lt / c3"
     with pytest.raises(ConfigError, match="whole number"):
-        parse_config(raw)
+        parse_config(raw, registry)
 
 
 @pytest.mark.parametrize(
@@ -63,11 +93,14 @@ def test_evaluate_rejects_non_arithmetic(expr):
         evaluate(expr, {"a": 1, "b": 2})
 
 
-def test_blg_config_every_parameter_cited():
+def test_expr_names_excludes_functions():
+    assert expr_names("ceil(a / b) + max(a, c)") == {"a", "b", "c"}
+
+
+def test_blg_config_loads_and_labels():
     cfg = load_config(BLG)
-    assert cfg.parameters, "case 1 should have cited parameters"
-    for p in cfg.parameters.values():
-        assert p.source in cfg.sources and p.locator
+    statuses = {a.status for a in cfg.assumptions.values()}
+    assert statuses == {"cited", "mock"}
     assert cfg.demand.mock is True
 
 
@@ -78,6 +111,7 @@ def test_blg_derived_values():
     assert d["sugar_kg_per_kg_rblg"] == pytest.approx(1 / (0.223 * 0.90))
     assert d["corn_kg_per_glucose_kg"] == pytest.approx((25 / 14) * 162.141 / 180.156)
     assert cfg.items["BLG-FERM"].planning.lead_time == 1  # 144 h cycle -> 1 week
+    assert cfg.items["BLG-PWD"].planning.on_hand == 60000
 
 
 def test_variant_substitutes_component():

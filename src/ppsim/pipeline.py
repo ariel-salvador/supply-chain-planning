@@ -37,23 +37,22 @@ class RunResult:
 
 
 def parameters_table(cfg: ProductConfig) -> pd.DataFrame:
-    rows = []
-    for p in cfg.parameters.values():
-        src = cfg.sources[p.source]
-        rows.append(
-            {
-                "name": p.name,
-                "value": p.value,
-                "unit": p.unit,
-                "kind": "cited",
-                "source": src.citation,
-                "locator": p.locator,
-                "url": src.url,
-                "note": p.note or "",
-            }
-        )
-    for name, v in cfg.derived.items():
-        rows.append({"name": name, "value": v, "unit": "", "kind": "derived", "source": "", "locator": "", "url": "", "note": ""})
+    """Every number the run used, with its registry label and citation."""
+    rows = [
+        {
+            "id": a.id,
+            "name": a.name,
+            "value": a.value,
+            "unit": a.unit,
+            "status": a.status,
+            "confidence": a.confidence,
+            "source": a.source,
+            "url": a.url,
+            "retrieved": a.retrieved,
+        }
+        for a in cfg.assumptions.values()
+    ]
+    rows += [{"id": k, "name": "derived", "value": v, "status": "derived"} for k, v in cfg.derived.items()]
     return pd.DataFrame(rows)
 
 
@@ -132,7 +131,8 @@ def write_outputs(result: RunResult, out_dir: Union[str, Path]) -> List[Path]:
         "demand_is_mock": True,
         "planning_parameters_are_assumptions": True,
         "horizon": {"start": cfg.start, "freq": cfg.freq, "buckets": cfg.horizon},
-        "sources": {k: {"citation": s.citation, "url": s.url, "license": s.license} for k, s in cfg.sources.items()},
+        "assumption_status_counts": result.parameters["status"].value_counts().to_dict(),
+        "sources": sorted({(a.source, a.url) for a in cfg.assumptions.values() if a.status == "cited"}),
         "price_series": result.fred_meta,
         "warnings": result.warnings,
         "files": [p.name for p in written],

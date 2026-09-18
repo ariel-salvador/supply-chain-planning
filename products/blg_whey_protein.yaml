@@ -1,0 +1,96 @@
+# Case 1 - MOCK precision-fermentation plant: recombinant beta-lactoglobulin (rBLG)
+# whey protein powder made by Trichoderma reesei fed-batch fermentation.
+#
+# Structure only. Every number is an id in knowledge/assumptions.csv
+# (status cited / estimate / mock). The loader enforces:
+#   - BOM quantities and price conversions rest on cited ids only
+#   - planning and demand values are registry ids (mock), never raw numbers
+# Process background: knowledge/topics/precision-fermentation-process.md
+
+product:
+  id: blg_whey_protein
+  name: "rBLG whey protein powder - mock precision-fermentation plant"
+  mock: true
+
+registry: ../knowledge/assumptions.csv
+
+time:
+  freq: W-SUN        # weekly buckets, Mon-Sun
+  start: "2027-01-04"
+  horizon: 26
+
+derived:
+  # kg rBLG secreted per kg powder (no UF/DF or drying loss, as in Behm 2022)
+  rblg_kg_per_kg_product: rblg_content_of_product / mf_permeate_recovery
+  # kg sugar per kg rBLG; yield read as total secreted protein (ADR 0004)
+  sugar_kg_per_kg_rblg: 1 / (protein_yield_on_sugar * rblg_fraction_of_secreted_protein)
+  fermentation_cycle_h: production_time + turnaround_time
+  fermentation_lead_time_weeks: ceil(fermentation_cycle_h / hours_per_week)
+  # upper bound: working volume is not sourced yet (backlog)
+  batch_rblg_kg_at_full_volume: main_bioreactor_volume * final_titre_rblg
+  # starch -> glucose mass gain on hydrolysis
+  hydrolysis_mass_gain: glucose_molar_mass / anhydroglucose_molar_mass
+  # theoretical minimum corn per kg glucose: 100% hydrolysis, no refining losses
+  corn_kg_per_glucose_kg: (corn_per_bushel / starch_per_bushel) / hydrolysis_mass_gain
+
+items:
+  - id: BLG-PWD
+    name: rBLG protein powder (85.8% rBLG)
+    type: finished
+    uom: kg
+    planning:
+      lead_time: mock_pwd_lead_time
+      on_hand: mock_pwd_on_hand
+      safety_stock: mock_pwd_safety_stock
+      scheduled_receipts: {0: mock_pwd_open_order}
+      lot_sizing: {rule: lot_for_lot}
+
+  - id: BLG-FERM
+    name: rBLG secreted in harvested broth (kg rBLG)
+    type: intermediate
+    uom: kg
+    planning:
+      lead_time: fermentation_lead_time_weeks          # from cited cycle time
+      scheduled_receipts: {0: mock_ferm_open_batch}
+      lot_sizing: {rule: lot_for_lot}                  # batch sizing arrives with RCCP
+
+  - id: GLUCOSE
+    name: Glucose (corn-derived), carbon source - Behm scenario 1
+    type: purchased
+    uom: kg
+    price:
+      series: PMAIZMTUSDM                              # USD per metric ton of corn
+      usd_per_uom: PMAIZMTUSDM / kg_per_tonne * corn_kg_per_glucose_kg   # corn content only
+    planning: &sugar_planning
+      lead_time: mock_sugar_lead_time
+      on_hand: mock_sugar_on_hand
+      safety_stock: mock_sugar_safety_stock
+      scheduled_receipts: {1: mock_sugar_open_po}
+      lot_sizing: {rule: fixed_order_quantity, quantity: mock_sugar_order_qty}
+
+  - id: SUCROSE
+    name: Sucrose, carbon source - Behm scenario 2
+    type: purchased
+    uom: kg
+    price:
+      series: PSUGAISAUSDM                             # US cents per pound, ICE No. 11
+      usd_per_uom: PSUGAISAUSDM / cents_per_usd / kg_per_lb
+    planning: *sugar_planning
+
+bom:
+  - {parent: BLG-PWD, component: BLG-FERM, qty_per: rblg_kg_per_kg_product}
+  - {parent: BLG-FERM, component: GLUCOSE, qty_per: sugar_kg_per_kg_rblg}
+
+variants:
+  sucrose:                    # Behm et al. scenario 2: same process, sucrose feed
+    substitute: {GLUCOSE: SUCROSE}
+
+demand:
+  mock: true                  # synthetic - not market data
+  item: BLG-PWD
+  base_per_period: mock_demand_base
+  annual_growth: mock_demand_growth
+  seasonal_amplitude: mock_demand_seasonal_amplitude
+  seasonal_peak_month: mock_demand_peak_month
+  noise_cv: mock_demand_noise_cv
+  seed: 42                    # RNG seed (structural)

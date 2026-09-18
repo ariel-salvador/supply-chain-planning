@@ -41,10 +41,10 @@
 
 ## Used in
 
-`products/blg_whey_protein/product.yaml`: titre, rBLG share, yield, biomass, cycle times,
-reactor volume, MF recovery, product rBLG content.
+`products/blg_whey_protein.yaml` via `knowledge/assumptions.csv` ids: titre, rBLG share, yield, cycle times,
+reactor volume, MF recovery, product rBLG content (plus DSP rows for later milestones).
 
 ## Open questions
 
-- Is 0.223 g/g total protein or rBLG only? We assume total (see SOURCES.md).
+- Is 0.223 g/g total protein or rBLG only? We assume total (ADR 0004).
 - Working volume of the 300 m³ vessel isn't stated. Check Humbird 2011.
