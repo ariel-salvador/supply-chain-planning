@@ -1,41 +1,46 @@
 # Status (handoff)
 
-_Last updated: 2026-09-18 · M1 merged to `main` (PR #1); M2 on `m2-sop-mps`, merged via PR #2. Repo is private._
+_Last updated: 2026-09-18 · branch `m-odoo` (from `main` after the M2 merge; local only, not pushed). Repo is private._
 
 ## Current milestone
-**M2: S&OP → MPS. Done and merged.** M1 (FRED pull, mock demand, BOM, MRP)
-is done, along with the harness, licensing (ADR 0005), and the Humbird research block.
+**ERP: Case 1 in Odoo 19 Community.** It's built and reproducible (`make odoo-demo`,
+about 1 min). Screenshots are pending, because they need the user to sign in to the
+Odoo UI. M1 and M2 are merged to `main` (PR #1, #2).
 
 ## Done (this block)
-- **Research:** Humbird et al. 2011 (NREL): final working volume 80 % (fed-batch from
-  50 %), seed-vessel cycle 48 h, uptime 96 %, and the 12,000 kg/batch cross-check. The
-  note and 8 cited rows are saved. Fermentation is now planned in whole 12,000 kg batches.
-- **M2 engine:** `sop.py` (week↔month split by days, chase/level plan, cover targets on
-  daily rate, capacity cap and flags) and `mps.py` (DTF/PTF, capacity-aware catch-up,
-  PAB, discrete ATP with look-ahead, mock order book). MRP now accepts the MPS as fixed
-  receipts. Config has `time.sop_months`, `demand.orders`, `sop:` and `mps:`.
-- **Case 1 run** [mock demand]: the chase plan meets target every month at 58–83 %
-  utilization with 3 mock reactors. The MPS stays within capacity, and there are no
-  warnings.
-- **Records:** ADR 0006 (fermenters as rough-cut constraint), ADR 0007 (S&OP → MPS
-  linkage). Topic, architecture and README updated.
-- 97 offline tests pass. Registry has 56 rows (36 cited, 20 mock).
+- **Docker:** OrbStack 2.2.3 installed via Homebrew with the user's OK. The Makefile
+  falls back to OrbStack's bundled `docker-compose` if `docker` isn't on PATH.
+- **Research (option a, then b):** nutrients cited from Humbird Table 20; 25 kg bags
+  from USDA DME1 §2.4. No public source for UF/DF membrane life, so it's a [mock] BOM
+  line under ADR 0008 (consumables only).
+- **Odoo stack:** `docker-compose.yml` (pinned `odoo:19.0-20260908`,
+  `postgres:17.11-bookworm`, localhost only), `.env.example`, `Makefile`,
+  `odoo/bootstrap.py`. Secrets are in a gitignored `.env` and `.odoo-apikey`.
+- **Scripts:**
+  - `odoo_client.py` (JSON-2, since XML-RPC is deprecated)
+  - `odoo_seed.py`: fictional company/vendors/customer, batch and lot units, routes,
+    BOMs, reorder rules, stock, WIP and open POs, weekly SOs
+  - `odoo_run.py`: scheduler run, then export to `data/processed/odoo_plan.csv`
+  - `compare_plans.py`: writes `docs/odoo/comparison.md`
+- **Finding:** quantities agree to within 7–9 %, and the gap is the engine's S&OP
+  inventory build. Odoo's reorder rules replenish the whole 26-week window *now*
+  (everything due in weeks 0–1), while the engine time-phases over weeks 1–25.
+- **Records:** ADR 0009 (why Odoo Community), `docs/odoo/README.md`, README section
+  "Hands-on ERP". Registry has 69 rows. 100 tests pass, and the pre-push check is clean.
 
 ## In progress
-- Next up (agreed with the user): a visual layer. Start with a static chart report
-  (local HTML, no hosting), then maybe a local Streamlit app; hosting decided later.
+- Screenshots (BOM, reorder rules, replenishment, MO, RFQ, comparison) for
+  `docs/odoo/`. **Blocked:** the user needs to sign in to Odoo in the browser pane
+  (I don't enter passwords).
 
 ## Next 3 steps
-1. **RCCP (M4) at batch level:** whole-batch rounding gives 4 fermentation starts in
-   week 2027-01-11 against 3.36 available. Load batch starts against reactors and
-   resolve (level or shift).
-2. **M3 purchasing:** planned sugar releases become a PO schedule and spend using FRED
-   price history.
-3. **First static charts** in `reports/` (S&OP plan, MPS/ATP, feedstock cost with
-   IMF/FRED citation).
+1. Screenshots once the user has signed in. Crop them to the app window, check them
+   for usernames, paths and emails, then add them to the README section.
+2. Optional Odoo variant: a short horizon plus a rolling daily scheduler, to show how
+   Community time-phases.
+3. Back to the main track: RCCP at batch level (M4), purchasing (M3), and the static
+   chart report (paused; palette already validated).
 
 ## Open questions
-- DSP throughput and cycle times are still unsourced (backlog P1). Until then DSP is
-  assumed unconstrained (ADR 0006).
-- Offline time: Behm 24 h (base) vs Humbird 48 h. Uptime of 96 % comes from an ethanol plant.
+- Membrane life is still unsourced (ADR 0008). DSP throughput is unsourced (ADR 0006).
 - See `knowledge/backlog.md`.
