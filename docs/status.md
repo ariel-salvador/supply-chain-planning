@@ -1,9 +1,9 @@
 # Status (handoff)
 
-_Last updated: 2026-09-18 · branch `m2-sop-mps` (branched from `m1-foundation`; local only, not pushed)_
+_Last updated: 2026-09-18 · M1 merged to `main` (PR #1); M2 on `m2-sop-mps`, merged via PR #2. Repo is private._
 
 ## Current milestone
-**M2: S&OP → MPS. Done, waiting for the user's review.** M1 (FRED pull, mock demand, BOM, MRP)
+**M2: S&OP → MPS. Done and merged.** M1 (FRED pull, mock demand, BOM, MRP)
 is done, along with the harness, licensing (ADR 0005), and the Humbird research block.
 
 ## Done (this block)
@@ -22,7 +22,8 @@ is done, along with the harness, licensing (ADR 0005), and the Humbird research 
 - 97 offline tests pass. Registry has 56 rows (36 cited, 20 mock).
 
 ## In progress
-- Nothing open. Waiting for the user's review of M2.
+- Next up (agreed with the user): a visual layer. Start with a static chart report
+  (local HTML, no hosting), then maybe a local Streamlit app; hosting decided later.
 
 ## Next 3 steps
 1. **RCCP (M4) at batch level:** whole-batch rounding gives 4 fermentation starts in
