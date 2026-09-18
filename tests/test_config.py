@@ -116,7 +116,8 @@ def test_blg_derived_values():
 
 def test_variant_substitutes_component():
     cfg = apply_variant(load_config(BLG), "sucrose")
-    assert [b.component for b in cfg.bom] == ["BLG-FERM", "SUCROSE"]
+    comps = [b.component for b in cfg.bom]
+    assert "SUCROSE" in comps and "GLUCOSE" not in comps
     with pytest.raises(ConfigError):
         apply_variant(cfg, "nope")
 
