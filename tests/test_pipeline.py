@@ -38,3 +38,30 @@ def test_sucrose_variant(fake_prices):
 def test_prices_optional():
     res = run(BLG, fetch_prices=False)
     assert res.prices is None and res.feedstock_cost is None
+
+
+def test_sop_mps_drive_mrp(fake_prices):
+    res = run(BLG)
+    assert res.sop is not None and res.mps is not None
+    t = res.mps.table
+    fg = res.mrp["BLG-PWD"].table
+    # MPS planned quantities are the finished item's MRP planned receipts
+    assert fg.loc["planned_order_receipts"].tolist() == pytest.approx(t.loc["planned_mps"].tolist())
+    assert fg.loc["gross_requirements"].tolist() == pytest.approx(t.loc["projected_demand"].tolist())
+    # nothing planned inside the planning time fence
+    ptf = res.cfg.mps.planning_time_fence
+    assert t.loc["planned_mps"].iloc[:ptf].sum() == 0
+    # MPS within weekly capacity, and the base case raises no warnings
+    load = t.loc["planned_mps"] + t.loc["firm_mps"]
+    assert (load <= res.cfg.sop.capacity_per_week + 1e-6).all()
+    assert res.warnings == []
+    # S&OP: 12 months, chase meets target, fermentation in whole batches
+    assert len(res.sop) == 12 and not res.sop["below_target"].any()
+    rel = res.mrp["BLG-FERM"].table.loc["planned_order_receipts"]
+    batch = res.cfg.derived["batch_rblg_kg"]
+    assert ((rel / batch) % 1 < 1e-9).all()
+
+
+def test_sop_outputs_written(tmp_path, fake_prices):
+    files = {p.name for p in write_outputs(run(BLG), tmp_path)}
+    assert {"sop_plan.csv", "mps_BLG-PWD.csv"} <= files

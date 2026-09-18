@@ -12,6 +12,9 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 - [ ] **UF/DF flux, membrane area, dryer evaporation capacity** for DSP capacity
   (see `topics/tff-scale-up.md`).
 
+- [ ] **RCCP at batch level (M4):** whole-batch rounding gives 4 starts in week
+  2027-01-11 vs 3.36 available (3 reactors). Needs batch-start loading against reactors.
+
 ## P2
 - [ ] Behm 0.223 g/g: total protein or rBLG only? (ADR 0004; total, now supported by the Humbird cross-check.)
 - [ ] Offline time: Behm 24 h vs Humbird 48 h. Is there a source for modern CIP/SIP turnaround at 300 m³?
@@ -23,6 +26,9 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 - [ ] Sucrose uptake by *T. reesei*: does scenario 2 imply an engineered strain or an
   invertase step? Is the yield the same?
 - [ ] Unfavourable-side sensitivity values (Behm Fig. 4) for `low`/`high` ranges.
+
+- [ ] Compare `chase` vs `level` S&OP (inventory vs utilization trade-off) once charts exist.
+- [ ] More realistic mock order book (order sizes and lumpiness, not a smooth share of forecast).
 
 ## P3
 - [ ] Filter-press cake dry content (40 %) → add to the registry when the biomass side

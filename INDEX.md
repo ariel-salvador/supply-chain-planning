@@ -14,6 +14,8 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0003-fred-data-not-committed.md`: IMF copyright, runtime fetch, citation on charts.
 - `docs/decisions/0004-blg-yield-interpretation.md`: 0.223 g/g read as total protein (conservative).
 - `docs/decisions/0005-licensing.md`: MIT for code, CC BY 4.0 for docs/ and knowledge/; holder is the GitHub handle.
+- `docs/decisions/0006-fermenters-as-rough-cut-constraint.md`: capacity basis for S&OP/MPS; DSP assumed unconstrained until sourced.
+- `docs/decisions/0007-sop-to-mps-linkage.md`: month/week split, cover targets, time fences, catch-up, MPS → MRP.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.
 
 ## Knowledge
@@ -21,7 +23,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `knowledge/backlog.md`: prioritized open questions. Read when choosing research.
 - `knowledge/topics/precision-fermentation-process.md`: Case 1 process train and BOM derivation. Read before touching the BLG config.
 - `knowledge/topics/tff-scale-up.md`: MF/UF/DF/drying parameters and DSP capacity gaps. Read for RCCP (M4).
-- `knowledge/topics/mrp-concepts.md`: MRP logic as implemented. Read before changing `mrp.py`.
+- `knowledge/topics/mrp-concepts.md`: MRP, S&OP and MPS logic as implemented. Read before changing `mrp.py`, `sop.py` or `mps.py`.
 - `knowledge/topics/commodity-feedstocks.md`: FRED series, corn→glucose and cents/lb conversions, cost/kg. Read for purchasing (M3).
 - `knowledge/notes/behm-2022-rblg-lca.md`: primary Case 1 source (rBLG by *T. reesei*, CC BY).
 - `knowledge/notes/humbird-2011-nrel-biochemical-design.md`: NREL *T. reesei* enzyme area: working volume, cycle, seed train, nutrients, uptime.

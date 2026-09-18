@@ -162,6 +162,21 @@ class DemandSpec:
     seasonal_peak_month: int = 1
     noise_cv: float = 0.0
     seed: int = 0
+    orders_booked_first: Optional[float] = None  # share of week-0 forecast already booked (mock)
+    orders_decay: Optional[float] = None  # booked share multiplier per week of lead time (mock)
+
+
+@dataclass(frozen=True)
+class SopSpec:
+    strategy: str  # chase | level
+    target_cover_months: float
+    capacity_per_week: Optional[float] = None  # in demand-item uom
+
+
+@dataclass(frozen=True)
+class MpsSpec:
+    demand_time_fence: int
+    planning_time_fence: int
 
 
 @dataclass(frozen=True)
@@ -179,6 +194,9 @@ class ProductConfig:
     demand: DemandSpec
     variants: Dict[str, Dict[str, str]] = field(default_factory=dict)  # name -> {old: new}
     variant: Optional[str] = None
+    sop: Optional[SopSpec] = None
+    mps: Optional[MpsSpec] = None
+    sop_months: int = 0
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -356,6 +374,40 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         noise_cv=r.planning(dm.get("noise_cv"), "demand.noise_cv"),
         seed=int(dm.get("seed", 0)),  # RNG seed: structural, not a model number
     )
+    orders_raw = dm.get("orders")
+    if orders_raw:
+        demand = replace(
+            demand,
+            orders_booked_first=r.planning(_req(orders_raw, "booked_first", "demand.orders"), "demand.orders.booked_first"),
+            orders_decay=r.planning(_req(orders_raw, "decay", "demand.orders"), "demand.orders.decay"),
+        )
+
+    sop = None
+    if raw.get("sop"):
+        sr = raw["sop"]
+        strategy = _req(sr, "strategy", "sop")
+        if strategy not in ("chase", "level"):
+            raise ConfigError(f"sop: unknown strategy {strategy!r}")
+        cap = sr.get("capacity_per_week")
+        sop = SopSpec(
+            strategy=strategy,
+            target_cover_months=r.planning(_req(sr, "target_cover_months", "sop"), "sop.target_cover_months"),
+            capacity_per_week=None if cap is None else r.planning(cap, "sop.capacity_per_week"),
+        )
+
+    mps = None
+    if raw.get("mps"):
+        mr = raw["mps"]
+        dtf = _whole(r.planning(mr.get("demand_time_fence"), "mps.demand_time_fence"), "mps.demand_time_fence")
+        ptf = _whole(r.planning(mr.get("planning_time_fence"), "mps.planning_time_fence"), "mps.planning_time_fence")
+        if ptf < dtf:
+            raise ConfigError(f"mps: planning_time_fence ({ptf}) must be >= demand_time_fence ({dtf})")
+        mps = MpsSpec(dtf, ptf)
+    if (sop is None) != (mps is None):
+        raise ConfigError("sop and mps must be configured together")
+    sop_months = int(time.get("sop_months", 0))
+    if sop is not None and sop_months < 1:
+        raise ConfigError("time.sop_months must be >= 1 when sop is configured")
 
     variants: Dict[str, Dict[str, str]] = {}
     for vname, v in (raw.get("variants") or {}).items():
@@ -386,6 +438,9 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         bom=bom,
         demand=demand,
         variants=variants,
+        sop=sop,
+        mps=mps,
+        sop_months=sop_months,
         path=path,
     )
 

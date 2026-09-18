@@ -18,9 +18,9 @@ and **the demand is mock**.
 | Milestone | Scope | State |
 |---|---|---|
 | **M1** | FRED data pull, mock demand generator, BOM, basic MRP table | ✅ done |
-| M2 | S&OP (monthly, aggregate) → MPS (weekly), ATP, time fences | planned |
+| **M2** | S&OP (monthly, aggregate) → MPS (weekly), ATP, time fences | ✅ done |
 | M3 | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | planned |
-| M4 | RCCP: bioreactor-hours / DSP load vs. capacity, batch lot sizing | planned (needs a working-volume source) |
+| M4 | RCCP: batch starts vs. reactors, DSP load vs. capacity | planned (batch size sourced; DSP throughput still missing) |
 | M5 | Static charts (published first), then an optional interactive UI | planned |
 
 Details: [`docs/status.md`](docs/status.md) · map of all docs: [`INDEX.md`](INDEX.md).
@@ -35,17 +35,17 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml --variant sucrose
 ```
 
-Outputs go to `outputs/<product>[-<variant>]/`: `demand_mock.csv`,
-`bom_explosion.csv`, `mrp_<ITEM>.csv`, `mrp_long.csv`, `parameters.csv` (every number
+Outputs go to `outputs/<product>[-<variant>]/`: `demand_mock.csv`, `sop_plan.csv`,
+`mps_<ITEM>.csv`, `bom_explosion.csv`, `mrp_<ITEM>.csv`, `mrp_long.csv`, `parameters.csv` (every number
 used, with status and citation), `feedstock_*.csv`, and `manifest.json`.
 
 ## How it works
 
 ```
-knowledge/assumptions.csv ─► config loader ─► mock demand ─► MRP ─► outputs/*.csv ─► static charts
-products/<id>.yaml ─────────┘  (rejects uncited               ▲
-                                process numbers)              │
-FRED CSV ─► data/raw/ ─► feedstock prices ─► cost per kg ─────┘
+knowledge/assumptions.csv ─► config loader ─► mock demand ─► S&OP ─► MPS ─► MRP ─► outputs/*.csv ─► static charts
+products/<id>.yaml ─────────┘  (rejects uncited     (monthly)  (weekly,         ▲
+                                process numbers)                fences, ATP)     │
+FRED CSV ─► data/raw/ ─► feedstock prices ─► cost per kg ────────────────────────┘
 ```
 
 - **Engine** (`src/ppsim/`): pure Python + pandas, no plotting or UI imports.

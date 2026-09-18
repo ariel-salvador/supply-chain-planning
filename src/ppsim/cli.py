@@ -22,7 +22,7 @@ def main(argv: Optional[List[str]] = None) -> int:
     ap = argparse.ArgumentParser(prog="ppsim", description="Production planning simulator")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
-    r = sub.add_parser("run", help="run demand -> BOM -> MRP for a product config")
+    r = sub.add_parser("run", help="run demand -> [S&OP -> MPS] -> MRP for a product config")
     r.add_argument("config", type=Path)
     r.add_argument("--variant", default=None, help="BOM variant defined in the config")
     r.add_argument("--out", type=Path, default=None, help="output directory (default outputs/<product>[-<variant>])")
@@ -44,6 +44,13 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"{res.cfg.name}  [variant: {res.cfg.variant or 'base'}]  (demand is MOCK)")
     print("\nBOM explosion per 1 unit of", res.cfg.demand.item)
     print(res.bom_explosion.to_string(index=False, float_format=lambda v: f"{v:,.4f}"))
+    if res.sop is not None:
+        cols = ["days", "demand", "production", "ending_inventory", "target_inventory", "utilization"]
+        print(f"\nS&OP ({res.cfg.sop.strategy}), monthly, demand is MOCK")
+        print(res.sop[cols].to_string(float_format=lambda v: f"{v:,.2f}" if v < 10 else f"{v:,.0f}"))
+    if res.mps is not None and args.show:
+        print(f"\nMPS  {res.cfg.demand.item}  (DTF {res.mps.dtf}, PTF {res.mps.ptf}; first {args.show} buckets)")
+        print(res.mps.to_frame().iloc[:, : args.show].to_string())
     if args.show:
         for item, rec in res.mrp.items():
             print(f"\nMRP  {item}  (lead time {rec.lead_time} buckets, first {args.show} buckets)")
