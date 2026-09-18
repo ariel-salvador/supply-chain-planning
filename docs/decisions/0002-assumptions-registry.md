@@ -8,8 +8,8 @@
   url, retrieved, confidence, status, used_in) is the single store of model numbers.
   Product YAML references ids. The loader enforces:
   (a) BOM quantities and price conversions rest only on `cited` rows (directly or via
-  `derived` expressions); (b) planning and demand values are ids (mock), and only `0` may
-  be literal; (c) expressions contain no numeric literals except 0 and 1; (d) each id
+  `derived` expressions); (b) planning and demand values are ids (mock), and only `0` and `1`
+  may be literal; (c) expressions contain no numeric literals except 0 and 1; (d) each id
   lists the product in `used_in`.
 - **Alternatives:** inline values with a citation block per parameter (the M1 approach:
   readable, but numbers are scattered across files); a database (overkill).

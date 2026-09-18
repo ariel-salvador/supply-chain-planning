@@ -5,8 +5,9 @@ assumptions registry (``knowledge/assumptions.csv``), never raw model numbers.
 The loader enforces the repo's rules:
 
 - process quantities (``derived`` used by the BOM, BOM ``qty_per``, price conversions)
-  may only use ``cited`` assumptions;
-- planning and demand numbers must be registry references (only 0 may be literal);
+  may only use ``cited`` assumptions. The one exception (ADR 0008): a BOM line marked
+  ``basis: mock`` whose component is a ``category: consumable`` item;
+- planning and demand numbers must be registry references (only 0 and 1 may be literal);
 - the only numeric literals allowed inside expressions are 0 and 1;
 - every referenced assumption lists this product in its ``used_in`` column.
 """
@@ -142,6 +143,7 @@ class Item:
     uom: str
     planning: Planning
     price: Optional[PriceLink] = None
+    category: str = "process"  # process | consumable | packaging
 
 
 @dataclass(frozen=True)
@@ -150,6 +152,15 @@ class BomLine:
     component: str
     qty_per: float
     expr: str  # original expression, kept for traceability
+    basis: str = "cited"  # cited | mock (mock only for consumables, ADR 0008)
+
+
+@dataclass(frozen=True)
+class Party:
+    """A company or vendor. Must be fictional (public-safe rule)."""
+    id: str
+    name: str
+    supplies: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -197,6 +208,8 @@ class ProductConfig:
     sop: Optional[SopSpec] = None
     mps: Optional[MpsSpec] = None
     sop_months: int = 0
+    company: Optional[Party] = None
+    vendors: Dict[str, Party] = field(default_factory=dict)
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -259,9 +272,9 @@ class _Resolver:
         if expr is None:
             return 0.0
         if isinstance(expr, (int, float)) and not isinstance(expr, bool):
-            if expr != 0:
+            if expr not in ALLOWED_LITERALS:
                 raise ConfigError(f"{where}: raw number {expr!r}; reference an assumption id instead")
-            return 0.0
+            return float(expr)
         self.used |= self._deps(expr, where, set())
         return evaluate(expr, self.names())
 
@@ -336,6 +349,9 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             pr = it["price"]
             price = PriceLink(series=_req(pr, "series", f"{where}.price"), usd_per_uom=_req(pr, "usd_per_uom", f"{where}.price"))
             r.process(price.usd_per_uom, f"{where}.price", extra={price.series: 1.0})
+        category = it.get("category", "process")
+        if category not in ("process", "consumable", "packaging"):
+            raise ConfigError(f"{where}: unknown category {category!r}")
         items[iid] = Item(
             id=iid,
             name=it.get("name", iid),
@@ -343,6 +359,7 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             uom=_req(it, "uom", where),
             planning=_load_planning(it.get("planning") or {}, f"{where}.planning", r),
             price=price,
+            category=category,
         )
 
     bom = []
@@ -353,10 +370,18 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             if ref not in items:
                 raise ConfigError(f"{where}: unknown item {ref!r}")
         expr = _req(line, "qty_per", where)
-        qty = r.process(expr, where)
+        basis = line.get("basis", "cited")
+        if basis == "mock":
+            if items[comp].category != "consumable":
+                raise ConfigError(f"{where}: basis: mock is only allowed for consumable components (ADR 0008)")
+            qty = r.planning(expr, where)
+        elif basis == "cited":
+            qty = r.process(expr, where)
+        else:
+            raise ConfigError(f"{where}: basis must be 'cited' or 'mock'")
         if qty <= 0:
             raise ConfigError(f"{where}: qty_per must be > 0 (got {qty})")
-        bom.append(BomLine(parent, comp, qty, str(expr)))
+        bom.append(BomLine(parent, comp, qty, str(expr), basis))
 
     dm = _req(raw, "demand", "config")
     if dm.get("mock") is not True:
@@ -421,6 +446,23 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
     for deps in r.derived_deps.values():
         r.used |= deps
 
+    def _party(raw_p: Mapping[str, Any], where: str) -> Party:
+        if raw_p.get("fictional") is not True:
+            raise ConfigError(f"{where}: must be marked 'fictional: true' (public-safe rule)")
+        supplies = tuple(raw_p.get("supplies") or ())
+        for i in supplies:
+            if i not in items or items[i].type != "purchased":
+                raise ConfigError(f"{where}: supplies {i!r}, which is not a purchased item")
+        return Party(_req(raw_p, "id", where), _req(raw_p, "name", where), supplies)
+
+    company = _party(raw["company"], "company") if raw.get("company") else None
+    vendors: Dict[str, Party] = {}
+    for i, v in enumerate(raw.get("vendors") or []):
+        p = _party(v, f"vendors[{i}]")
+        if p.id in vendors:
+            raise ConfigError(f"vendors[{i}]: duplicate id {p.id!r}")
+        vendors[p.id] = p
+
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
         raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
@@ -441,6 +483,8 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         sop=sop,
         mps=mps,
         sop_months=sop_months,
+        company=company,
+        vendors=vendors,
         path=path,
     )
 

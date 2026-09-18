@@ -154,3 +154,34 @@ def test_blg_sop_mps_config():
     assert (cfg.mps.demand_time_fence, cfg.mps.planning_time_fence) == (1, 2)
     # 3 reactors x 168 h x 0.96 / 144 h x 12,000 kg / 0.880 kg/kg
     assert cfg.sop.capacity_per_week == pytest.approx(3 * 168 * 0.96 / 144 * 12000 / (0.858 / 0.975))
+
+
+def test_mock_bom_basis_only_for_consumables(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["bom"][0] = {"parent": "A", "component": "B", "qty_per": "m_base", "basis": "mock"}
+    with pytest.raises(ConfigError, match="consumable"):
+        parse_config(raw, registry)
+    raw["items"][1]["category"] = "consumable"
+    cfg = parse_config(raw, registry)
+    assert cfg.bom[0].basis == "mock" and cfg.bom[0].qty_per == 10
+
+
+def test_parties_must_be_fictional(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["vendors"] = [{"id": "v", "name": "Some Vendor", "supplies": ["B"]}]
+    with pytest.raises(ConfigError, match="fictional"):
+        parse_config(raw, registry)
+    raw["vendors"][0]["fictional"] = True
+    assert parse_config(raw, registry).vendors["v"].supplies == ("B",)
+    raw["vendors"][0]["supplies"] = ["A"]  # finished item can't be supplied
+    with pytest.raises(ConfigError, match="purchased"):
+        parse_config(raw, registry)
+
+
+def test_blg_every_purchased_bom_item_has_a_fictional_vendor():
+    cfg = load_config(BLG)
+    supplied = {i for v in cfg.vendors.values() for i in v.supplies}
+    purchased = {b.component for b in cfg.bom if cfg.items[b.component].type == "purchased"}
+    assert purchased <= supplied
+    assert all("fictional" in v.name.lower() for v in cfg.vendors.values())
+    assert "fictional" in cfg.company.name.lower()

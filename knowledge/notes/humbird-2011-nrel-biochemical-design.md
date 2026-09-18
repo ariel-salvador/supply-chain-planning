@@ -46,7 +46,9 @@
 `max_working_volume_fraction`, `initial_working_volume_fraction`,
 `humbird_protein_per_batch` (cross-check), `seed_vessel_cycle_time`, `humbird_seed_trains`,
 `humbird_production_reactors`, `plant_uptime`, `humbird_protein_yield_on_glucose`, and the
-`high` bound of `turnaround_time`.
+`high` bound of `turnaround_time`. Media: `nh3_conc`, `ammonium_sulfate_conc`,
+`potassium_phosphate_conc`, `magnesium_sulfate_conc`, `calcium_chloride_conc` (Table 20;
+applied per litre of final working volume, so kg per kg rBLG = conc / titre).
 
 ## Open questions
 
