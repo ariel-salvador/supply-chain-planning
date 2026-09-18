@@ -1,0 +1,52 @@
+id,name,value,unit,low,high,source,url,retrieved,confidence,status,used_in
+final_titre_rblg,Final rBLG titre at harvest,50,g/L,,100,"Behm et al. 2022 §2.4 (high = favourable sensitivity value, §3.3)",https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+rblg_fraction_of_secreted_protein,rBLG share of total secreted protein,0.90,fraction,,,Behm et al. 2022 §2.4,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+protein_yield_on_sugar,Secreted protein yield on sugar fed (base case; read as total protein - see ADR 0004),0.223,g/g,,,Behm et al. 2022 §2.4,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+final_fungal_biomass,Final fungal biomass at harvest,30,g/L,10,,"Behm et al. 2022 §2.4 (low = favourable sensitivity value, §3.3)",https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+production_time,Main bioreactor production time per batch,120,h,,,Behm et al. 2022 §2.4,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+turnaround_time,Offline time per batch (drain/clean/refill),24,h,,48,"Behm et al. 2022 §2.4 (high = Humbird et al. 2011 Table 18, 48 h offline)",https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+main_bioreactor_volume,Main production bioreactor volume,300,m3,,,Behm et al. 2022 §2.4,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+mf_permeate_recovery,Microfiltration permeate (protein) recovery,0.975,fraction,,,Behm et al. 2022 Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+rblg_content_of_product,rBLG content of final powder (90% purity x 95% DM),0.858,kg/kg,,,Behm et al. 2022 §2.1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,blg_whey_protein
+corn_per_bushel,Mass of an average bushel of corn,25,kg,,,US EPA AP-42 §9.9.7.1,https://www.epa.gov/sites/default/files/2020-10/documents/c9s09-7.pdf,2026-09-18,med,cited,blg_whey_protein
+starch_per_bushel,Starch recovered per bushel in wet milling,14,kg,,,US EPA AP-42 §9.9.7.1,https://www.epa.gov/sites/default/files/2020-10/documents/c9s09-7.pdf,2026-09-18,med,cited,blg_whey_protein
+glucose_molar_mass,Molar mass of glucose C6H12O6,180.156,g/mol,,,CIAAW conventional atomic weights (C 12.011 H 1.008 O 15.999),https://www.ciaaw.org/atomic-weights.htm,2026-09-18,high,cited,blg_whey_protein
+anhydroglucose_molar_mass,Molar mass of anhydroglucose C6H10O5 (starch unit),162.141,g/mol,,,CIAAW conventional atomic weights (C 12.011 H 1.008 O 15.999),https://www.ciaaw.org/atomic-weights.htm,2026-09-18,high,cited,blg_whey_protein
+kg_per_lb,Kilograms per avoirdupois pound (exact),0.45359237,kg/lb,,,NIST SP 811 Appendix B,https://www.nist.gov/pml/special-publication-811,2026-09-18,high,cited,blg_whey_protein
+kg_per_tonne,Kilograms per metric ton,1000,kg/t,,,NIST SP 811 (SI unit definitions),https://www.nist.gov/pml/special-publication-811,2026-09-18,high,cited,blg_whey_protein
+cents_per_usd,US cents per US dollar,100,cents/USD,,,Definition,,2026-09-18,high,cited,blg_whey_protein
+hours_per_week,Hours per week,168,h/week,,,Definition (7 x 24 h),,2026-09-18,high,cited,blg_whey_protein
+mock_pwd_lead_time,Powder lead time: DSP + drying + QA release,1,week,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_pwd_on_hand,Powder starting inventory,60000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_pwd_safety_stock,Powder safety stock,20000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_pwd_open_order,Powder already in DSP (week 0 receipt),25000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_ferm_open_batch,rBLG from batches already running (week 0 receipt),30000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_sugar_lead_time,Sugar purchase lead time,2,week,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_sugar_on_hand,Sugar starting inventory,400000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_sugar_safety_stock,Sugar safety stock,150000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_sugar_open_po,Sugar open PO (week 1 receipt),250000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_sugar_order_qty,Sugar fixed order quantity,250000,kg,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_demand_base,Powder demand at start of horizon,30000,kg/week,,,mock demand,,,low,mock,blg_whey_protein
+mock_demand_growth,Demand growth,0.15,1/year,,,mock demand,,,low,mock,blg_whey_protein
+mock_demand_seasonal_amplitude,Seasonal amplitude (fraction of base),0.10,fraction,,,mock demand,,,low,mock,blg_whey_protein
+mock_demand_peak_month,Seasonal peak month,11,month,,,mock demand,,,low,mock,blg_whey_protein
+mock_demand_noise_cv,Demand noise coefficient of variation,0.08,fraction,,,mock demand,,,low,mock,blg_whey_protein
+product_purity,rBLG purity of final product (dry basis),0.90,fraction,,,Behm et al. 2022 §2.1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+product_dry_matter,Dry matter of spray-dried product,0.95,fraction,,,Behm et al. 2022 §2.4 and Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+mf_pore_size,Microfiltration pore size,0.2,um,,,Behm et al. 2022 Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+mf_electricity,Microfiltration electricity per m3 permeate,2,kWh/m3,,,Behm et al. 2022 Online Resource 1 Data 1 (citing Hermann and Patel 2007),https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,low,cited,
+ufdf_mwco,UF/DF membrane molecular weight cut-off (PES),10,kDa,,,Behm et al. 2022 Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+ufdf_impurity_permeability,UF/DF permeability of water and impurities,0.85,fraction,,,Behm et al. 2022 Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,low,cited,
+ufdf_diavolume,Diafiltration buffer volume per retentate volume,5,m3/m3,,,Behm et al. 2022 Online Resource 1 Data 1,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,low,cited,
+ufdf_electricity,UF/DF electricity per m3,19.7,kWh/m3,,,Behm et al. 2022 Online Resource 1 Data 1 (citing Cheryan 1998),https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,low,cited,
+spray_dryer_heat,Spray dryer heat per tonne water evaporated,4.9,GJ/t,,,Behm et al. 2022 Online Resource 1 Data 1 (citing Baker and McKenzie 2005),https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,low,cited,
+seed_inoculum_fraction,Culture fraction carried to next seed stage,0.10,fraction,,,Behm et al. 2022 §2.4,https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+aeration_power_per_o2,Power to deliver O2 in stirred tanks,2,kWh/kg O2,,,Behm et al. 2022 §2.4 (citing Humbird et al. 2017),https://doi.org/10.1007/s11367-022-02087-0,2026-09-18,med,cited,
+max_working_volume_fraction,Final (maximum) working volume of fed-batch production vessel,0.80,fraction,,,"Humbird et al. 2011 NREL/TP-5100-47764 Tables 18-19 (pp. 37-39)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
+initial_working_volume_fraction,Initial working volume of fed-batch production vessel,0.50,fraction,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+humbird_protein_per_batch,Protein per 300 m3 batch (cross-check for derived batch size),12000,kg,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+seed_vessel_cycle_time,Seed fermentor cycle time incl. cleaning and sterilization,48,h,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 39 (2 days)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+humbird_seed_trains,Seed trains (3 vessels each) in reference design,4,count,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+humbird_production_reactors,Production reactors served by those seed trains,9,count,,,"Humbird et al. 2011 NREL/TP-5100-47764 §3.4 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,
+plant_uptime,Plant uptime (8410 operating h/yr),0.96,fraction,,,"Humbird et al. 2011 NREL/TP-5100-47764 §2.1 p. 11 (ethanol biorefinery basis)",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,low,cited,
+humbird_protein_yield_on_glucose,Total enzyme protein yield on glucose (reference design),0.24,kg/kg,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 18 p. 37",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,

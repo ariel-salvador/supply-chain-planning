@@ -1,0 +1,14 @@
+.venv/
+data/raw/
+__pycache__/
+.env
+.DS_Store
+
+# also local-only
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+outputs/
+.claude/settings.local.json
