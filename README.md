@@ -22,6 +22,7 @@ and **the demand is mock**.
 | M3 | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | planned |
 | M4 | RCCP: batch starts vs. reactors, DSP load vs. capacity | planned (batch size sourced; DSP throughput still missing) |
 | M5 | Static charts (published first), then an optional interactive UI | planned |
+| **ERP** | Case 1 in Odoo 19 Community: BOM → reorder rules → MO/PO, compared with the engine | ✅ built |
 
 Details: [`docs/status.md`](docs/status.md) · map of all docs: [`INDEX.md`](INDEX.md).
 
@@ -68,6 +69,33 @@ More: [`docs/architecture.md`](docs/architecture.md), and the decisions in
 | Corn, as glucose feedstock | ≥ 7.05 kg | EPA AP-42 starch yield + hydrolysis stoichiometry [source → derived] |
 
 Process background: [`knowledge/topics/precision-fermentation-process.md`](knowledge/topics/precision-fermentation-process.md).
+
+## Hands-on ERP
+
+Case 1 also runs in **Odoo 19 Community** (local Docker). It's seeded from the same
+`product.yaml` through Odoo's JSON-2 API, so there's no manual data entry and the
+company, vendors and customer are fictional. One command rebuilds it from scratch:
+
+```bash
+make odoo-demo    # reset → up → init → seed → run scheduler → compare (~1 min)
+```
+
+Odoo covers the transaction flow: products, per-batch BOMs, vendor lead times,
+reorder rules, replenishment runs, and the MOs and RFQs they generate. S&OP, the MPS
+and capacity stay in the Python engine, because they're Enterprise-only in Odoo
+(ADR 0009). The [comparison](docs/odoo/comparison.md) shows the key difference:
+reorder rules replenish the whole 26-week window **now**, while the engine's MRP
+releases each order in the week it's needed. Quantities agree to within 7–9 %, and
+that gap is the engine's S&OP inventory build. Details and lessons:
+[`docs/odoo/README.md`](docs/odoo/README.md).
+
+| Bill of materials (one 12,000 kg batch) | Reorder rules |
+|---|---|
+| ![BOM](docs/odoo/bom.png) | ![Reorder rules](docs/odoo/reorder-rules.png) |
+| **Replenishment run: MOs all start today** | **A generated MO (3-batch multiple)** |
+| ![Replenishment run](docs/odoo/replenishment-run.png) | ![Manufacturing order](docs/odoo/mo.png) |
+| **A generated RFQ (fictional vendor)** | **Odoo vs engine comparison** |
+| ![RFQ](docs/odoo/po.png) | ![Comparison](docs/odoo/comparison.png) |
 
 ## Data sources and licensing
 

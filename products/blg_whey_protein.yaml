@@ -12,6 +12,11 @@ product:
   name: "rBLG whey protein powder - mock precision-fermentation plant"
   mock: true
 
+company:                       # used by the Odoo demo; FICTIONAL
+  id: demo_co
+  name: "Demo Precision Proteins Co. (fictional)"
+  fictional: true
+
 registry: ../knowledge/assumptions.csv
 
 time:
@@ -31,6 +36,16 @@ derived:
   batch_rblg_kg: main_bioreactor_volume * max_working_volume_fraction * final_titre_rblg
   # powder capacity per week: reactors x available hours / batch cycle x batch / (rBLG per kg powder)
   powder_capacity_per_week: mock_production_reactors * hours_per_week * plant_uptime / fermentation_cycle_h * batch_rblg_kg / rblg_kg_per_kg_product
+  powder_kg_per_batch: batch_rblg_kg / rblg_kg_per_kg_product
+  # media: Humbird Table 20 concentrations per litre of final working volume -> kg per kg rBLG
+  nh3_kg_per_kg_rblg: nh3_conc / final_titre_rblg
+  ammonium_sulfate_kg_per_kg_rblg: ammonium_sulfate_conc / final_titre_rblg
+  potassium_phosphate_kg_per_kg_rblg: potassium_phosphate_conc / final_titre_rblg
+  magnesium_sulfate_kg_per_kg_rblg: magnesium_sulfate_conc / final_titre_rblg
+  calcium_chloride_kg_per_kg_rblg: calcium_chloride_conc / final_titre_rblg
+  bags_per_kg_powder: 1 / bag_net_kg
+  # MOCK (ADR 0008): one UF/DF membrane set per N batches
+  membrane_sets_per_kg_powder: 1 / (mock_batches_per_membrane_set * powder_kg_per_batch)
   # starch -> glucose mass gain on hydrolysis
   hydrolysis_mass_gain: glucose_molar_mass / anhydroglucose_molar_mass
   # theoretical minimum corn per kg glucose: 100% hydrolysis, no refining losses
@@ -41,6 +56,7 @@ items:
     name: rBLG protein powder (85.8% rBLG)
     type: finished
     uom: kg
+    batch_size: powder_kg_per_batch                     # ERP BOM base: powder from one batch
     planning:
       lead_time: mock_pwd_lead_time
       on_hand: mock_pwd_on_hand
@@ -52,6 +68,7 @@ items:
     name: rBLG secreted in harvested broth (kg rBLG)
     type: intermediate
     uom: kg
+    batch_size: batch_rblg_kg                           # ERP BOM base: one 300 m3 batch
     planning:
       lead_time: fermentation_lead_time_weeks          # from cited cycle time
       scheduled_receipts: {0: mock_ferm_open_batch}
@@ -80,9 +97,100 @@ items:
       usd_per_uom: PSUGAISAUSDM / cents_per_usd / kg_per_lb
     planning: *sugar_planning
 
+  - id: NH3
+    name: Ammonia (nitrogen source)
+    type: purchased
+    uom: kg
+    planning: &nutrient_planning
+      lead_time: mock_nutrient_lead_time
+      on_hand: mock_start_cover_batches * batch_rblg_kg * nh3_kg_per_kg_rblg
+      lot_sizing: {rule: lot_for_lot}
+
+  - id: AMSULF
+    name: Ammonium sulfate
+    type: purchased
+    uom: kg
+    planning:
+      <<: *nutrient_planning
+      on_hand: mock_start_cover_batches * batch_rblg_kg * ammonium_sulfate_kg_per_kg_rblg
+
+  - id: KPHOS
+    name: Potassium phosphate
+    type: purchased
+    uom: kg
+    planning:
+      <<: *nutrient_planning
+      on_hand: mock_start_cover_batches * batch_rblg_kg * potassium_phosphate_kg_per_kg_rblg
+
+  - id: MGSULF
+    name: Magnesium sulfate
+    type: purchased
+    uom: kg
+    planning:
+      <<: *nutrient_planning
+      on_hand: mock_start_cover_batches * batch_rblg_kg * magnesium_sulfate_kg_per_kg_rblg
+
+  - id: CACL2
+    name: Calcium chloride
+    type: purchased
+    uom: kg
+    planning:
+      <<: *nutrient_planning
+      on_hand: mock_start_cover_batches * batch_rblg_kg * calcium_chloride_kg_per_kg_rblg
+
+  - id: BAG-25KG
+    name: Multiwall paper bag, 25 kg, PE liner
+    type: purchased
+    category: packaging
+    uom: unit
+    planning:
+      lead_time: mock_packaging_lead_time
+      on_hand: mock_start_cover_batches * powder_kg_per_batch * bags_per_kg_powder
+      lot_sizing: {rule: lot_for_lot}
+
+  - id: UFDF-MEMBRANE-SET
+    name: UF/DF membrane set (10 kDa PES), consumable
+    type: purchased
+    category: consumable
+    uom: unit
+    planning:
+      lead_time: mock_membrane_lead_time
+      on_hand: mock_membrane_sets_on_hand
+      lot_sizing: {rule: lot_for_lot, multiple: 1}
+
 bom:
   - {parent: BLG-PWD, component: BLG-FERM, qty_per: rblg_kg_per_kg_product}
+  - {parent: BLG-PWD, component: BAG-25KG, qty_per: bags_per_kg_powder}
+  - {parent: BLG-PWD, component: UFDF-MEMBRANE-SET, qty_per: membrane_sets_per_kg_powder, basis: mock}
   - {parent: BLG-FERM, component: GLUCOSE, qty_per: sugar_kg_per_kg_rblg}
+  - {parent: BLG-FERM, component: NH3, qty_per: nh3_kg_per_kg_rblg}
+  - {parent: BLG-FERM, component: AMSULF, qty_per: ammonium_sulfate_kg_per_kg_rblg}
+  - {parent: BLG-FERM, component: KPHOS, qty_per: potassium_phosphate_kg_per_kg_rblg}
+  - {parent: BLG-FERM, component: MGSULF, qty_per: magnesium_sulfate_kg_per_kg_rblg}
+  - {parent: BLG-FERM, component: CACL2, qty_per: calcium_chloride_kg_per_kg_rblg}
+
+vendors:                       # used by the Odoo demo; all FICTIONAL
+  - id: v_sugar
+    name: "Example Sugar Supply Co. (fictional)"
+    fictional: true
+    supplies: [GLUCOSE, SUCROSE]
+  - id: v_nutrients
+    name: "Example Nutrients Ltd. (fictional)"
+    fictional: true
+    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
+  - id: v_packaging
+    name: "Example Packaging Inc. (fictional)"
+    fictional: true
+    supplies: [BAG-25KG]
+  - id: v_membranes
+    name: "Example Membranes GmbH (fictional)"
+    fictional: true
+    supplies: [UFDF-MEMBRANE-SET]
+
+customers:                     # used by the Odoo demo; FICTIONAL
+  - id: c_demo
+    name: "Example Food Brands Inc. (fictional)"
+    fictional: true
 
 variants:
   sucrose:                    # Behm et al. scenario 2: same process, sucrose feed

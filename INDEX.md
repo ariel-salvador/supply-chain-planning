@@ -16,6 +16,10 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0005-licensing.md`: MIT for code, CC BY 4.0 for docs/ and knowledge/; holder is the GitHub handle.
 - `docs/decisions/0006-fermenters-as-rough-cut-constraint.md`: capacity basis for S&OP/MPS; DSP assumed unconstrained until sourced.
 - `docs/decisions/0007-sop-to-mps-linkage.md`: month/week split, cover targets, time fences, catch-up, MPS → MRP.
+- `docs/decisions/0008-mock-quantities-for-consumables.md`: [mock] BOM lines allowed only for consumables (membranes).
+- `docs/decisions/0009-odoo-community-scope.md`: why Odoo Community; S&OP/MPS/capacity stay in Python (verified limits).
+- `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
+- `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.
 
 ## Knowledge
@@ -27,6 +31,8 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `knowledge/topics/commodity-feedstocks.md`: FRED series, corn→glucose and cents/lb conversions, cost/kg. Read for purchasing (M3).
 - `knowledge/notes/behm-2022-rblg-lca.md`: primary Case 1 source (rBLG by *T. reesei*, CC BY).
 - `knowledge/notes/humbird-2011-nrel-biochemical-design.md`: NREL *T. reesei* enzyme area: working volume, cycle, seed train, nutrients, uptime.
+- `knowledge/notes/odoo-19-community-scope.md`: Odoo 19 Community vs Enterprise modules, JSON-2 API, image pins. Read before Odoo work.
+- `knowledge/notes/usda-dme1-dairy-powder-packaging.md`: 25 kg multiwall bag spec (analog dairy powder).
 - `knowledge/notes/epa-ap42-corn-wet-milling.md`: corn → starch yield.
 - `knowledge/notes/fred-imf-commodity-prices.md`: series, units, license, fetch quirks.
 - `knowledge/notes/unit-constants.md`: lb/kg, molar masses.
@@ -36,6 +42,8 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `src/ppsim/`: engine (see architecture.md for the module map).
 - `scripts/fetch_data.py`: dataset provenance and license; fetches into `data/raw/`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
+- `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`).
+- `docker-compose.yml`, `Makefile`, `.env.example`, `odoo/bootstrap.py`: local Odoo stack.
 - `data/processed/README.md`: what may be committed there.
 - `tests/`: offline pytest suite.
 

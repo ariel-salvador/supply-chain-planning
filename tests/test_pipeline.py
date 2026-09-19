@@ -16,7 +16,8 @@ def fake_prices(monkeypatch):
 
 def test_end_to_end_blg(tmp_path, fake_prices):
     res = run(BLG)
-    assert set(res.mrp) == {"BLG-PWD", "BLG-FERM", "GLUCOSE"}  # SUCROSE not in active BOM
+    assert {"BLG-PWD", "BLG-FERM", "GLUCOSE", "NH3", "BAG-25KG", "UFDF-MEMBRANE-SET"} <= set(res.mrp)
+    assert "SUCROSE" not in res.mrp  # not in the active BOM
     # every planned release of powder becomes fermentation gross requirement x qty_per
     pwd_rel = res.mrp["BLG-PWD"].table.loc["planned_order_releases"]
     ferm_gross = res.mrp["BLG-FERM"].table.loc["gross_requirements"]

@@ -1,0 +1,43 @@
+# Local-only Odoo Community demo for the production planning simulator.
+# Nothing is published beyond 127.0.0.1. Secrets come from .env (gitignored).
+# Data lives in named Docker volumes, never in the repo.
+name: pps-odoo
+
+services:
+  db:
+    image: postgres:17.11-bookworm          # pinned; Odoo 19 needs PostgreSQL >= 13
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${ODOO_DB_USER:?set in .env}
+      POSTGRES_PASSWORD: ${ODOO_DB_PASSWORD:?set in .env}
+    volumes:
+      - odoo-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    # no ports: Postgres is reachable only from the odoo container
+
+  odoo:
+    image: odoo:19.0-20260908                # pinned exact build of Odoo 19.0 Community
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: db
+      USER: ${ODOO_DB_USER:?set in .env}
+      PASSWORD: ${ODOO_DB_PASSWORD:?set in .env}
+    command:
+      - --db-filter=^${ODOO_DB_NAME:-pps_demo}$$
+      - --no-database-list                   # disables the web database manager
+    ports:
+      - "127.0.0.1:8069:8069"                # localhost only
+    volumes:
+      - odoo-data:/var/lib/odoo              # filestore + sessions
+    restart: unless-stopped
+
+volumes:
+  odoo-db:
+  odoo-data:

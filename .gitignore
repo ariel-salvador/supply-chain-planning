@@ -12,3 +12,10 @@ build/
 dist/
 outputs/
 .claude/settings.local.json
+
+# Odoo demo: generated API key, any local DB/filestore dumps (.env is ignored above)
+.odoo-apikey
+odoo/data/
+odoo/filestore/
+*.dump
+*.sql.gz

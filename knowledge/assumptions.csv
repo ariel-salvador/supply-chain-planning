@@ -55,3 +55,16 @@ mock_sop_target_cover_months,S&OP target ending inventory (months of next month'
 mock_demand_time_fence,MPS demand time fence,1,week,,,mock planning policy,,,low,mock,blg_whey_protein
 mock_orders_booked_week0,Share of current-week forecast already booked as customer orders,0.95,fraction,,,mock order book,,,low,mock,blg_whey_protein
 mock_orders_decay,Booked share multiplier per week of lead time,0.70,fraction,,,mock order book,,,low,mock,blg_whey_protein
+bag_net_kg,Net product per multiwall paper bag (dairy powder),25,kg,,,"USDA Commodity Requirements DME1 (nonfat dry milk) §2.4, eff. 2006-01-23 (analog product)",https://www.fsa.usda.gov/Internet/FSA_File/dme1.pdf,2026-09-18,med,cited,blg_whey_protein
+nh3_conc,Ammonia in production medium (stoichiometric approx.),7,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,low,cited,blg_whey_protein
+ammonium_sulfate_conc,Ammonium sulfate in production medium,1.4,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
+potassium_phosphate_conc,Potassium phosphate in production medium,2.0,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
+magnesium_sulfate_conc,Magnesium sulfate in production medium,0.3,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
+calcium_chloride_conc,Calcium chloride in production medium,0.4,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
+days_per_week,Days per week (used by scripts/odoo_seed.py),7,d/week,,,Definition,,2026-09-18,high,cited,
+mock_batches_per_membrane_set,Fermentation batches processed per UF/DF membrane set before replacement,100,batch,,,mock (no public source found 2026-09-18; ADR 0008),,,low,mock,blg_whey_protein
+mock_membrane_sets_on_hand,UF/DF membrane sets in stock at start,2,set,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_start_cover_batches,Starting stock of nutrients and bags (batches' worth),6,batch,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_nutrient_lead_time,Nutrient purchase lead time,1,week,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_packaging_lead_time,Bag purchase lead time,2,week,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_membrane_lead_time,Membrane set purchase lead time,4,week,,,mock planning assumption,,,low,mock,blg_whey_protein

@@ -21,14 +21,16 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 - [ ] Plant uptime for a food-grade protein plant (Humbird's 96 % is for an ethanol biorefinery).
 - [ ] A public **dextrose / glucose syrup price** or a published wet-milling cost, so
   glucose isn't priced at corn content only (M3).
-- [ ] Media inputs per kg: NH₃, corn steep liquor, nutrients (Humbird 2011 via Behm
-  Table 2) to add purchased items to the BOM.
+- [x] ~~Media inputs per kg~~: NH₃ and salts from Humbird Table 20 are in the BOM (CSL and Tween are not yet, since CSL is given as % w/w).
 - [ ] Sucrose uptake by *T. reesei*: does scenario 2 imply an engineered strain or an
   invertase step? Is the yield the same?
 - [ ] Unfavourable-side sensitivity values (Behm Fig. 4) for `low`/`high` ranges.
 
 - [ ] Compare `chase` vs `level` S&OP (inventory vs utilization trade-off) once charts exist.
 - [ ] More realistic mock order book (order sizes and lumpiness, not a smooth share of forecast).
+
+- [ ] UF/DF membrane life / replacement rate: public source needed to replace the [mock] row (ADR 0008).
+- [ ] Odoo: demonstrate rolling time-phasing (short horizon + scheduler per simulated day) vs one-shot run.
 
 ## P3
 - [ ] Filter-press cake dry content (40 %) → add to the registry when the biomass side
