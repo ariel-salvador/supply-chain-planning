@@ -22,6 +22,7 @@ from typing import Any, Dict, List, Mapping, Optional, Set
 
 import yaml
 
+from .rccp import BorLine, Resource
 from .registry import Assumption, load_registry
 
 
@@ -192,6 +193,12 @@ class MpsSpec:
 
 
 @dataclass(frozen=True)
+class RccpSpec:
+    level: bool = False
+    max_pull_forward: int = 0  # buckets a lot may be pulled earlier when leveling
+
+
+@dataclass(frozen=True)
 class ProductConfig:
     id: str
     name: str
@@ -212,6 +219,9 @@ class ProductConfig:
     company: Optional[Party] = None
     vendors: Dict[str, Party] = field(default_factory=dict)
     customers: Dict[str, Party] = field(default_factory=dict)
+    resources: Dict[str, Resource] = field(default_factory=dict)
+    bill_of_resources: List[BorLine] = field(default_factory=list)
+    rccp: Optional[RccpSpec] = None
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -471,6 +481,41 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
     vendors = _parties("vendors")
     customers = _parties("customers")
 
+    resources: Dict[str, Resource] = {}
+    for i, rr in enumerate(raw.get("resources") or []):
+        where = f"resources[{i}]"
+        rid = _req(rr, "id", where)
+        if rid in resources:
+            raise ConfigError(f"{where}: duplicate id {rid!r}")
+        resources[rid] = Resource(
+            id=rid,
+            name=rr.get("name", rid),
+            units=r.planning(_req(rr, "units", where), f"{where}.units"),
+            hours_per_week=r.process(_req(rr, "hours_per_week", where), f"{where}.hours_per_week"),
+            availability=r.process(_req(rr, "availability", where), f"{where}.availability"),
+        )
+    bor: List[BorLine] = []
+    for i, bl in enumerate(raw.get("bill_of_resources") or []):
+        where = f"bill_of_resources[{i}]"
+        item, res_id = _req(bl, "item", where), _req(bl, "resource", where)
+        if item not in items:
+            raise ConfigError(f"{where}: unknown item {item!r}")
+        if res_id not in resources:
+            raise ConfigError(f"{where}: unknown resource {res_id!r}")
+        hpu = r.process(_req(bl, "hours_per_unit", where), where)
+        if hpu <= 0:
+            raise ConfigError(f"{where}: hours_per_unit must be > 0")
+        bor.append(BorLine(item, res_id, hpu))
+    rccp = None
+    if raw.get("rccp") is not None:
+        rc = raw["rccp"] or {}
+        if not bor:
+            raise ConfigError("rccp: needs a bill_of_resources")
+        rccp = RccpSpec(
+            level=bool(rc.get("level", False)),
+            max_pull_forward=_whole(r.planning(rc.get("max_pull_forward"), "rccp.max_pull_forward"), "rccp.max_pull_forward"),
+        )
+
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
         raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
@@ -494,6 +539,9 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         company=company,
         vendors=vendors,
         customers=customers,
+        resources=resources,
+        bill_of_resources=bor,
+        rccp=rccp,
         path=path,
     )
 

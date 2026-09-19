@@ -18,6 +18,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0007-sop-to-mps-linkage.md`: month/week split, cover targets, time fences, catch-up, MPS → MRP.
 - `docs/decisions/0008-mock-quantities-for-consumables.md`: [mock] BOM lines allowed only for consumables (membranes).
 - `docs/decisions/0009-odoo-community-scope.md`: why Odoo Community; S&OP/MPS/capacity stay in Python (verified limits).
+- `docs/decisions/0010-rccp-bill-of-resources-and-leveling.md`: RCCP load in release week; pull-forward leveling.
 - `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
 - `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.
@@ -27,7 +28,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `knowledge/backlog.md`: prioritized open questions. Read when choosing research.
 - `knowledge/topics/precision-fermentation-process.md`: Case 1 process train and BOM derivation. Read before touching the BLG config.
 - `knowledge/topics/tff-scale-up.md`: MF/UF/DF/drying parameters and DSP capacity gaps. Read for RCCP (M4).
-- `knowledge/topics/mrp-concepts.md`: MRP, S&OP and MPS logic as implemented. Read before changing `mrp.py`, `sop.py` or `mps.py`.
+- `knowledge/topics/mrp-concepts.md`: MRP, S&OP, MPS and RCCP logic as implemented. Read before changing `mrp.py`, `sop.py`, `mps.py` or `rccp.py`.
 - `knowledge/topics/commodity-feedstocks.md`: FRED series, corn→glucose and cents/lb conversions, cost/kg. Read for purchasing (M3).
 - `knowledge/notes/behm-2022-rblg-lca.md`: primary Case 1 source (rBLG by *T. reesei*, CC BY).
 - `knowledge/notes/humbird-2011-nrel-biochemical-design.md`: NREL *T. reesei* enzyme area: working volume, cycle, seed train, nutrients, uptime.

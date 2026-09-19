@@ -186,3 +186,19 @@ def test_blg_every_purchased_bom_item_has_a_fictional_vendor():
     assert purchased <= supplied
     assert all("fictional" in v.name.lower() for v in cfg.vendors.values())
     assert "fictional" in cfg.company.name.lower()
+
+
+def test_bill_of_resources_validation(minimal_raw, registry):
+    raw = copy.deepcopy(minimal_raw)
+    raw["resources"] = [{"id": "R", "units": "m_lt", "hours_per_week": "c3", "availability": "k"}]
+    raw["bill_of_resources"] = [{"item": "A", "resource": "R", "hours_per_unit": "k"}]
+    raw["rccp"] = {"level": True, "max_pull_forward": "m_lt"}
+    cfg = parse_config(raw, registry)
+    assert cfg.resources["R"].capacity_h == 1 * 3 * 2
+    assert cfg.rccp.level and cfg.rccp.max_pull_forward == 1
+    raw["bill_of_resources"][0]["hours_per_unit"] = "m_base"  # process number must be cited
+    with pytest.raises(ConfigError, match="cited"):
+        parse_config(raw, registry)
+    raw["bill_of_resources"][0] = {"item": "A", "resource": "NOPE", "hours_per_unit": "k"}
+    with pytest.raises(ConfigError, match="resource"):
+        parse_config(raw, registry)

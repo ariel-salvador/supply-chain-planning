@@ -68,3 +68,4 @@ mock_start_cover_batches,Starting stock of nutrients and bags (batches' worth),6
 mock_nutrient_lead_time,Nutrient purchase lead time,1,week,,,mock planning assumption,,,low,mock,blg_whey_protein
 mock_packaging_lead_time,Bag purchase lead time,2,week,,,mock planning assumption,,,low,mock,blg_whey_protein
 mock_membrane_lead_time,Membrane set purchase lead time,4,week,,,mock planning assumption,,,low,mock,blg_whey_protein
+mock_rccp_max_pull_forward,Max weeks a fermentation batch may be pulled earlier when leveling,2,week,,,mock planning policy,,,low,mock,blg_whey_protein

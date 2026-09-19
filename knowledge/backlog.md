@@ -12,8 +12,7 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 - [ ] **UF/DF flux, membrane area, dryer evaporation capacity** for DSP capacity
   (see `topics/tff-scale-up.md`).
 
-- [ ] **RCCP at batch level (M4):** whole-batch rounding gives 4 starts in week
-  2027-01-11 vs 3.36 available (3 reactors). Needs batch-start loading against reactors.
+- [x] ~~RCCP at batch level (M4)~~: bill of resources + pull-forward leveling (ADR 0010); peak 119 % → 89 %.
 
 ## P2
 - [ ] Behm 0.223 g/g: total protein or rBLG only? (ADR 0004; total, now supported by the Humbird cross-check.)

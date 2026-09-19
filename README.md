@@ -20,7 +20,7 @@ and **the demand is mock**.
 | **M1** | FRED data pull, mock demand generator, BOM, basic MRP table | ✅ done |
 | **M2** | S&OP (monthly, aggregate) → MPS (weekly), ATP, time fences | ✅ done |
 | M3 | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | planned |
-| M4 | RCCP: batch starts vs. reactors, DSP load vs. capacity | planned (batch size sourced; DSP throughput still missing) |
+| **M4** | RCCP: batch starts vs. reactors, pull-forward leveling | ✅ done (fermenters; DSP throughput still unsourced) |
 | M5 | Static charts (published first), then an optional interactive UI | planned |
 | **ERP** | Case 1 in Odoo 19 Community: BOM → reorder rules → MO/PO, compared with the engine | ✅ built |
 

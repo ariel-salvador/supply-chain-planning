@@ -51,6 +51,15 @@ def main(argv: Optional[List[str]] = None) -> int:
     if res.mps is not None and args.show:
         print(f"\nMPS  {res.cfg.demand.item}  (DTF {res.mps.dtf}, PTF {res.mps.ptf}; first {args.show} buckets)")
         print(res.mps.to_frame().iloc[:, : args.show].to_string())
+    if res.rccp is not None:
+        print("\nRCCP (rough-cut capacity)")
+        for rid, grp in res.rccp.groupby("resource"):
+            b = res.rccp_before[res.rccp_before["resource"] == rid]
+            print(f"  {rid}: capacity {grp['capacity_h'].iloc[0]:,.0f} h/bucket; peak utilization "
+                  f"{b['utilization'].max():.0%} before leveling, {grp['utilization'].max():.0%} after; "
+                  f"overloaded buckets {int(grp['overloaded'].sum())}")
+        for m in res.rccp_moves:
+            print("  leveled:", m)
     if args.show:
         for item, rec in res.mrp.items():
             print(f"\nMRP  {item}  (lead time {rec.lead_time} buckets, first {args.show} buckets)")

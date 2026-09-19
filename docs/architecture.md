@@ -29,6 +29,8 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 - **Built (M2):** S&OP (monthly, chase/level, capacity-capped) → MPS (weekly, time
   fences, PAB, ATP) → MRP with the MPS as the finished item's planned receipts
   (ADR 0007).
+- **Built (M4):** RCCP loads fermenter hours from planned batch starts and levels
+  overloads by pulling batches earlier (ADR 0010).
 - **Planned:** purchasing turns planned releases of purchased items into POs priced
   from FRED; RCCP loads batch starts and DSP against capacity.
 
@@ -41,6 +43,7 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 | `demand.py` | seeded mock demand (trend × seasonality × noise), always labeled mock |
 | `sop.py` | week↔month weights, aggregation/disaggregation, chase/level plan with capacity |
 | `mps.py` | projected demand (DTF), planning-fence catch-up (PTF), PAB, ATP, mock order book |
+| `rccp.py` | bill of resources, load vs capacity per bucket, pull-forward leveling |
 | `bom.py` | low-level codes, cycle detection, explosion, summed requirements |
 | `mrp.py` | netting, lot sizing (LFL / FOQ / POQ / min / multiple), safety stock, lead-time offset, past-due |
 | `fred.py` | FRED CSV download + cache with retrieval metadata |

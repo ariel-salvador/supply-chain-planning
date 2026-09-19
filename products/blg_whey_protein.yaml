@@ -217,3 +217,17 @@ sop:
 mps:
   demand_time_fence: mock_demand_time_fence
   planning_time_fence: mock_pwd_lead_time + fermentation_lead_time_weeks   # cumulative lead time
+
+resources:                    # rough-cut capacity (M4)
+  - id: FERMENTERS
+    name: 300 m3 production fermenters
+    units: mock_production_reactors
+    hours_per_week: hours_per_week
+    availability: plant_uptime
+
+bill_of_resources:            # fermenter hours per kg rBLG = cited 144 h cycle / 12,000 kg batch
+  - {item: BLG-FERM, resource: FERMENTERS, hours_per_unit: fermentation_cycle_h / batch_rblg_kg}
+
+rccp:
+  level: true                 # pull whole batches earlier into weeks with spare fermenter time
+  max_pull_forward: mock_rccp_max_pull_forward

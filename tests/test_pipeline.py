@@ -66,3 +66,15 @@ def test_sop_mps_drive_mrp(fake_prices):
 def test_sop_outputs_written(tmp_path, fake_prices):
     files = {p.name for p in write_outputs(run(BLG), tmp_path)}
     assert {"sop_plan.csv", "mps_BLG-PWD.csv"} <= files
+
+
+def test_rccp_leveling_removes_fermenter_overload():
+    res = run(BLG, fetch_prices=False)
+    assert res.rccp_before["overloaded"].any()          # whole-batch rounding overloads a week
+    assert not res.rccp["overloaded"].any()             # leveling fixes it
+    assert res.rccp_moves and all(m.startswith("BLG-FERM: moved") for m in res.rccp_moves)
+    # leveling only moves batches earlier: total fermentation volume unchanged
+    before = res.rccp_before["load_h"].sum()
+    assert res.rccp["load_h"].sum() == pytest.approx(before)
+    # components follow the leveled schedule, and nothing goes short
+    assert res.warnings == []
