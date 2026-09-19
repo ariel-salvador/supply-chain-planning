@@ -61,7 +61,7 @@ ammonium_sulfate_conc,Ammonium sulfate in production medium,1.4,g/L,,,"Humbird e
 potassium_phosphate_conc,Potassium phosphate in production medium,2.0,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
 magnesium_sulfate_conc,Magnesium sulfate in production medium,0.3,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
 calcium_chloride_conc,Calcium chloride in production medium,0.4,g/L,,,"Humbird et al. 2011 NREL/TP-5100-47764 Table 20 p. 39",https://www.nrel.gov/docs/fy11osti/47764.pdf,2026-09-18,med,cited,blg_whey_protein
-days_per_week,Days per week,7,d/week,,,Definition,,2026-09-18,high,cited,blg_whey_protein
+days_per_week,Days per week (used by scripts/odoo_seed.py),7,d/week,,,Definition,,2026-09-18,high,cited,
 mock_batches_per_membrane_set,Fermentation batches processed per UF/DF membrane set before replacement,100,batch,,,mock (no public source found 2026-09-18; ADR 0008),,,low,mock,blg_whey_protein
 mock_membrane_sets_on_hand,UF/DF membrane sets in stock at start,2,set,,,mock planning assumption,,,low,mock,blg_whey_protein
 mock_start_cover_batches,Starting stock of nutrients and bags (batches' worth),6,batch,,,mock planning assumption,,,low,mock,blg_whey_protein
