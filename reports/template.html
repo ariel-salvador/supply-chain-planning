@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Planning Simulator Report</title>
+<style>
+:root {
+  color-scheme: light;
+  --page: #f9f9f7; --surface: #fcfcfb; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+  --grid: #e1e0d9; --axis: #c3c2b7; --border: rgba(11,11,11,0.10);
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --ref: #52514e; --zone: rgba(11,11,11,0.035);
+  --good: #006300; --critical: #d03b3b;
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #c3c2b7; --zone: rgba(255,255,255,0.05);
+    --good: #0ca30c; --critical: #e66767;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0d0d0d; --surface: #1a1a19; --ink: #ffffff; --ink-2: #c3c2b7; --muted: #898781;
+  --grid: #2c2c2a; --axis: #383835; --border: rgba(255,255,255,0.10);
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --ref: #c3c2b7; --zone: rgba(255,255,255,0.05);
+  --good: #0ca30c; --critical: #e66767;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+header h1 { font-size: 22px; margin: 0 0 4px; }
+header p { margin: 0; color: var(--ink-2); }
+.banner { margin: 14px 0 20px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink-2); font-size: 13px; }
+.banner strong { color: var(--ink); }
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.tile { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.tile .label { color: var(--ink-2); font-size: 12.5px; }
+.tile .value { font-size: 26px; font-weight: 600; margin: 2px 0; }
+.tile .note { color: var(--muted); font-size: 12px; }
+.tile .status { font-size: 12.5px; font-weight: 600; }
+.tile .status.good { color: var(--good); } .tile .status.bad { color: var(--critical); }
+section.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 16px 10px; margin-bottom: 16px; }
+.card h2 { font-size: 15px; margin: 0; }
+.card .sub { color: var(--ink-2); font-size: 12.5px; margin: 2px 0 8px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; }
+.grid2 > section.card { margin-bottom: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); margin: 4px 0 6px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.key-rect { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.key-line { width: 14px; height: 0; border-top: 2px solid; display: inline-block; }
+.chart { position: relative; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.chart text { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+.tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; font-size: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); min-width: 150px; display: none; z-index: 2; }
+.tip .t { color: var(--ink-2); margin-bottom: 4px; }
+.tip .row { display: flex; align-items: center; gap: 6px; }
+.tip .row b { font-variant-numeric: tabular-nums; }
+.tip .row span.n { color: var(--ink-2); }
+details { margin: 6px 0 4px; font-size: 12.5px; }
+details summary { color: var(--ink-2); cursor: pointer; }
+table { border-collapse: collapse; width: 100%; margin-top: 6px; font-variant-numeric: tabular-nums; }
+th, td { text-align: right; padding: 3px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+.tablewrap { overflow-x: auto; max-height: 280px; overflow-y: auto; }
+.source { color: var(--muted); font-size: 11.5px; margin-top: 4px; }
+footer { color: var(--muted); font-size: 12px; margin-top: 24px; }
+.toggle { float: right; background: var(--surface); color: var(--ink-2); border: 1px solid var(--border); border-radius: 6px; padding: 4px 10px; cursor: pointer; font: inherit; font-size: 12px; }
+@media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } .tile .value { font-size: 22px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <button class="toggle" id="theme" type="button">Theme</button>
+    <h1 id="title"></h1>
+    <p id="subtitle"></p>
+  </header>
+  <div class="banner" id="banner"></div>
+  <div class="tiles" id="tiles"></div>
+  <div id="charts"></div>
+  <footer id="footer"></footer>
+</main>
+<script>
+const DATA = /*DATA*/null;
+
+// ---------- helpers ----------
+const $ = (tag, attrs = {}, parent) => { const e = document.createElement(tag); for (const [k, v] of Object.entries(attrs)) { if (k === 'text') e.textContent = v; else e.setAttribute(k, v); } if (parent) parent.appendChild(e); return e; };
+const S = (tag, attrs = {}, parent) => { const e = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); if (parent) parent.appendChild(e); return e; };
+const fmt = (v, d = 0) => v == null || Number.isNaN(v) ? '–' : Number(v).toLocaleString('en-US', { maximumFractionDigits: d, minimumFractionDigits: d });
+const color = slot => `var(--${slot === 'ref' ? 'ref' : 's' + slot})`;
+// clean ticks: step = 1, 2, 2.5 or 5 x 10^k, about 4-5 intervals
+function niceStep(max) { if (max <= 0) return 1; const raw = max / 4, p = Math.pow(10, Math.floor(Math.log10(raw))); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= raw) return m * p; return 10 * p; }
+function ticks(max, step) { const out = []; for (let v = 0; v <= max + step * 1e-6; v += step) out.push(v); return out; }
+function short(v) { const a = Math.abs(v); if (a >= 1e6) return fmt(v / 1e6, a >= 1e7 ? 0 : 1) + 'M'; if (a >= 1e3) return fmt(v / 1e3, a >= 1e4 ? 0 : 1) + 'k'; return fmt(v, a < 10 && v % 1 ? 2 : 0); }
+
+// ---------- chart ----------
+function chart(parent, spec) {
+  const card = $('section', { class: 'card' }, parent);
+  $('h2', { text: spec.title }, card);
+  if (spec.sub) $('div', { class: 'sub', text: spec.sub }, card);
+  if (spec.series.length > 1) {
+    const lg = $('div', { class: 'legend' }, card);
+    spec.series.forEach(s => { const it = $('span', {}, lg); const k = $('i', { class: s.kind === 'bar' ? 'key-rect' : 'key-line' }, it); if (s.kind === 'bar') k.style.background = color(s.slot); else k.style.borderColor = color(s.slot); if (s.kind === 'ref') k.style.borderTopWidth = '1.5px'; it.appendChild(document.createTextNode(s.name)); });
+  }
+  const box = $('div', { class: 'chart' }, card);
+  const tip = $('div', { class: 'tip' }, box);
+  const draw = () => {
+    box.querySelectorAll('svg').forEach(e => e.remove());
+    const W = Math.max(280, box.clientWidth), H = spec.height || 240;
+    const m = { l: 48, r: 12, t: 8, b: 26 };
+    const iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const n = spec.x.length;
+    const bars = spec.series.filter(s => s.kind === 'bar');
+    const stacked = spec.stacked && bars.length > 1;
+    let maxV = 0;
+    for (let i = 0; i < n; i++) {
+      const barSum = stacked ? bars.reduce((a, s) => a + (s.values[i] || 0), 0) : Math.max(0, ...bars.map(s => s.values[i] || 0));
+      const lineMax = Math.max(0, ...spec.series.filter(s => s.kind !== 'bar').map(s => s.values[i] || 0));
+      maxV = Math.max(maxV, barSum, lineMax);
+    }
+    const step = niceStep(maxV * 1.05), ymax = Math.ceil(maxV * 1.05 / step) * step || step;
+    const y = v => m.t + ih - (v / ymax) * ih;
+    const band = iw / n;
+    const xc = i => m.l + band * (i + 0.5);
+    const svg = S('svg', { viewBox: `0 0 ${W} ${H}`, height: H, role: 'img', 'aria-label': spec.title });
+    box.insertBefore(svg, tip);
+    (spec.zones || []).forEach((z, k) => { S('rect', { x: m.l + band * z.from, y: m.t, width: band * (z.to - z.from), height: ih, fill: 'var(--zone)' }, svg); S('text', { x: m.l + band * z.from + 3, y: m.t + 12 + 13 * k }, svg).textContent = z.label; });
+    ticks(ymax, step).forEach(t => { S('line', { x1: m.l, x2: W - m.r, y1: y(t), y2: y(t), stroke: t === 0 ? 'var(--axis)' : 'var(--grid)', 'stroke-width': 1 }, svg); const tx = S('text', { x: m.l - 6, y: y(t) + 4, 'text-anchor': 'end' }, svg); tx.textContent = short(t); });
+    const every = Math.max(1, Math.ceil(n / Math.max(2, Math.floor(iw / 64))));
+    for (let i = 0; i < n; i += every) { const tx = S('text', { x: xc(i), y: H - 8, 'text-anchor': 'middle' }, svg); tx.textContent = spec.xShort ? spec.xShort[i] : spec.x[i]; }
+    // bars (grouped or stacked), 2px surface gap, 4px rounded data end
+    const gap = 2;
+    const bw = stacked ? Math.min(24, band - gap * 2) : Math.min(24, (band - gap * (bars.length + 1)) / bars.length);
+    const barPath = (x, y0, y1, w, r) => { const h = y0 - y1; if (h <= 0) return ''; const rr = Math.min(r, h, w / 2); return `M${x},${y0}V${y1 + rr}Q${x},${y1} ${x + rr},${y1}H${x + w - rr}Q${x + w},${y1} ${x + w},${y1 + rr}V${y0}Z`; };
+    for (let i = 0; i < n; i++) {
+      let base = 0;
+      bars.forEach((s, j) => {
+        const v = s.values[i] || 0; if (v <= 0) return;
+        const x = stacked ? xc(i) - bw / 2 : xc(i) - (bars.length * bw + (bars.length - 1) * gap) / 2 + j * (bw + gap);
+        const y0 = y(base), y1 = y(base + v);
+        const top = stacked ? j === bars.length - 1 : true;
+        S('path', { d: barPath(x, stacked && base > 0 ? y0 - gap : y0, y1, bw, top ? 4 : 0), fill: color(s.slot) }, svg);
+        if (stacked) base += v;
+      });
+    }
+    // lines and reference lines
+    // reference lines first, data lines on top
+    spec.series.filter(s => s.kind !== 'bar').sort((a, b) => (a.kind === 'ref' ? 0 : 1) - (b.kind === 'ref' ? 0 : 1)).forEach(s => {
+      let d = ''; s.values.forEach((v, i) => { if (v == null || Number.isNaN(v)) return; const cmd = spec.step ? (d ? `H${xc(i) - band / 2}V${y(v)}H${xc(i) + band / 2}` : `M${xc(i) - band / 2},${y(v)}H${xc(i) + band / 2}`) : `${d ? 'L' : 'M'}${xc(i)},${y(v)}`; d += cmd; });
+      S('path', { d, fill: 'none', stroke: color(s.slot), 'stroke-width': s.kind === 'ref' ? 1.5 : 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }, svg);
+    });
+    // crosshair + tooltip (one tooltip, every series)
+    const cross = S('line', { y1: m.t, y2: m.t + ih, stroke: 'var(--axis)', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    const hit = S('rect', { x: m.l, y: m.t, width: iw, height: ih, fill: 'transparent', tabindex: 0 }, svg);
+    const show = i => {
+      cross.setAttribute('x1', xc(i)); cross.setAttribute('x2', xc(i)); cross.setAttribute('visibility', 'visible');
+      tip.replaceChildren(); $('div', { class: 't', text: spec.x[i] }, tip);
+      spec.series.forEach(s => { const r = $('div', { class: 'row' }, tip); const k = $('i', { class: 'key-line' }, r); k.style.borderColor = color(s.slot); $('b', { text: fmt(s.values[i], spec.digits || 0) + (spec.unit ? ' ' + spec.unit : '') }, r); $('span', { class: 'n', text: s.name }, r); });
+      tip.style.display = 'block';
+      const left = Math.min(Math.max(0, xc(i) / W * box.clientWidth + 12), box.clientWidth - tip.offsetWidth - 4);
+      tip.style.left = left + 'px'; tip.style.top = '8px';
+    };
+    const hide = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); };
+    hit.addEventListener('pointermove', e => { const r = svg.getBoundingClientRect(); const px = (e.clientX - r.left) / r.width * W; show(Math.max(0, Math.min(n - 1, Math.floor((px - m.l) / band)))); });
+    hit.addEventListener('pointerleave', hide);
+    let kb = 0; hit.addEventListener('focus', () => show(kb)); hit.addEventListener('blur', hide);
+    hit.addEventListener('keydown', e => { if (e.key === 'ArrowRight') { kb = Math.min(n - 1, kb + 1); show(kb); } if (e.key === 'ArrowLeft') { kb = Math.max(0, kb - 1); show(kb); } });
+  };
+  draw(); new ResizeObserver(draw).observe(box);
+  // table view (values reachable without hovering)
+  const det = $('details', {}, card); $('summary', { text: 'Table' }, det);
+  const wrap = $('div', { class: 'tablewrap' }, det); const tb = $('table', {}, wrap);
+  const hr = $('tr', {}, $('thead', {}, tb)); $('th', { text: spec.xName || 'Period' }, hr); spec.series.forEach(s => $('th', { text: s.name + (spec.unit ? ` (${spec.unit})` : '') }, hr));
+  const body = $('tbody', {}, tb); spec.x.forEach((xl, i) => { const tr = $('tr', {}, body); $('td', { text: xl }, tr); spec.series.forEach(s => $('td', { text: fmt(s.values[i], spec.digits || 0) }, tr)); });
+  if (spec.source) $('div', { class: 'source', text: spec.source }, card);
+  return card;
+}
+
+// ---------- page ----------
+document.getElementById('title').textContent = DATA.title;
+document.getElementById('subtitle').textContent = DATA.subtitle;
+const banner = document.getElementById('banner');
+DATA.banner.forEach((b, i) => { if (i) banner.appendChild(document.createTextNode(' · ')); const s = $('strong', { text: b[0] }, banner); banner.appendChild(document.createTextNode(' ' + b[1])); });
+const tiles = document.getElementById('tiles');
+DATA.tiles.forEach(t => { const d = $('div', { class: 'tile' }, tiles); $('div', { class: 'label', text: t.label }, d); $('div', { class: 'value', text: t.value }, d); if (t.status) $('div', { class: 'status ' + t.status[0], text: (t.status[0] === 'good' ? '✓ ' : '⚠ ') + t.status[1] }, d); if (t.note) $('div', { class: 'note', text: t.note }, d); });
+const charts = document.getElementById('charts');
+DATA.rows.forEach(row => { const holder = row.length > 1 ? $('div', { class: 'grid2' }, charts) : charts; row.forEach(spec => chart(holder, spec)); if (row.length > 1) holder.style.marginBottom = '16px'; });
+document.getElementById('footer').textContent = DATA.footer;
+const tbtn = document.getElementById('theme');
+tbtn.addEventListener('click', () => { const r = document.documentElement; const dark = r.dataset.theme ? r.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches; r.dataset.theme = dark ? 'light' : 'dark'; try { localStorage.setItem('pps-theme', r.dataset.theme); } catch (e) {} });
+try { const t = localStorage.getItem('pps-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+</body>
+</html>

@@ -21,7 +21,7 @@ and **the demand is mock**.
 | **M2** | S&OP (monthly, aggregate) → MPS (weekly), ATP, time fences | ✅ done |
 | **M3** | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | ✅ done |
 | **M4** | RCCP: batch starts vs. reactors, pull-forward leveling | ✅ done (fermenters; DSP throughput still unsourced) |
-| M5 | Static charts (published first), then an optional interactive UI | planned |
+| **M5** | Static chart report (local HTML: S&OP, MPS, RCCP, purchasing, feedstock cost) | ✅ done (public version: see status) |
 | **ERP** | Case 1 in Odoo 19 Community: BOM → reorder rules → MO/PO, compared with the engine | ✅ built |
 
 Details: [`docs/status.md`](docs/status.md) · map of all docs: [`INDEX.md`](INDEX.md).
@@ -34,6 +34,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python scripts/fetch_data.py                     # FRED → data/raw/ (not committed)
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml --variant sucrose
+make report      # outputs/report/index.html: 8 interactive static charts, opens in any browser
 ```
 
 Outputs go to `outputs/<product>[-<variant>]/`: `demand_mock.csv`, `sop_plan.csv`,

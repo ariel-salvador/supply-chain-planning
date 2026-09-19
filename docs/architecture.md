@@ -33,7 +33,10 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
   overloads by pulling batches earlier (ADR 0010).
 - **Built (M3):** purchasing turns planned releases of purchased items into POs, priced
   from FRED with percentile scenarios (ADR 0011).
-- **Planned:** static charts (M5); DSP capacity once sourced.
+- **Built (M5):** `reports/build_report.py` renders a self-contained HTML report
+  (dependency-free SVG charts with tooltips, table views, light/dark) from engine
+  results. It stays local because it embeds IMF-derived prices (ADR 0003).
+- **Planned:** DSP capacity once sourced; a public report variant without raw price series.
 
 ## Engine modules
 

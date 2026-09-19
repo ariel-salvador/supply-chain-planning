@@ -32,11 +32,12 @@ process parameters are cited, and demand is mock. This repo will be **public**.
 ## Layout
 
 ```
-src/ppsim/            engine: registry, config, bom, mrp, demand, fred, feedstock, pipeline, cli
+src/ppsim/            engine: registry, config, bom, mrp, sop, mps, rccp, purchasing, demand, fred, feedstock, pipeline, cli
 products/<id>.yaml    product configs (structure + assumption ids)
 knowledge/            assumptions.csv, notes/, topics/, backlog.md
 docs/                 status.md, architecture.md, decisions/
-scripts/              fetch_data.py (dataset provenance), pre_push_check.py
+scripts/              fetch_data.py, pre_push_check.py, odoo_*.py, compare_plans.py
+reports/              build_report.py + template.html (static charts; reads engine output)
 data/raw/             download cache (gitignored)   data/processed/  license-permitting only
 tests/                pytest, offline
 ```
@@ -49,6 +50,8 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python scripts/fetch_data.py
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml [--variant sucrose] [--offline]
 .venv/bin/python scripts/pre_push_check.py
+make report                                   # static HTML charts -> outputs/report/
+make odoo-demo                                # Odoo 19 Community demo (Docker), ~1 min
 ```
 
 ## Skills (`.claude/skills/`)

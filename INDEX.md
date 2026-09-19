@@ -46,6 +46,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
 - `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`).
 - `docker-compose.yml`, `Makefile`, `.env.example`, `odoo/bootstrap.py`: local Odoo stack.
+- `reports/build_report.py`, `reports/template.html`: static chart report (`make report`).
 - `data/processed/README.md`: what may be committed there.
 - `tests/`: offline pytest suite.
 
