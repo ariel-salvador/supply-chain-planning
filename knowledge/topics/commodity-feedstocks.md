@@ -29,6 +29,16 @@ Feedstock-only cost per kg of powder is about **$1.50 with glucose** (corn basis
 about **$1.43 with sucrose** [estimate: cited process ratios × FRED prices]. Both
 exclude processing, energy and all other costs.
 
+## Purchasing spend (M3)
+
+The PO schedule comes from MRP releases of purchased items (ADR 0011). Over the
+26-week horizon [mock demand], 2.75 kt of glucose is bought in 11 lots of 250 t.
+- **Base (July 2026 corn price):** about **$0.94M** [estimate].
+- **Last 10 years of monthly prices:** p10 about $0.67M, p50 about $0.85M, p90 about
+  $1.30M [estimate].
+- **Not priced** (no public series): nutrients, bags and membranes. The spend figure is
+  feedstock-only.
+
 ## Caveats
 
 - These are global benchmark prices, not delivered prices at any plant.

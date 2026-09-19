@@ -19,6 +19,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0008-mock-quantities-for-consumables.md`: [mock] BOM lines allowed only for consumables (membranes).
 - `docs/decisions/0009-odoo-community-scope.md`: why Odoo Community; S&OP/MPS/capacity stay in Python (verified limits).
 - `docs/decisions/0010-rccp-bill-of-resources-and-leveling.md`: RCCP load in release week; pull-forward leveling.
+- `docs/decisions/0011-purchasing-spend-scenarios.md`: PO schedule; spend only from public price series; p10/p50/p90.
 - `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
 - `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.

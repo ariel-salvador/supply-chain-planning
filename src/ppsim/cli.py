@@ -60,6 +60,15 @@ def main(argv: Optional[List[str]] = None) -> int:
                   f"overloaded buckets {int(grp['overloaded'].sum())}")
         for m in res.rccp_moves:
             print("  leveled:", m)
+    if res.po_lines is not None and len(res.po_lines):
+        print(f"\nPurchasing: {res.po_lines['po'].nunique()} POs, {len(res.po_lines)} lines, "
+              f"{res.po_lines['vendor'].nunique()} vendor(s)")
+        if res.spend is not None and len(res.spend):
+            t = res.spend.loc["TOTAL (priced items)"]
+            print(f"  spend over horizon (priced items): base ${t['base']:,.0f}; "
+                  f"p10-p90 ${t['low_p10']:,.0f}-${t['high_p90']:,.0f}")
+        if res.spend_excluded:
+            print("  not priced (no public price series):", ", ".join(res.spend_excluded))
     if args.show:
         for item, rec in res.mrp.items():
             print(f"\nMRP  {item}  (lead time {rec.lead_time} buckets, first {args.show} buckets)")

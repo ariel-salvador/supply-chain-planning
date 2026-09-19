@@ -18,6 +18,7 @@ import pandas as pd
 
 from . import bom as bom_mod
 from . import mps as mps_mod
+from . import purchasing as purch_mod
 from . import rccp as rccp_mod
 from . import sop as sop_mod
 from . import demand as demand_mod
@@ -41,6 +42,10 @@ class RunResult:
     rccp: Optional[pd.DataFrame] = None  # load after leveling (or as planned if no leveling)
     rccp_before: Optional[pd.DataFrame] = None  # load before leveling
     rccp_moves: List[str] = field(default_factory=list)
+    po_lines: Optional[pd.DataFrame] = None
+    price_scenarios: Optional[pd.DataFrame] = None
+    spend: Optional[pd.DataFrame] = None
+    spend_excluded: List[str] = field(default_factory=list)
     fred_meta: List[dict] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
 
@@ -129,6 +134,12 @@ def run(
         if priced:
             result.prices = item_prices(cfg, series)
             result.feedstock_cost = material_cost_per_unit(cfg, result.prices, root)
+
+    if cfg.vendors or cfg.purchasing:
+        result.po_lines = purch_mod.po_schedule(cfg, records)
+        if cfg.purchasing and result.prices is not None:
+            result.price_scenarios = purch_mod.price_scenarios(result.prices, cfg.purchasing.price_window_years)
+            result.po_lines, result.spend, result.spend_excluded = purch_mod.spend(result.po_lines, result.price_scenarios)
     return result
 
 
@@ -259,6 +270,11 @@ def write_outputs(result: RunResult, out_dir: Union[str, Path]) -> List[Path]:
         save(result.mps.to_frame(), f"mps_{result.cfg.demand.item}.csv", index=True)
     if result.rccp is not None:
         save(result.rccp, "rccp_load.csv")
+    if result.po_lines is not None:
+        save(result.po_lines, "po_schedule.csv")
+    if result.spend is not None:
+        save(result.price_scenarios, "price_scenarios_usd_per_uom.csv", index=True)
+        save(result.spend, "spend_by_scenario.csv", index=True)
     save(result.mrp_long, "mrp_long.csv")
     for item, rec in result.mrp.items():
         save(rec.table.round(3), f"mrp_{item}.csv", index=True)
@@ -281,6 +297,7 @@ def write_outputs(result: RunResult, out_dir: Union[str, Path]) -> List[Path]:
         "assumption_status_counts": result.parameters["status"].value_counts().to_dict(),
         "sources": sorted({(a.source, a.url) for a in cfg.assumptions.values() if a.status == "cited"}),
         "price_series": result.fred_meta,
+        "spend_excludes_unpriced_items": result.spend_excluded,
         "warnings": result.warnings,
         "files": [p.name for p in written],
     }

@@ -199,6 +199,11 @@ class RccpSpec:
 
 
 @dataclass(frozen=True)
+class PurchasingSpec:
+    price_window_years: float
+
+
+@dataclass(frozen=True)
 class ProductConfig:
     id: str
     name: str
@@ -222,6 +227,7 @@ class ProductConfig:
     resources: Dict[str, Resource] = field(default_factory=dict)
     bill_of_resources: List[BorLine] = field(default_factory=list)
     rccp: Optional[RccpSpec] = None
+    purchasing: Optional[PurchasingSpec] = None
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -516,6 +522,13 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             max_pull_forward=_whole(r.planning(rc.get("max_pull_forward"), "rccp.max_pull_forward"), "rccp.max_pull_forward"),
         )
 
+    purchasing = None
+    if raw.get("purchasing"):
+        pr = raw["purchasing"]
+        purchasing = PurchasingSpec(
+            price_window_years=r.planning(_req(pr, "price_window_years", "purchasing"), "purchasing.price_window_years"),
+        )
+
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
         raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
@@ -542,6 +555,7 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         resources=resources,
         bill_of_resources=bor,
         rccp=rccp,
+        purchasing=purchasing,
         path=path,
     )
 

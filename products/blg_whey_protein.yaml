@@ -231,3 +231,6 @@ bill_of_resources:            # fermenter hours per kg rBLG = cited 144 h cycle 
 rccp:
   level: true                 # pull whole batches earlier into weeks with spare fermenter time
   max_pull_forward: mock_rccp_max_pull_forward
+
+purchasing:                   # M3: PO schedule + spend from FRED-linked prices
+  price_window_years: mock_price_window_years

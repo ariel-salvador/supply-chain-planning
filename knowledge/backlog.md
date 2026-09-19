@@ -31,6 +31,8 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 - [ ] UF/DF membrane life / replacement rate: public source needed to replace the [mock] row (ADR 0008).
 - [ ] Odoo: demonstrate rolling time-phasing (short horizon + scheduler per simulated day) vs one-shot run.
 
+- [ ] Public price series for ammonia, salts or packaging (e.g. USDA ERS fertilizer prices for NH3) to extend spend coverage.
+
 ## P3
 - [ ] Filter-press cake dry content (40 %) → add to the registry when the biomass side
   stream is modelled.
