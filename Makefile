@@ -17,7 +17,10 @@ export
 DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
-.PHONY: odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-demo odoo-down odoo-reset odoo-logs
+.PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-demo odoo-down odoo-reset odoo-logs
+
+report:              ## build outputs/report/index.html (static charts, local only)
+	$(PY) reports/build_report.py products/blg_whey_protein.yaml
 
 odoo-env:            ## create .env with random secrets if missing (never printed)
 	@test -f .env || $(PY) -c "import secrets,re; s=open('.env.example').read(); \

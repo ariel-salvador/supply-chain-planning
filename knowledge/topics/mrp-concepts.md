@@ -48,8 +48,17 @@ Hand-checked examples live in `tests/test_mrp.py`.
 
 Decisions: ADR 0006 (capacity basis), ADR 0007 (linkage details).
 
+## RCCP (M4, `rccp.py`)
+
+- **Bill of resources:** hours per unit of an item on a resource. Load = planned
+  releases × hours per unit, placed in the release week.
+- **Capacity** = units × hours per week × availability. Utilization = load / capacity,
+  and overloaded = load > capacity.
+- **Leveling:** pull whole lots to the latest earlier week with spare capacity, within
+  `max_pull_forward`, then re-run MRP with leveled receipts fixed. Residual overloads
+  are warnings. ADR 0010.
+
 ## Next layers
 
 - **Purchasing (M3):** planned releases of purchased items become POs, priced from FRED.
-- **RCCP (M4):** batch starts per week against reactors (whole-batch rounding can
-  overload single weeks); DSP once sourced.
+- **RCCP for DSP:** add bill-of-resources lines once throughput is sourced.

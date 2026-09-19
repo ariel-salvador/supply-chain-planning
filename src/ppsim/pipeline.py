@@ -18,6 +18,8 @@ import pandas as pd
 
 from . import bom as bom_mod
 from . import mps as mps_mod
+from . import purchasing as purch_mod
+from . import rccp as rccp_mod
 from . import sop as sop_mod
 from . import demand as demand_mod
 from . import fred
@@ -37,6 +39,13 @@ class RunResult:
     feedstock_cost: Optional[pd.DataFrame] = None
     sop: Optional[pd.DataFrame] = None
     mps: Optional[mps_mod.MpsResult] = None
+    rccp: Optional[pd.DataFrame] = None  # load after leveling (or as planned if no leveling)
+    rccp_before: Optional[pd.DataFrame] = None  # load before leveling
+    rccp_moves: List[str] = field(default_factory=list)
+    po_lines: Optional[pd.DataFrame] = None
+    price_scenarios: Optional[pd.DataFrame] = None
+    spend: Optional[pd.DataFrame] = None
+    spend_excluded: List[str] = field(default_factory=list)
     fred_meta: List[dict] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
 
@@ -96,9 +105,21 @@ def run(
             labels,
             fixed_receipts={root: mps_res.planned},
         )
+    indep = {root: (mps_res.table.loc["projected_demand"].to_numpy() if mps_res is not None else dem["qty"].to_numpy())}
+    fixed = {root: mps_res.planned} if mps_res is not None else {}
+    rccp_before = rccp_after = None
+    moves: List[str] = []
+    if cfg.bill_of_resources:
+        records, rccp_before, rccp_after, moves = _rccp(cfg, records, plan_items, bom_lines, indep, fixed, labels)
+        over = rccp_after[rccp_after["overloaded"]]
+        for rid, grp in over.groupby("resource"):
+            extra.append(f"RCCP: {rid} overloaded in {len(grp)} bucket(s), first {grp['period'].iloc[0]}")
     warnings = extra + [w for r in records.values() for w in r.warnings]
 
-    result = RunResult(cfg, dem, explosion, records, parameters_table(cfg), sop=sop_df, mps=mps_res, warnings=warnings)
+    result = RunResult(
+        cfg, dem, explosion, records, parameters_table(cfg), sop=sop_df, mps=mps_res,
+        rccp=rccp_after, rccp_before=rccp_before, rccp_moves=moves, warnings=warnings,
+    )
 
     if fetch_prices:
         wanted = sorted({it.price.series for it in cfg.items.values() if it.price is not None})
@@ -113,7 +134,57 @@ def run(
         if priced:
             result.prices = item_prices(cfg, series)
             result.feedstock_cost = material_cost_per_unit(cfg, result.prices, root)
+
+    if cfg.vendors or cfg.purchasing:
+        result.po_lines = purch_mod.po_schedule(cfg, records)
+        if cfg.purchasing and result.prices is not None:
+            result.price_scenarios = purch_mod.price_scenarios(result.prices, cfg.purchasing.price_window_years)
+            result.po_lines, result.spend, result.spend_excluded = purch_mod.spend(result.po_lines, result.price_scenarios)
     return result
+
+
+def _rccp(cfg: ProductConfig, records, plan_items, bom_lines, indep, fixed, labels):
+    """Load resources from planned releases; optionally level and re-run MRP."""
+    bor = [b for b in cfg.bill_of_resources if b.item in records]
+
+    def releases(recs):
+        return {i: recs[i].table.loc["planned_order_releases"].to_numpy() for i in recs}
+
+    before = rccp_mod.load_profile(releases(records), bor, cfg.resources, labels)
+    if not (cfg.rccp and cfg.rccp.level and before["overloaded"].any()):
+        return records, before, before, []
+
+    h = len(labels)
+    new_fixed = dict(fixed)
+    moves: List[str] = []
+    rel_all = releases(records)
+    for line in bor:
+        res = cfg.resources[line.resource]
+        other = np.zeros(h)
+        for o in bor:
+            if o.resource == line.resource and o.item != line.item and o.item in rel_all:
+                other += rel_all[o.item] * o.hours_per_unit
+        lot = cfg.items[line.item].planning.lot_sizing
+        leveled, notes = rccp_mod.level(
+            rel_all[line.item], line.hours_per_unit, res.capacity_h,
+            lot.multiple or lot.quantity, cfg.rccp.max_pull_forward, other,
+        )
+        if np.allclose(leveled, rel_all[line.item]):
+            continue
+        rec = records[line.item]
+        lt = rec.lead_time
+        receipts = rec.table.loc["planned_order_receipts"].to_numpy().copy()
+        receipts[lt:] = 0.0
+        for t in range(h - lt):
+            receipts[t + lt] += leveled[t]
+        new_fixed[line.item] = receipts
+        moves += [f"{line.item}: {n.replace('bucket', 'week')}" for n in notes]
+        rel_all[line.item] = leveled
+    if len(new_fixed) == len(fixed):
+        return records, before, before, moves
+    records = run_mrp(plan_items, bom_lines, indep, labels, fixed_receipts=new_fixed)
+    after = rccp_mod.load_profile(releases(records), bor, cfg.resources, labels)
+    return records, before, after, moves
 
 
 def sop_weeks(start: str, months: int, freq: str) -> pd.PeriodIndex:
@@ -197,6 +268,13 @@ def write_outputs(result: RunResult, out_dir: Union[str, Path]) -> List[Path]:
         save(result.sop, "sop_plan.csv", index=True)
     if result.mps is not None:
         save(result.mps.to_frame(), f"mps_{result.cfg.demand.item}.csv", index=True)
+    if result.rccp is not None:
+        save(result.rccp, "rccp_load.csv")
+    if result.po_lines is not None:
+        save(result.po_lines, "po_schedule.csv")
+    if result.spend is not None:
+        save(result.price_scenarios, "price_scenarios_usd_per_uom.csv", index=True)
+        save(result.spend, "spend_by_scenario.csv", index=True)
     save(result.mrp_long, "mrp_long.csv")
     for item, rec in result.mrp.items():
         save(rec.table.round(3), f"mrp_{item}.csv", index=True)
@@ -219,6 +297,7 @@ def write_outputs(result: RunResult, out_dir: Union[str, Path]) -> List[Path]:
         "assumption_status_counts": result.parameters["status"].value_counts().to_dict(),
         "sources": sorted({(a.source, a.url) for a in cfg.assumptions.values() if a.status == "cited"}),
         "price_series": result.fred_meta,
+        "spend_excludes_unpriced_items": result.spend_excluded,
         "warnings": result.warnings,
         "files": [p.name for p in written],
     }

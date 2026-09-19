@@ -66,3 +66,30 @@ def test_sop_mps_drive_mrp(fake_prices):
 def test_sop_outputs_written(tmp_path, fake_prices):
     files = {p.name for p in write_outputs(run(BLG), tmp_path)}
     assert {"sop_plan.csv", "mps_BLG-PWD.csv"} <= files
+
+
+def test_rccp_leveling_removes_fermenter_overload():
+    res = run(BLG, fetch_prices=False)
+    assert res.rccp_before["overloaded"].any()          # whole-batch rounding overloads a week
+    assert not res.rccp["overloaded"].any()             # leveling fixes it
+    assert res.rccp_moves and all(m.startswith("BLG-FERM: moved") for m in res.rccp_moves)
+    # leveling only moves batches earlier: total fermentation volume unchanged
+    before = res.rccp_before["load_h"].sum()
+    assert res.rccp["load_h"].sum() == pytest.approx(before)
+    # components follow the leveled schedule, and nothing goes short
+    assert res.warnings == []
+
+
+def test_po_schedule_and_spend(fake_prices):
+    res = run(BLG)
+    po = res.po_lines
+    # every purchased item in the active BOM is ordered from its (fictional) vendor
+    assert set(po["vendor"]).issubset({v.name for v in res.cfg.vendors.values()})
+    assert (po["due_bucket"] - po["order_bucket"] >= 0).all()
+    # PO quantities equal MRP planned releases for each purchased item
+    for item, q in po.groupby("item")["qty"].sum().items():
+        assert q == pytest.approx(res.mrp[item].table.loc["planned_order_releases"].sum())
+    # glucose is priced (corn link), nutrients/bags are excluded rather than guessed
+    assert "GLUCOSE" in res.spend.index and "NH3" in res.spend_excluded
+    s = res.spend.loc["GLUCOSE"]
+    assert s["low_p10"] <= s["median_p50"] <= s["high_p90"]

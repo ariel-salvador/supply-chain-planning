@@ -29,8 +29,14 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 - **Built (M2):** S&OP (monthly, chase/level, capacity-capped) → MPS (weekly, time
   fences, PAB, ATP) → MRP with the MPS as the finished item's planned receipts
   (ADR 0007).
-- **Planned:** purchasing turns planned releases of purchased items into POs priced
-  from FRED; RCCP loads batch starts and DSP against capacity.
+- **Built (M4):** RCCP loads fermenter hours from planned batch starts and levels
+  overloads by pulling batches earlier (ADR 0010).
+- **Built (M3):** purchasing turns planned releases of purchased items into POs, priced
+  from FRED with percentile scenarios (ADR 0011).
+- **Built (M5):** `reports/build_report.py` renders a self-contained HTML report
+  (dependency-free SVG charts with tooltips, table views, light/dark) from engine
+  results. It stays local because it embeds IMF-derived prices (ADR 0003).
+- **Planned:** DSP capacity once sourced; a public report variant without raw price series.
 
 ## Engine modules
 
@@ -41,6 +47,8 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 | `demand.py` | seeded mock demand (trend × seasonality × noise), always labeled mock |
 | `sop.py` | week↔month weights, aggregation/disaggregation, chase/level plan with capacity |
 | `mps.py` | projected demand (DTF), planning-fence catch-up (PTF), PAB, ATP, mock order book |
+| `rccp.py` | bill of resources, load vs capacity per bucket, pull-forward leveling |
+| `purchasing.py` | PO schedule (vendor × release week), spend from linked prices, p10/p50/p90 scenarios |
 | `bom.py` | low-level codes, cycle detection, explosion, summed requirements |
 | `mrp.py` | netting, lot sizing (LFL / FOQ / POQ / min / multiple), safety stock, lead-time offset, past-due |
 | `fred.py` | FRED CSV download + cache with retrieval metadata |

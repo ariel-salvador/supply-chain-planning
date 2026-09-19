@@ -51,6 +51,24 @@ def main(argv: Optional[List[str]] = None) -> int:
     if res.mps is not None and args.show:
         print(f"\nMPS  {res.cfg.demand.item}  (DTF {res.mps.dtf}, PTF {res.mps.ptf}; first {args.show} buckets)")
         print(res.mps.to_frame().iloc[:, : args.show].to_string())
+    if res.rccp is not None:
+        print("\nRCCP (rough-cut capacity)")
+        for rid, grp in res.rccp.groupby("resource"):
+            b = res.rccp_before[res.rccp_before["resource"] == rid]
+            print(f"  {rid}: capacity {grp['capacity_h'].iloc[0]:,.0f} h/bucket; peak utilization "
+                  f"{b['utilization'].max():.0%} before leveling, {grp['utilization'].max():.0%} after; "
+                  f"overloaded buckets {int(grp['overloaded'].sum())}")
+        for m in res.rccp_moves:
+            print("  leveled:", m)
+    if res.po_lines is not None and len(res.po_lines):
+        print(f"\nPurchasing: {res.po_lines['po'].nunique()} POs, {len(res.po_lines)} lines, "
+              f"{res.po_lines['vendor'].nunique()} vendor(s)")
+        if res.spend is not None and len(res.spend):
+            t = res.spend.loc["TOTAL (priced items)"]
+            print(f"  spend over horizon (priced items): base ${t['base']:,.0f}; "
+                  f"p10-p90 ${t['low_p10']:,.0f}-${t['high_p90']:,.0f}")
+        if res.spend_excluded:
+            print("  not priced (no public price series):", ", ".join(res.spend_excluded))
     if args.show:
         for item, rec in res.mrp.items():
             print(f"\nMRP  {item}  (lead time {rec.lead_time} buckets, first {args.show} buckets)")
