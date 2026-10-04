@@ -21,9 +21,18 @@ from .mrp import MrpRecord
 SCENARIOS: Tuple[Tuple[str, float], ...] = (("low_p10", 10.0), ("median_p50", 50.0), ("high_p90", 90.0))
 
 
-def po_schedule(cfg: ProductConfig, records: Mapping[str, MrpRecord]) -> pd.DataFrame:
-    """PO lines: po, vendor, item, qty, uom, order_bucket, order_period, due_bucket, due_period."""
-    vendor_of = {i: v for v in cfg.vendors.values() for i in v.supplies}
+def po_schedule(
+    cfg: ProductConfig,
+    records: Mapping[str, MrpRecord],
+    vendor_of: Optional[Mapping[str, Tuple[str, str]]] = None,
+) -> pd.DataFrame:
+    """PO lines: po, vendor, item, qty, uom, order_bucket, order_period, due_bucket, due_period.
+
+    ``vendor_of`` maps item -> (vendor id, vendor name) and overrides the config's
+    ``vendors`` block; the sourcing award supplies it, so POs go to the awarded supplier.
+    """
+    if vendor_of is None:
+        vendor_of = {i: (v.id, v.name) for v in cfg.vendors.values() for i in v.supplies}
     rows = []
     for iid, rec in records.items():
         item = cfg.items[iid]
@@ -31,14 +40,14 @@ def po_schedule(cfg: ProductConfig, records: Mapping[str, MrpRecord]) -> pd.Data
             continue
         rel = rec.table.loc["planned_order_releases"].to_numpy()
         labels = list(rec.table.columns)
-        vendor = vendor_of.get(iid)
+        vid, vname = vendor_of.get(iid, ("", "(no vendor)"))
         for t, q in enumerate(rel):
             if q <= 1e-9:
                 continue
             due = t + rec.lead_time
             rows.append({
-                "vendor": vendor.name if vendor else "(no vendor)",
-                "vendor_id": vendor.id if vendor else "",
+                "vendor": vname,
+                "vendor_id": vid,
                 "item": iid,
                 "qty": q,
                 "uom": item.uom,

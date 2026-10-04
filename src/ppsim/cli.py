@@ -69,6 +69,33 @@ def main(argv: Optional[List[str]] = None) -> int:
                   f"p10-p90 ${t['low_p10']:,.0f}-${t['high_p90']:,.0f}")
         if res.spend_excluded:
             print("  not priced (no public price series):", ", ".join(res.spend_excluded))
+    if res.awards is not None and len(res.awards):
+        print(f"\nSourcing: {len(res.cfg.suppliers)} suppliers, {len(res.quotes)} quotes on {len(res.awards)} items "
+              f"(quotes and supplier performance are MOCK)")
+        w = res.cfg.sourcing.weights
+        print("  RFQ weights: " + ", ".join(f"{k.replace('_', ' ')} {v:.0%}" for k, v in w.items()))
+        aw = res.awards
+        cols = ["bids", "awarded_name", "awarded_usd_per_uom", "awarded_score", "score_margin", "premium_vs_lowest_pct", "gap_vs_should_cost_pct"]
+        print(aw[cols].to_string(float_format=lambda v: f"{v:,.3f}"))
+        for item, row in aw.iterrows():
+            print(f"  {item}: {row['rationale']}")
+        for n in res.tco_notes:
+            print("  TCO:", n)
+        for n in res.sourcing_notes:
+            print("  note:", n)
+        if res.scorecard is not None and len(res.scorecard):
+            print("\n  Supplier scorecard over "
+                  f"{res.cfg.sourcing.scorecard_periods} simulated delivery periods (MOCK)")
+            sc = res.scorecard[["supplier_name", "otif_pct", "on_time_pct", "in_full_pct", "fill_rate", "ppv_usd", "ppv_pct", "grade"]]
+            print(sc.to_string(float_format=lambda v: f"{v:,.3f}"))
+        for n in res.strategy_notes:
+            print("  strategy:", n)
+        if res.forward_buy is not None and len(res.forward_buy):
+            for item, grp in res.forward_buy.groupby("item"):
+                be = grp["breakeven_usd_per_uom"].iloc[0]
+                spots = ", ".join(f"{r['scenario']} ${r['spot_usd_per_uom']:,.3f}" for _, r in grp.iterrows())
+                print(f"  forward buy {item}: {int(grp['weeks_covered'].iloc[0])} weeks of cover breaks even at "
+                      f"${be:,.3f}/{grp['uom'].iloc[0]}; scenario prices {spots}")
     if args.show:
         for item, rec in res.mrp.items():
             print(f"\nMRP  {item}  (lead time {rec.lead_time} buckets, first {args.show} buckets)")

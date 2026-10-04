@@ -166,6 +166,78 @@ class Party:
 
 
 @dataclass(frozen=True)
+class Quote:
+    """One supplier's RFQ response for the items it bids on (all MOCK, ADR 0013).
+
+    ``price_index`` multiplies the item's should-cost target price; ``lead_time_delta``
+    is weeks relative to the item's planning lead time (may be negative).
+    """
+    price_index: float
+    lead_time_delta: float
+    moq_weeks: float
+    quality_ppm: float
+    otif: float
+    lead_time_sigma: float
+    short_ship_rate: float
+
+
+@dataclass(frozen=True)
+class Supplier:
+    """A bidder in the supplier master. Must be fictional (public-safe rule)."""
+    id: str
+    name: str
+    supplies: tuple
+    quote: Quote
+    lane: str
+    incoterm: str
+    risk_tier: str
+    archetype: str = ""
+
+
+@dataclass(frozen=True)
+class Lane:
+    """An inbound lane: freight and duty as shares of ex-works cost."""
+    id: str
+    freight_pct: float
+    duty_pct: float
+
+
+@dataclass(frozen=True)
+class SourcingSpec:
+    """Sourcing policy: RFQ weights, should-cost build-up, landed cost and risk inputs."""
+    weights: Dict[str, float]
+    risk_scores: Dict[str, float]
+    conversion_pct: float
+    margin_pct: float
+    material_base: Dict[str, float]
+    lanes: Dict[str, Lane]
+    carrying_cost_rate: float
+    quality_cost_multiple: float
+    scorecard_periods: int
+    price_drift_cv: float
+    short_ship_fraction: float
+    dual_source_split: float
+    disruption_prob_base: float
+    disruption_weeks: float
+    forward_buy_weeks: float
+    service_level_z: float
+    seed: int = 0
+
+
+RFQ_CRITERIA = ("price", "lead_time", "quality", "risk")
+
+# Incoterm -> (seller pays inbound freight, seller pays import duty). Used by the TCO
+# build-up: anything the seller does not pay is a buyer cost on top of the quote.
+INCOTERMS = {
+    "EXW": (False, False),
+    "FOB": (False, False),
+    "CIF": (True, False),
+    "DAP": (True, False),
+    "DDP": (True, True),
+}
+
+
+@dataclass(frozen=True)
 class DemandSpec:
     item: str
     mock: bool
@@ -228,6 +300,8 @@ class ProductConfig:
     bill_of_resources: List[BorLine] = field(default_factory=list)
     rccp: Optional[RccpSpec] = None
     purchasing: Optional[PurchasingSpec] = None
+    suppliers: Dict[str, Supplier] = field(default_factory=dict)
+    sourcing: Optional[SourcingSpec] = None
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -334,6 +408,13 @@ def _load_planning(raw: Mapping[str, Any], where: str, r: _Resolver) -> Planning
         },
         lot_sizing=lot,
     )
+
+
+def _incoterm(value: Any, where: str) -> str:
+    code = str(value).upper()
+    if code not in INCOTERMS:
+        raise ConfigError(f"{where}: unknown incoterm {value!r}; known: {sorted(INCOTERMS)}")
+    return code
 
 
 def load_config(path: "str | Path", registry: "str | Path | None" = None) -> ProductConfig:
@@ -529,6 +610,106 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             price_window_years=r.planning(_req(pr, "price_window_years", "purchasing"), "purchasing.price_window_years"),
         )
 
+    # ---- sourcing: supplier master + RFQ / should-cost / risk policy (M6) ----
+    purchased = {i for i, it in items.items() if it.type == "purchased"}
+    suppliers: Dict[str, Supplier] = {}
+    for i, sp in enumerate(raw.get("suppliers") or []):
+        where = f"suppliers[{i}]"
+        sid = _req(sp, "id", where)
+        if sid in suppliers:
+            raise ConfigError(f"{where}: duplicate id {sid!r}")
+        if sp.get("fictional") is not True:
+            raise ConfigError(f"{where}: must be marked 'fictional: true' (public-safe rule)")
+        supplies = tuple(sp.get("supplies") or ())
+        if not supplies:
+            raise ConfigError(f"{where}: must supply at least one purchased item")
+        for iid in supplies:
+            if iid not in purchased:
+                raise ConfigError(f"{where}: supplies {iid!r}, which is not a purchased item")
+        q = _req(sp, "quote", where)
+        suppliers[sid] = Supplier(
+            id=sid,
+            name=_req(sp, "name", where),
+            supplies=supplies,
+            quote=Quote(
+                price_index=r.planning(_req(q, "price_index", f"{where}.quote"), f"{where}.quote.price_index"),
+                lead_time_delta=r.planning(q.get("lead_time_delta"), f"{where}.quote.lead_time_delta"),
+                moq_weeks=r.planning(_req(q, "moq_weeks", f"{where}.quote"), f"{where}.quote.moq_weeks"),
+                quality_ppm=r.planning(_req(q, "quality_ppm", f"{where}.quote"), f"{where}.quote.quality_ppm"),
+                otif=r.planning(_req(q, "otif", f"{where}.quote"), f"{where}.quote.otif"),
+                lead_time_sigma=r.planning(q.get("lead_time_sigma"), f"{where}.quote.lead_time_sigma"),
+                short_ship_rate=r.planning(q.get("short_ship_rate"), f"{where}.quote.short_ship_rate"),
+            ),
+            lane=str(_req(sp, "lane", where)),
+            incoterm=_incoterm(_req(sp, "incoterm", where), where),
+            risk_tier=str(_req(sp, "risk_tier", where)),
+            archetype=str(sp.get("archetype", "")),
+        )
+
+    sourcing = None
+    if raw.get("sourcing"):
+        sr = raw["sourcing"]
+        if not suppliers:
+            raise ConfigError("sourcing: needs a suppliers block")
+        w_raw = _req(sr, "weights", "sourcing")
+        if set(w_raw) != set(RFQ_CRITERIA):
+            raise ConfigError(f"sourcing.weights: keys must be exactly {list(RFQ_CRITERIA)}, got {sorted(w_raw)}")
+        weights = {k: r.planning(w_raw[k], f"sourcing.weights.{k}") for k in RFQ_CRITERIA}
+        if any(v < 0 for v in weights.values()):
+            raise ConfigError("sourcing.weights: weights must be >= 0")
+        if abs(sum(weights.values()) - 1.0) > 1e-9:
+            raise ConfigError(f"sourcing.weights: must sum to 1 (got {sum(weights.values()):g})")
+        risk_scores = {
+            str(k): r.planning(v, f"sourcing.risk_scores.{k}")
+            for k, v in (_req(sr, "risk_scores", "sourcing")).items()
+        }
+        lanes: Dict[str, Lane] = {}
+        for lid, lv in (_req(sr, "lanes", "sourcing")).items():
+            lanes[str(lid)] = Lane(
+                id=str(lid),
+                freight_pct=r.planning(lv.get("freight_pct"), f"sourcing.lanes.{lid}.freight_pct"),
+                duty_pct=r.planning(lv.get("duty_pct"), f"sourcing.lanes.{lid}.duty_pct"),
+            )
+        sc = _req(sr, "should_cost", "sourcing")
+        base_raw = _req(sc, "material_base", "sourcing.should_cost")
+        material_base = {}
+        for iid, expr in base_raw.items():
+            if iid not in purchased:
+                raise ConfigError(f"sourcing.should_cost.material_base: {iid!r} is not a purchased item")
+            material_base[str(iid)] = r.planning(expr, f"sourcing.should_cost.material_base.{iid}")
+        quoted = sorted({i for sp in suppliers.values() for i in sp.supplies})
+        no_base = [i for i in quoted if i not in material_base]
+        if no_base:
+            raise ConfigError(f"sourcing.should_cost.material_base: missing a base cost for quoted item(s) {no_base}")
+        for sp in suppliers.values():
+            if sp.lane not in lanes:
+                raise ConfigError(f"suppliers.{sp.id}: unknown lane {sp.lane!r}; known: {sorted(lanes)}")
+            if sp.risk_tier not in risk_scores:
+                raise ConfigError(f"suppliers.{sp.id}: unknown risk_tier {sp.risk_tier!r}; known: {sorted(risk_scores)}")
+        sourcing = SourcingSpec(
+            weights=weights,
+            risk_scores=risk_scores,
+            conversion_pct=r.planning(_req(sc, "conversion_pct", "sourcing.should_cost"), "sourcing.should_cost.conversion_pct"),
+            margin_pct=r.planning(_req(sc, "margin_pct", "sourcing.should_cost"), "sourcing.should_cost.margin_pct"),
+            material_base=material_base,
+            lanes=lanes,
+            carrying_cost_rate=r.planning(_req(sr, "carrying_cost_rate", "sourcing"), "sourcing.carrying_cost_rate"),
+            quality_cost_multiple=r.planning(_req(sr, "quality_cost_multiple", "sourcing"), "sourcing.quality_cost_multiple"),
+            scorecard_periods=_whole(r.planning(_req(sr, "scorecard_periods", "sourcing"), "sourcing.scorecard_periods"), "sourcing.scorecard_periods"),
+            price_drift_cv=r.planning(sr.get("price_drift_cv"), "sourcing.price_drift_cv"),
+            short_ship_fraction=r.planning(_req(sr, "short_ship_fraction", "sourcing"), "sourcing.short_ship_fraction"),
+            dual_source_split=r.planning(_req(sr, "dual_source_split", "sourcing"), "sourcing.dual_source_split"),
+            disruption_prob_base=r.planning(_req(sr, "disruption_prob_base", "sourcing"), "sourcing.disruption_prob_base"),
+            disruption_weeks=r.planning(_req(sr, "disruption_weeks", "sourcing"), "sourcing.disruption_weeks"),
+            forward_buy_weeks=r.planning(_req(sr, "forward_buy_weeks", "sourcing"), "sourcing.forward_buy_weeks"),
+            service_level_z=r.planning(_req(sr, "service_level_z", "sourcing"), "sourcing.service_level_z"),
+            seed=int(sr.get("seed", 0)),  # RNG seed: structural, not a model number
+        )
+        if not 0.0 <= sourcing.dual_source_split <= 0.5:
+            raise ConfigError("sourcing.dual_source_split: must be between 0 and 0.5")
+    elif suppliers:
+        raise ConfigError("suppliers: needs a sourcing block (weights, should_cost, lanes)")
+
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
         raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
@@ -556,6 +737,8 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         bill_of_resources=bor,
         rccp=rccp,
         purchasing=purchasing,
+        suppliers=suppliers,
+        sourcing=sourcing,
         path=path,
     )
 
