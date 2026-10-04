@@ -6,7 +6,8 @@ Reads data/processed/odoo_plan.csv (from odoo_run.py) and outputs/odoo/seed_meta
 (from odoo_seed.py), reruns the engine on the same config, and writes
 docs/odoo/comparison.md. Odoo dates are converted to week offsets from the seed's
 week-0 Monday; the engine's weeks are its bucket indices. Orders that existed at
-the start (WIP / open POs) are excluded from both sides' planned figures.
+the start (WIP / open POs) and the draft RFQs of the sourcing round are excluded from
+both sides' planned figures.
 """
 from __future__ import annotations
 
@@ -68,6 +69,8 @@ def main() -> int:
 
     odoo = pd.read_csv(PLAN)
     odoo = odoo[~odoo["open_at_start"].astype(bool)].copy()
+    if "rfq" in odoo.columns:  # draft RFQs are quotes from the sourcing round, not a plan
+        odoo = odoo[~odoo["rfq"].astype(bool)].copy()
     odoo["start_w"] = week_of(odoo["start"], anchor, days)
     odoo["due_w"] = week_of(odoo["due"], anchor, days)
 

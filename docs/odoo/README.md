@@ -33,7 +33,10 @@ filestore live in Docker volumes and are never committed.
 | Config | Odoo |
 |---|---|
 | items (`finished`/`intermediate`) | storable products with the **Manufacture** route |
-| items (`purchased`) | storable products with the **Buy** route, plus a vendor price-list line (`delay` = lead time × 7 days, `min_qty` = lot) |
+| items (`purchased`) | storable products with the **Buy** route, plus one vendor price-list line **per bidder** (`price` = quote, `delay` = quoted lead time × 7 days, `min_qty` = MOQ, `sequence` = RFQ rank) |
+| supplier master (`suppliers`) | one `res.partner` per bidder, all fictional |
+| RFQ round | one **draft** purchase order per bidding supplier, `origin = "RFQ round [mock]"`; a draft PO *is* an RFQ in Odoo, and a quote is not a commitment |
+| RFQ award | `sequence` 1 on the price list, so the scheduler replenishes from the awarded supplier; open POs are placed with it too |
 | `batch_size` | BOM base quantity: powder per batch (13,636 kg); one fermentation batch (12,000 kg rBLG) |
 | BOM lines | BOM components (qty × base); `produce_delay` = lead time in days |
 | lot multiple / fixed order qty | a custom unit (e.g. *BLG-FERM batch (12,000 kg)*, *GLUCOSE lot (250,000 kg)*) set as the reorder rule's replenishment unit |
@@ -42,6 +45,10 @@ filestore live in Docker volumes and are never committed.
 | scheduled receipts | WIP MOs without a BOM (so no double consumption), and confirmed open POs |
 | weekly demand (MPS projected demand) | one confirmed sales order per week; engine week 0 → the Monday after the run date |
 | horizon (26 weeks) | company **replenishment horizon** = 182 days (Odoo's default is 365) |
+
+> **Sourcing (M6) is code review only so far.** The price-list, RFQ and award mapping
+> above was written without a running instance (ADR 0016); `make odoo-demo` is the check.
+> The screenshots below and `comparison.md` predate it.
 
 ## What each screen shows (screenshots in this folder)
 

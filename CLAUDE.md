@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 Product-agnostic **production planning simulator**: S&OP → MPS → MRP → purchasing →
-rough-cut capacity. Case 1 is a **mock** precision-fermentation plant making
+rough-cut capacity → sourcing. Case 1 is a **mock** precision-fermentation plant making
 recombinant beta-lactoglobulin (rBLG) whey protein. Feedstock prices are real (FRED),
 process parameters are cited, and demand is mock. This repo will be **public**.
 
@@ -32,7 +32,7 @@ process parameters are cited, and demand is mock. This repo will be **public**.
 ## Layout
 
 ```
-src/ppsim/            engine: registry, config, bom, mrp, sop, mps, rccp, purchasing, demand, fred, feedstock, pipeline, cli
+src/ppsim/            engine: registry, config, bom, mrp, sop, mps, rccp, purchasing, sourcing, supplier_perf, demand, fred, feedstock, pipeline, cli
 products/<id>.yaml    product configs (structure + assumption ids)
 knowledge/            assumptions.csv, notes/, topics/, backlog.md
 docs/                 status.md, architecture.md, decisions/

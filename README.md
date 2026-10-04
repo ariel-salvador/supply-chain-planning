@@ -1,8 +1,8 @@
 # Production Planning Simulator
 
 A product-agnostic production planning engine covering
-**S&OP → MPS → MRP → purchasing → rough-cut capacity planning (RCCP)**. Each product is
-one config file.
+**S&OP → MPS → MRP → purchasing → rough-cut capacity planning (RCCP) → sourcing**. Each
+product is one config file.
 
 **Case 1:** a *mock* precision-fermentation plant making recombinant
 beta-lactoglobulin (rBLG) whey protein powder. The feedstock prices are real (IMF
@@ -22,6 +22,7 @@ and **the demand is mock**.
 | **M3** | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | ✅ done |
 | **M4** | RCCP: batch starts vs. reactors, pull-forward leveling | ✅ done (fermenters; DSP throughput still unsourced) |
 | **M5** | Static chart report (local HTML: S&OP, MPS, RCCP, purchasing, feedstock cost) | ✅ done (public version: see status) |
+| **M6** | Sourcing: supplier master, should-cost, RFQ scoring and award, TCO, supplier scorecard, single/dual source and forward-buy scenarios | ✅ done (Odoo mirror unverified) |
 | **ERP** | Case 1 in Odoo 19 Community: BOM → reorder rules → MO/PO, compared with the engine | ✅ built |
 
 Details: [`docs/status.md`](docs/status.md) · map of all docs: [`INDEX.md`](INDEX.md).
@@ -34,13 +35,16 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python scripts/fetch_data.py                     # FRED → data/raw/ (not committed)
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml --variant sucrose
-make report      # outputs/report/index.html: 8 interactive static charts, opens in any browser
+make report      # outputs/report/index.html: 13 interactive static charts, opens in any browser
 ```
 
 Outputs go to `outputs/<product>[-<variant>]/`: `demand_mock.csv`, `sop_plan.csv`,
 `mps_<ITEM>.csv`, `rccp_load.csv`, `po_schedule.csv`,
 `spend_by_scenario.csv`, `bom_explosion.csv`, `mrp_<ITEM>.csv`, `mrp_long.csv`, `parameters.csv` (every number
-used, with status and citation), `feedstock_*.csv`, and `manifest.json`.
+used, with status and citation), `feedstock_*.csv`, the sourcing set
+(`sourcing_should_cost.csv`, `sourcing_quotes_scored.csv`, `sourcing_awards.csv` with a
+written rationale per item, `sourcing_tco.csv`, `supplier_scorecard.csv`,
+`sourcing_strategy.csv`, `sourcing_forward_buy.csv`), and `manifest.json`.
 
 ## How it works
 
@@ -62,6 +66,24 @@ FRED CSV ─► data/raw/ ─► feedstock prices ─► cost per kg ───�
 More: [`docs/architecture.md`](docs/architecture.md), and the decisions in
 [`docs/decisions/`](docs/decisions/).
 
+## Sourcing
+
+The planning engine decides how much to buy and when. **M6 decides who from and at what
+cost**, which is the half that a buyer or sourcing analyst is actually measured on.
+
+| Step | What it produces |
+|---|---|
+| **Supplier master** | every bidder per purchased item: lane, incoterm, risk tier, quoted price, lead time, MOQ, defect ppm, OTIF |
+| **Should-cost** | material (cited commodity index where one is linked, else a labelled mock base) + conversion + margin = target price, and the gap to each quote |
+| **RFQ → award** | price / lead time / quality / risk, range-normalised inside the bid set and weighted by policy, with a one-sentence rationale naming the criterion that decided it |
+| **Total cost of ownership** | quote + freight and duty **by incoterm** + carrying cost of the MOQ + cost of defects. In case 1 the cheapest quote on every item is an import bid, and it loses on total cost every time |
+| **Supplier scorecard** | a simulated delivery history gives OTIF, fill rate, lead-time variance and purchase price variance against standard cost |
+| **Category strategy** | single vs dual source priced against the expected value of supply at risk; the safety-stock cost of an erratic lead time; forward buy vs spot through the p10/p50/p90 price scenarios |
+
+Suppliers, quotes and performance are **fictional and [mock]**, and every output says
+so; commodity prices stay cited. Concepts and vocabulary:
+[`knowledge/topics/sourcing-concepts.md`](knowledge/topics/sourcing-concepts.md).
+
 ## Case 1 at a glance (per kg of powder)
 
 | Step | Quantity | Basis |
@@ -82,8 +104,9 @@ company, vendors and customer are fictional. One command rebuilds it from scratc
 make odoo-demo    # reset → up → init → seed → run scheduler → compare (~1 min)
 ```
 
-Odoo covers the transaction flow: products, per-batch BOMs, vendor lead times,
-reorder rules, replenishment runs, and the MOs and RFQs they generate. S&OP, the MPS
+Odoo covers the transaction flow: products, per-batch BOMs, vendor price lists (one line
+per bidder, the awarded supplier first), the RFQ round as draft purchase orders,
+reorder rules, replenishment runs, and the MOs and POs they generate. S&OP, the MPS
 and capacity stay in the Python engine, because they're Enterprise-only in Odoo
 (ADR 0009). The [comparison](docs/odoo/comparison.md) shows the key difference:
 reorder rules replenish the whole 26-week window **now**, while the engine's MRP

@@ -6,10 +6,11 @@ Everything comes from the product YAML and the assumptions registry (cited or mo
 company, vendor and customer names are fictional and say so. Creates:
 
   company name + replenishment horizon, units of measure (batch / lot units),
-  products with routes (manufacture / buy), vendor price lists (lead time, min qty),
+  products with routes (manufacture / buy), vendor price lists (one per bidder, with
+  quoted price, lead time and minimum quantity, the awarded supplier first),
   bills of materials per batch, reorder rules, opening stock, open orders
-  (WIP manufacturing orders and open purchase orders), and weekly demand as
-  confirmed sales orders.
+  (WIP manufacturing orders and open purchase orders), one draft RFQ per bidding
+  supplier for the sourcing round, and weekly demand as confirmed sales orders.
 
 Dates: engine week 0 maps to the Monday after today, so Odoo's "today"-based
 scheduler sees the same relative horizon. The mapping is written to
@@ -35,6 +36,50 @@ from ppsim.registry import load_registry  # noqa: E402
 
 UOM_XMLID = {"kg": "uom.product_uom_kgm", "unit": "uom.product_uom_unit"}
 META = ROOT / "outputs" / "odoo" / "seed_meta.json"
+RFQ_ORIGIN = "RFQ round [mock]"  # marks the sourcing round so it is not read as a plan
+
+
+def supplier_prices(cfg, res, days_per_week: float, items):
+    """Vendor price list rows: one per (item, bidder), awarded supplier first.
+
+    Odoo replenishes from the lowest-``sequence`` ``product.supplierinfo`` line, so
+    putting the awarded supplier at sequence 1 makes the RFQ award the default source.
+    Pure function: returns (item, supplier id, vals) with no Odoo call, so it can be
+    tested offline.
+    """
+    if res.quotes is None or res.awards is None:
+        return []
+    out = []
+    for iid in items:
+        bids = res.quotes[res.quotes["item"] == iid].sort_values("rank")
+        for _, q in bids.iterrows():
+            out.append((iid, q["supplier"], {
+                "price": round(float(q["quoted_usd_per_uom"]), 4),
+                "min_qty": round(float(q["moq_qty"]), 4),
+                "delay": int(round(float(q["lead_time_weeks"]) * days_per_week)),
+                "sequence": int(q["rank"]),
+            }))
+    return out
+
+
+def rfq_lines(cfg, res, items):
+    """One request for quotation per bidding supplier: {supplier id: [(item, qty, price)]}.
+
+    The volume quoted is the horizon requirement the award was decided on. These stay
+    **draft** in Odoo: a draft purchase order *is* an RFQ, and a quote is not an order.
+    """
+    if res.quotes is None or res.usage is None:
+        return {}
+    out = {}
+    for iid in items:
+        if iid not in res.usage.index:
+            continue
+        qty = float(res.usage.loc[iid, "gross_requirements"])
+        if qty <= 0:
+            continue
+        for _, q in res.quotes[res.quotes["item"] == iid].sort_values("rank").iterrows():
+            out.setdefault(q["supplier"], []).append((iid, round(qty, 4), round(float(q["quoted_usd_per_uom"]), 4)))
+    return out
 
 
 def anchor_monday(today: dt.date) -> dt.date:
@@ -84,9 +129,13 @@ def main() -> int:
 
     # --- partners -----------------------------------------------------------
     partner = {}
-    for p in list(cfg.vendors.values()) + list(cfg.customers.values()):
+    bidders = cfg.suppliers or cfg.vendors          # the supplier master, or the M3 vendor list
+    for p in list(bidders.values()) + list(cfg.customers.values()):
         partner[p.id] = o.create("res.partner", {"name": p.name, "is_company": True})
-    vendor_of = {i: v.id for v in cfg.vendors.values() for i in v.supplies}
+    if res.awards is not None:
+        vendor_of = {i: r["awarded_to"] for i, r in res.awards.iterrows()}   # the RFQ award decides
+    else:
+        vendor_of = {i: v.id for v in bidders.values() for i in v.supplies}
     customer = next(iter(cfg.customers.values())).id
 
     # --- products -----------------------------------------------------------
@@ -121,15 +170,23 @@ def main() -> int:
         elif lot.multiple > 1:
             repl_uom[iid] = lot_uom(f"{iid} batch ({lot.multiple:,.0f} {it.uom})", it.uom, lot.multiple)
 
-        if buy:
-            if iid not in vendor_of:
-                raise SystemExit(f"{iid}: no vendor supplies this purchased item")
-            o.create("product.supplierinfo", {
-                "partner_id": partner[vendor_of[iid]],
-                "product_tmpl_id": tmpl[iid],
-                "min_qty": lot.quantity if lot.rule == "fixed_order_quantity" else lot.minimum,
-                "delay": int(it.planning.lead_time * days_per_week),
-            })
+        if buy and iid not in vendor_of:
+            raise SystemExit(f"{iid}: no vendor supplies this purchased item")
+
+    # --- vendor price lists (every bidder; the awarded supplier at sequence 1) ---
+    quoted = supplier_prices(cfg, res, days_per_week, [i for i in planned if cfg.items[i].type == "purchased"])
+    for iid, sid, vals in quoted:
+        o.create("product.supplierinfo", {"partner_id": partner[sid], "product_tmpl_id": tmpl[iid], **vals})
+    for iid in [i for i in planned if cfg.items[i].type == "purchased"]:
+        if any(q[0] == iid for q in quoted):
+            continue                                 # already has quoted price-list lines
+        lot = cfg.items[iid].planning.lot_sizing
+        o.create("product.supplierinfo", {
+            "partner_id": partner[vendor_of[iid]],
+            "product_tmpl_id": tmpl[iid],
+            "min_qty": lot.quantity if lot.rule == "fixed_order_quantity" else lot.minimum,
+            "delay": int(cfg.items[iid].planning.lead_time * days_per_week),
+        })
 
     # --- bills of materials (one per manufactured item, per batch) ----------
     for parent in [i for i in planned if cfg.items[i].type != "purchased"]:
@@ -197,6 +254,20 @@ def main() -> int:
                 })
                 o.call("mrp.production", "action_confirm", ids=[mo])
 
+    # --- sourcing round: one draft RFQ per bidding supplier -----------------
+    # A draft purchase order *is* an RFQ in Odoo, so the bid record lives in the same
+    # app that will raise the real POs. They stay draft: a quote is not a commitment.
+    rfqs = rfq_lines(cfg, res, [i for i in planned if cfg.items[i].type == "purchased"])
+    for sid, lines in rfqs.items():
+        o.create("purchase.order", {
+            "partner_id": partner[sid],
+            "origin": RFQ_ORIGIN,
+            "order_line": [[0, 0, {
+                "product_id": prod[iid], "product_qty": qty, "price_unit": price,
+                "date_planned": at_noon(week(0)),
+            }] for iid, qty, price in lines],
+        })
+
     # --- demand: one confirmed sales order per week -------------------------
     weekly = (
         res.mps.table.loc["projected_demand"].to_numpy()
@@ -216,6 +287,9 @@ def main() -> int:
 
     META.parent.mkdir(parents=True, exist_ok=True)
     META.write_text(json.dumps({
+        "rfq_origin": RFQ_ORIGIN,
+        "rfqs_seeded": len(rfqs),
+        "supplierinfo_rows": len(quoted),
         "config": str(args.config),
         "anchor_week0": anchor.isoformat(),
         "engine_week0": cfg.start,
