@@ -272,3 +272,14 @@ def test_blg_supplier_master_is_complete_and_fictional():
     quoted = {i for s in cfg.suppliers.values() for i in s.supplies}
     assert purchased_in_bom <= quoted                      # nothing bought without an RFQ
     assert (res.awards["bids"] >= 2).all()                 # every item has a competitive quote
+
+
+def test_tco_says_when_an_item_has_no_planned_usage():
+    """SUCROSE is only in the variant BOM, so the base run cannot carry MOQ stock for it."""
+    res = run(BLG, fetch_prices=False)
+    t = res.tco.set_index(["item", "supplier"])
+    assert np.isnan(t.loc[("SUCROSE", "s_sugar_a"), "moq_carrying_usd"])
+    assert "no MOQ carrying cost" in t.loc[("SUCROSE", "s_sugar_a"), "tco_basis"]
+    assert t.loc[("GLUCOSE", "s_sugar_a"), "tco_basis"] == "landed + MOQ carrying + defect cost"
+    note = next(n for n in res.tco_notes if n.startswith("SUCROSE"))
+    assert "MOQ carrying cost is excluded" in note

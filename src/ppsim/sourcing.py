@@ -279,6 +279,8 @@ def tco(cfg: ProductConfig, quotes: pd.DataFrame, usage: pd.DataFrame) -> pd.Dat
         quality = landed * float(q["quality_ppm"]) / 1e6 * s.quality_cost_multiple
         total = landed + (0.0 if np.isnan(carrying) else carrying) + quality
         rows.append({
+            "tco_basis": "landed + MOQ carrying + defect cost" if annual > 0
+            else "landed + defect cost (no planned usage, so no MOQ carrying cost)",
             "item": q["item"],
             "uom": q["uom"],
             "supplier": q["supplier"],
@@ -308,12 +310,13 @@ def tco_notes(tco_df: pd.DataFrame) -> List[str]:
     for iid, grp in tco_df.groupby("item"):
         cheap = grp.loc[grp["unit_price_usd"].idxmin()]
         best = grp.loc[grp["tco_usd_per_uom"].idxmin()]
+        partial = "" if grp["moq_carrying_usd"].notna().all() else " [no planned usage, so the MOQ carrying cost is excluded]"
         if cheap["supplier"] != best["supplier"]:
             notes.append(
                 f"{iid}: lowest price is {cheap['supplier_name']} "
                 f"(${cheap['unit_price_usd']:,.4g}/{cheap['uom']}), but lowest total cost is "
                 f"{best['supplier_name']} (${best['tco_usd_per_uom']:,.4g} vs "
-                f"${cheap['tco_usd_per_uom']:,.4g} per {cheap['uom']})"
+                f"${cheap['tco_usd_per_uom']:,.4g} per {cheap['uom']}){partial}"
             )
     return notes
 

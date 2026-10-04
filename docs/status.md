@@ -22,7 +22,8 @@ and the Odoo demo (PR #1–#5). M6 is on `m6-sourcing`, waiting for review and p
   awarded glucose quote sits at should-cost; the nutrient awards sit +9%.
 - **M6d TCO** (ADR 0014): freight and duty by incoterm, MOQ carrying cost, cost of
   defects. **On all 9 items the lowest quote is not the lowest total cost** — every
-  cheapest bid is an import bid.
+  cheapest bid is an import bid. Items with no planned usage in the active BOM (sucrose)
+  carry no MOQ cost, and the `tco_basis` column says so.
 - **M6e scorecard** (ADR 0015): a simulated 12-period delivery history per awarded
   supplier → OTIF, on-time, in-full, fill rate, lead-time sigma and purchase price
   variance against standard cost, with A–D grades.
