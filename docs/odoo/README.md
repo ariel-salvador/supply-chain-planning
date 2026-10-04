@@ -57,6 +57,32 @@ They were checked for usernames, emails and file paths before committing.
 | `po.png` | A generated RFQ | Fictional vendor, lead-time due date, grouped lines |
 | `comparison.png` | [`comparison.md`](comparison.md) rendered | Odoo vs engine quantities and timing |
 
+## Odoo ↔ SAP S/4HANA: the same flow, different names
+
+Odoo Community covers the core MRP transaction flow found in any ERP. This table maps
+what this demo does to the SAP S/4HANA equivalents (transaction codes in brackets), so
+the concepts carry over to SAP-based planning roles.
+
+| Concept | Odoo (this demo) | SAP S/4HANA equivalent |
+|---|---|---|
+| Item master | Product (route, UoM, vendor list) | Material master [MM01], with MRP views |
+| Bill of materials | BoM (one per batch) | BOM [CS01]; **master recipe** [C201] in process industries (PP-PI) |
+| Vendor lead time / min qty | Vendor price list (`delay`, `min_qty`) | Purchasing info record [ME11]; planned delivery time on the material |
+| Reorder rule | Reordering rule (min/max, auto) | MRP type on the material: reorder-point planning (e.g. VB) vs MRP (PD) |
+| Lot sizing | Replenishment unit (batch or lot as a unit) | Lot-sizing procedure: lot-for-lot (EX), fixed (FX), rounding value |
+| Planning run | Scheduler / Replenishment | MRP run [MD01N] and stock/requirements list [MD04] |
+| Planned supply | MO or RFQ created directly | Planned orders, converted to production orders [CO40] or purchase requisitions |
+| Manufacturing order | Manufacturing Order | Production order [CO01], or **process order** [COR1] for fermentation-type plants |
+| Purchasing | RFQ → Purchase Order | Purchase requisition [ME51N] → purchase order [ME21N] |
+| Demand | Confirmed sales orders | Sales orders [VA01] and planned independent requirements [MD61] |
+| Master production schedule | Enterprise edition only | MPS strategies within MRP; PP/DS or IBP for advanced planning |
+| Capacity planning | Enterprise (Gantt / work orders) | Capacity evaluation [CM01]; PP/DS for finite scheduling |
+
+**How the planning logic compares:** Odoo's reorder rules behave like SAP
+reorder-point planning. The Python engine's time-phased weekly plan behaves like SAP
+MRP with planned independent requirements, and that's the difference quantified in
+[`comparison.md`](comparison.md).
+
 ## What I learned
 
 - **Reorder rules aren't MRP.** One scheduler run covers every shortfall inside the
