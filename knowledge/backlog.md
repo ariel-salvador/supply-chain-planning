@@ -30,9 +30,14 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 
 - [ ] UF/DF membrane life / replacement rate: public source needed to replace the [mock] row (ADR 0008).
 - [ ] Odoo: demonstrate rolling time-phasing (short horizon + scheduler per simulated day) vs one-shot run.
-- [ ] **Run `make odoo-demo` to verify the M6 Odoo mirror** (multi-vendor price lists,
-  draft RFQ round, awarded supplier at sequence 1). Written without a running instance
-  (ADR 0016); screenshots and `docs/odoo/comparison.md` need regenerating afterwards.
+- [x] ~~Run `make odoo-demo` to verify the M6 Odoo mirror~~ **done 2026-10-04**: found
+  two real bugs (a seeded draft RFQ round suppressed every PO; the engine ignored the
+  awarded supplier's MOQ), both fixed; `docs/odoo/comparison.md` regenerated (ADR 0016).
+- [ ] Odoo screenshots for M6: the RFQ round and a multi-vendor price list (the existing
+  screenshots predate it).
+- [ ] Lot-sizing to match an awarded MOQ: bags are awarded to a supplier asking six weeks
+  of cover while the plan orders weekly. Try periods-of-supply lot sizing on BAG-25KG and
+  show the trade-off (fewer, larger orders and more inventory vs the awarded price).
 - [ ] Odoo purchase agreements (blanket orders) need the `purchase_requisition` module;
   decide whether the demo is worth a fifth app (ADR 0016).
 - [ ] Sourcing: public data for the should-cost **conversion and margin shares**, which

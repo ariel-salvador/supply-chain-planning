@@ -9,8 +9,12 @@ company, vendor and customer names are fictional and say so. Creates:
   products with routes (manufacture / buy), vendor price lists (one per bidder, with
   quoted price, lead time and minimum quantity, the awarded supplier first),
   bills of materials per batch, reorder rules, opening stock, open orders
-  (WIP manufacturing orders and open purchase orders), one draft RFQ per bidding
-  supplier for the sourcing round, and weekly demand as confirmed sales orders.
+  (WIP manufacturing orders and open purchase orders), and weekly demand as
+  confirmed sales orders.
+
+The RFQ round is **not** seeded here: a draft purchase order counts as replenishment
+already in progress, so seeding one at the horizon volume stops the reorder rules from
+ordering anything. It is created by scripts/odoo_sourcing.py after the planning run.
 
 Dates: engine week 0 maps to the Monday after today, so Odoo's "today"-based
 scheduler sees the same relative horizon. The mapping is written to
@@ -36,9 +40,6 @@ from ppsim.registry import load_registry  # noqa: E402
 
 UOM_XMLID = {"kg": "uom.product_uom_kgm", "unit": "uom.product_uom_unit"}
 META = ROOT / "outputs" / "odoo" / "seed_meta.json"
-RFQ_ORIGIN = "RFQ round [mock]"  # marks the sourcing round so it is not read as a plan
-
-
 def supplier_prices(cfg, res, days_per_week: float, items):
     """Vendor price list rows: one per (item, bidder), awarded supplier first.
 
@@ -59,26 +60,6 @@ def supplier_prices(cfg, res, days_per_week: float, items):
                 "delay": int(round(float(q["lead_time_weeks"]) * days_per_week)),
                 "sequence": int(q["rank"]),
             }))
-    return out
-
-
-def rfq_lines(cfg, res, items):
-    """One request for quotation per bidding supplier: {supplier id: [(item, qty, price)]}.
-
-    The volume quoted is the horizon requirement the award was decided on. These stay
-    **draft** in Odoo: a draft purchase order *is* an RFQ, and a quote is not an order.
-    """
-    if res.quotes is None or res.usage is None:
-        return {}
-    out = {}
-    for iid in items:
-        if iid not in res.usage.index:
-            continue
-        qty = float(res.usage.loc[iid, "gross_requirements"])
-        if qty <= 0:
-            continue
-        for _, q in res.quotes[res.quotes["item"] == iid].sort_values("rank").iterrows():
-            out.setdefault(q["supplier"], []).append((iid, round(qty, 4), round(float(q["quoted_usd_per_uom"]), 4)))
     return out
 
 
@@ -104,7 +85,7 @@ def main() -> int:
 
     root = cfg.demand.item
     planned = bom_mod.reachable(root, cfg.bom)
-    lines = [b for b in cfg.bom if b.parent in planned]
+    bom_lines = [b for b in cfg.bom if b.parent in planned]
     anchor = anchor_monday(dt.date.today())
     week = lambda t: anchor + dt.timedelta(days=int(days_per_week) * t)  # noqa: E731
 
@@ -192,7 +173,7 @@ def main() -> int:
     for parent in [i for i in planned if cfg.items[i].type != "purchased"]:
         it = cfg.items[parent]
         base = it.batch_size or 1.0
-        comps = [b for b in lines if b.parent == parent]
+        comps = [b for b in bom_lines if b.parent == parent]
         o.create("mrp.bom", {
             "product_tmpl_id": tmpl[parent],
             "product_qty": base,
@@ -254,20 +235,6 @@ def main() -> int:
                 })
                 o.call("mrp.production", "action_confirm", ids=[mo])
 
-    # --- sourcing round: one draft RFQ per bidding supplier -----------------
-    # A draft purchase order *is* an RFQ in Odoo, so the bid record lives in the same
-    # app that will raise the real POs. They stay draft: a quote is not a commitment.
-    rfqs = rfq_lines(cfg, res, [i for i in planned if cfg.items[i].type == "purchased"])
-    for sid, lines in rfqs.items():
-        o.create("purchase.order", {
-            "partner_id": partner[sid],
-            "origin": RFQ_ORIGIN,
-            "order_line": [[0, 0, {
-                "product_id": prod[iid], "product_qty": qty, "price_unit": price,
-                "date_planned": at_noon(week(0)),
-            }] for iid, qty, price in lines],
-        })
-
     # --- demand: one confirmed sales order per week -------------------------
     weekly = (
         res.mps.table.loc["projected_demand"].to_numpy()
@@ -287,9 +254,8 @@ def main() -> int:
 
     META.parent.mkdir(parents=True, exist_ok=True)
     META.write_text(json.dumps({
-        "rfq_origin": RFQ_ORIGIN,
-        "rfqs_seeded": len(rfqs),
         "supplierinfo_rows": len(quoted),
+        "awarded_supplier": {i: vendor_of[i] for i in sorted(vendor_of)},
         "config": str(args.config),
         "anchor_week0": anchor.isoformat(),
         "engine_week0": cfg.start,
@@ -297,8 +263,8 @@ def main() -> int:
         "horizon_weeks": cfg.horizon,
         "products": {i: prod[i] for i in planned},
     }, indent=2))
-    print(f"seeded {len(planned)} products, {len(lines)} BOM lines, {len(weekly)} weekly sales orders; "
-          f"engine week 0 ({cfg.start}) -> Odoo {anchor}")
+    print(f"seeded {len(planned)} products, {len(bom_lines)} BOM lines, {len(quoted)} vendor price-list "
+          f"lines, {len(weekly)} weekly sales orders; engine week 0 ({cfg.start}) -> Odoo {anchor}")
     return 0
 
 

@@ -1,7 +1,8 @@
-"""The sourcing part of the Odoo seed, tested offline (no Odoo instance needed).
+"""The sourcing part of the Odoo scripts, tested offline (no Odoo instance needed).
 
-`supplier_prices` and `rfq_lines` are pure: they turn the engine's RFQ result into the
-payloads the seeder posts, so what Odoo would receive can be checked without Docker.
+`supplier_prices` (seed) and `rfq_lines` (sourcing round) are pure: they turn the
+engine's RFQ result into the payloads the scripts post, so what Odoo would receive can
+be checked without Docker.
 """
 import importlib.util
 
@@ -10,9 +11,15 @@ import pytest
 from ppsim.pipeline import run
 from conftest import BLG, ROOT
 
-spec = importlib.util.spec_from_file_location("odoo_seed", ROOT / "scripts" / "odoo_seed.py")
-seed = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(seed)
+def _load(name):
+    spec = importlib.util.spec_from_file_location(name, ROOT / "scripts" / f"{name}.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+seed = _load("odoo_seed")
+sourcing = _load("odoo_sourcing")
 
 
 @pytest.fixture(scope="module")
@@ -45,7 +52,7 @@ def test_every_bidder_gets_a_price_list_line_awarded_first(res, purchased):
 
 
 def test_rfq_lines_group_by_supplier_at_the_volume_quoted(res, purchased):
-    rfqs = seed.rfq_lines(res.cfg, res, purchased)
+    rfqs = sourcing.rfq_lines(res.cfg, res, purchased)
     assert set(rfqs) == set(res.quotes[res.quotes["item"].isin(purchased)]["supplier"])
     for sid, lines in rfqs.items():
         for iid, qty, price in lines:
@@ -58,7 +65,7 @@ def test_rfq_lines_group_by_supplier_at_the_volume_quoted(res, purchased):
 
 
 def test_rfq_round_is_marked_so_it_is_never_read_as_a_plan():
-    assert seed.RFQ_ORIGIN == "RFQ round [mock]"
+    assert sourcing.RFQ_ORIGIN == "RFQ round [mock]"
     run_py = (ROOT / "scripts" / "odoo_run.py").read_text()
     compare_py = (ROOT / "scripts" / "compare_plans.py").read_text()
     assert 'RFQ_ORIGIN = "RFQ round [mock]"' in run_py and '"rfq"' in run_py
@@ -72,4 +79,16 @@ def test_no_sourcing_config_falls_back_to_the_vendor_list(sourcing_cfg):
     r = run(plain, fetch_prices=False)
     assert r.quotes is None and r.awards is None
     assert seed.supplier_prices(plain, r, 7.0, ["B"]) == []
-    assert seed.rfq_lines(plain, r, ["B"]) == {}
+    assert sourcing.rfq_lines(plain, r, ["B"]) == {}
+
+
+def test_the_seed_does_not_create_the_rfq_round():
+    """A draft RFQ counts as supply in progress, so the round must come after planning."""
+    seed_py = (ROOT / "scripts" / "odoo_seed.py").read_text()
+    assert "purchase.order" in seed_py                       # it still seeds the open POs
+    assert "RFQ round" not in seed_py.split('"""', 2)[2]     # but not the bid round
+    assert not hasattr(seed, "rfq_lines")
+    makefile = (ROOT / "Makefile").read_text()
+    demo = next(l for l in makefile.splitlines() if l.startswith("odoo-demo:"))
+    assert demo.index("odoo-run") < demo.index("odoo-rfq")   # round created after the run
+    assert demo.index("odoo-compare") < demo.index("odoo-rfq")

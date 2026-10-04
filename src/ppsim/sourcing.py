@@ -30,6 +30,9 @@ from .config import INCOTERMS, ProductConfig, RFQ_CRITERIA
 from .mrp import MrpRecord
 
 PERIODS_PER_YEAR = {"W": 52.0, "M": 12.0, "Q": 4.0, "D": 365.0}
+# How far under an MOQ the typical planned order may sit before it is worth a note:
+# lot-size rounding leaves orders a few percent short, which is not a sourcing problem.
+MOQ_TOLERANCE = 0.10
 
 
 def periods_per_year(freq: str) -> float:
@@ -319,6 +322,44 @@ def tco_notes(tco_df: pd.DataFrame) -> List[str]:
                 f"${cheap['tco_usd_per_uom']:,.4g} per {cheap['uom']}){partial}"
             )
     return notes
+
+
+def check_moq(po_lines: pd.DataFrame, quotes: pd.DataFrame, awards: pd.DataFrame) -> Tuple[pd.DataFrame, List[str]]:
+    """Flag planned PO lines that fall below the awarded supplier's minimum order quantity.
+
+    A plan that orders weekly from a supplier quoting six weeks of cover is not a plan
+    that gets the awarded price. An ERP enforces this at vendor selection: Odoo filters
+    the vendor price list by the order quantity and falls through to the next vendor in
+    sequence, so the award quietly stops applying (verified against Odoo 19 Community,
+    2026-10-04). Either the lot-sizing policy consolidates orders up to the MOQ, or the
+    award has to go to a supplier whose MOQ fits the plan.
+    """
+    out = po_lines.copy()
+    if not len(out):
+        return out, []
+    moq_of = {}
+    for iid, aw in awards.iterrows():
+        bid = quotes[(quotes["item"] == iid) & (quotes["supplier"] == aw["awarded_to"])]
+        if len(bid):
+            moq_of[iid] = float(bid.iloc[0]["moq_qty"])
+    out["awarded_moq_qty"] = out["item"].map(moq_of)
+    out["below_awarded_moq"] = out["qty"] < out["awarded_moq_qty"] - 1e-9
+    notes = []
+    for iid, grp in out.groupby("item"):
+        below, moq = grp[grp["below_awarded_moq"]], moq_of.get(iid)
+        if not len(below) or not moq:
+            continue
+        typical = float(grp["qty"].median())
+        if typical >= moq * (1 - MOQ_TOLERANCE):
+            continue  # the typical order is at the MOQ; rounding is not a sourcing problem
+        notes.append(
+            f"{iid}: {len(below)} of {len(grp)} planned orders ({below['qty'].min():,.0f}-"
+            f"{below['qty'].max():,.0f} {grp['uom'].iloc[0]}) are below the awarded supplier's MOQ of "
+            f"{moq:,.0f} - the typical order covers {typical / moq:.0%} of it. Consolidate them "
+            f"(periods-of-supply lot sizing) or the award price does not apply, because an ERP will "
+            f"source from the next vendor instead"
+        )
+    return out, notes
 
 
 def awarded_vendor_map(awards: pd.DataFrame, cfg: ProductConfig) -> Dict[str, Tuple[str, str]]:

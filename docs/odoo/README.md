@@ -10,16 +10,17 @@ as such. Why Odoo Community, and what stays in Python: ADR 0009.
 Requirements: Docker (OrbStack or Docker Desktop) and the repo's `.venv`.
 
 ```bash
-make odoo-demo        # rebuild from scratch: reset → up → init → seed → run → compare (~1 min)
+make odoo-demo        # rebuild from scratch: reset → up → init → seed → run → compare → RFQ round (~2 min)
 ```
 
 | Step | Command | What it does |
 |---|---|---|
 | 1 | `make odoo-up` | Creates `.env` with random secrets if missing, then starts Postgres 17 and Odoo 19 on `127.0.0.1:8069` |
 | 2 | `make odoo-init` | Creates the `pps_demo` DB (no demo data), installs Inventory, Manufacturing, Purchase and Sales, sets the admin password from `.env`, and writes a 7-day API key to `.odoo-apikey` |
-| 3 | `make odoo-seed` | `scripts/odoo_seed.py`: company, units, products, routes, vendor lead times, BOMs, reorder rules, opening stock, open orders, weekly sales orders |
+| 3 | `make odoo-seed` | `scripts/odoo_seed.py`: company, units, products, routes, **vendor price lists (one line per bidder, awarded supplier first)**, BOMs, reorder rules, opening stock, open orders, weekly sales orders |
 | 4 | `make odoo-run` | `scripts/odoo_run.py`: runs the scheduler and exports MOs and PO lines to `data/processed/odoo_plan.csv` |
-| 5 | `make odoo-compare` | `scripts/compare_plans.py`: diffs against the Python MRP and writes [`comparison.md`](comparison.md) |
+| 5 | `make odoo-compare` | `scripts/compare_plans.py`: diffs against the Python MRP and writes [`comparison.md`](comparison.md), including which supplier each PO went to |
+| 6 | `make odoo-rfq` | `scripts/odoo_sourcing.py`: the RFQ round, one draft quotation per bidding supplier. **Runs last on purpose** — see the lessons below |
 
 To sign in at http://127.0.0.1:8069, use the user `admin` and the password in your
 local `.env` (`ODOO_ADMIN_PASSWORD`). `make odoo-down` stops the stack, and
@@ -46,9 +47,9 @@ filestore live in Docker volumes and are never committed.
 | weekly demand (MPS projected demand) | one confirmed sales order per week; engine week 0 → the Monday after the run date |
 | horizon (26 weeks) | company **replenishment horizon** = 182 days (Odoo's default is 365) |
 
-> **Sourcing (M6) is code review only so far.** The price-list, RFQ and award mapping
-> above was written without a running instance (ADR 0016); `make odoo-demo` is the check.
-> The screenshots below and `comparison.md` predate it.
+> The sourcing mapping above was verified against Odoo 19.0 Community on 2026-10-04
+> (ADR 0016). `comparison.md` is from that run. The screenshots below predate M6, so
+> there is not yet one of the RFQ round or of a multi-vendor price list.
 
 ## What each screen shows (screenshots in this folder)
 
@@ -92,6 +93,18 @@ MRP with planned independent requirements, and that's the difference quantified 
 
 ## What I learned
 
+- **A draft RFQ is already supply, as far as the planner is concerned.** Odoo counts
+  draft, sent and to-approve purchase lines as replenishment in progress, so seeding a
+  bid round at the horizon volume told the reorder rules everything was on order: the
+  scheduler raised **zero** POs, with no error anywhere, and only the plan comparison
+  showed it. The sourcing round has to come after the planning run (or be cancelled).
+  This is the single most useful thing the Odoo build has taught me: in an ERP a
+  document is a commitment of some strength, and quotations are not free of consequence.
+- **An award and a lot-size policy are one decision.** Odoo buys from the lowest-sequence
+  vendor whose **minimum order quantity** the order reaches. Bags were awarded to the
+  cheapest bidder, which asks for six weeks of cover; the plan orders weekly, so Odoo
+  skipped it on 13 of 22 lines and bought from the runner-up at a higher price. Winning
+  a price you cannot order against is not a saving.
 - **Reorder rules aren't MRP.** One scheduler run covers every shortfall inside the
   look-ahead window immediately. The engine's time-phased plan spreads the same volume
   over 26 weeks. In Community, time-phasing comes from running the scheduler daily with

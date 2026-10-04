@@ -50,7 +50,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `src/ppsim/`: engine (see architecture.md for the module map).
 - `scripts/fetch_data.py`: dataset provenance and license; fetches into `data/raw/`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
-- `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`).
+- `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `odoo_sourcing.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`). `odoo_sourcing.py` runs last on purpose (ADR 0016).
 - `docker-compose.yml`, `Makefile`, `.env.example`, `odoo/bootstrap.py`: local Odoo stack.
 - `reports/build_report.py`, `reports/template.html`: static chart report (`make report`).
 - `data/processed/README.md`: what may be committed there.

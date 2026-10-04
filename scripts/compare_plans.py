@@ -110,6 +110,45 @@ def main() -> int:
             prof_rows.append({"item": iid, "plan": label, **{f"w{w}": f"{arr[w]:,.0f}" for w in weeks if w < len(arr)}})
     profile = pd.DataFrame(prof_rows)
 
+    # --- which supplier the POs actually went to (M6) ------------------------
+    vendor_section = ""
+    if res.awards is not None and len(res.awards):
+        po = odoo[odoo["kind"] == "PO"]
+        rows_v, mismatches = [], []
+        for iid, aw in res.awards.iterrows():
+            if iid not in items:
+                continue
+            got = po[po["item"] == iid].groupby("partner")["qty"].agg(["count", "sum"]).sort_values("sum", ascending=False)
+            if not len(got):
+                continue
+            picked = " · ".join(f"{n} ({int(r['count'])} lines, {r['sum']:,.0f})" for n, r in got.iterrows())
+            other = [n for n in got.index if n != aw["awarded_name"]]
+            if other:
+                mismatches.append(iid)
+            rows_v.append({
+                "item": iid,
+                "awarded by the RFQ": aw["awarded_name"].replace(" (fictional)", ""),
+                "Odoo bought from": picked.replace(" (fictional)", ""),
+                "award honoured": "no" if other else "yes",
+            })
+        if rows_v:
+            vendor_section = f"""
+## Which supplier the purchase orders went to
+
+The RFQ award is carried into Odoo as `sequence` 1 on the vendor price list, so the
+scheduler buys from the awarded supplier by default.
+
+{md_table(pd.DataFrame(rows_v))}
+
+{"All awards were honoured." if not mismatches else
+ "**Where it was not honoured** (" + ", ".join(mismatches) + "): Odoo filters the vendor "
+ "price list by the order quantity, so a supplier whose **minimum order quantity** the "
+ "order does not reach is skipped and the next vendor in sequence is used. The engine "
+ "reports the same condition as a sourcing note (`below_awarded_moq` on the PO lines): "
+ "either the lot-sizing policy consolidates orders up to the MOQ, or the award price "
+ "does not apply."}
+"""
+
     sop_end = res.mps.table.loc["projected_available_balance"].iloc[-1] if res.mps is not None else float("nan")
     fg_ss = cfg.items[cfg.demand.item].planning.safety_stock
 
@@ -128,7 +167,7 @@ and lot policies are [mock]; process quantities are [source] (see
 ## Cumulative planned supply by week (receipt/due week)
 
 {md_table(profile)}
-
+{vendor_section}
 ## Why they differ
 
 1. **Timing is the big one.** Odoo's reorder rules look ahead `lead time + horizon_days`
@@ -150,6 +189,13 @@ and lot policies are [mock]; process quantities are [source] (see
    batch unit on the reorder rule) and sugar to 250 t lots.
 5. **Lead times.** Odoo uses days (weeks × 7); the engine uses whole weeks. The 144 h
    fermentation cycle is 7 days in both, because the engine rounds it up to 1 week.
+6. **Vendor selection respects the MOQ.** Odoo picks the lowest-`sequence` price-list
+   line whose minimum quantity the order reaches, so an award to a supplier with a large
+   MOQ silently stops applying on small, frequent orders. The engine now flags this
+   instead of assuming the award holds.
+7. **The RFQ round is created after this comparison** (`make odoo-rfq`). A draft
+   purchase order counts as replenishment in progress in Odoo, so a bid round seeded
+   before the scheduler run suppresses every PO it would otherwise raise.
 
 ## What each tool does well
 

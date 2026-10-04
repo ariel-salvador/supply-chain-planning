@@ -283,3 +283,22 @@ def test_tco_says_when_an_item_has_no_planned_usage():
     assert t.loc[("GLUCOSE", "s_sugar_a"), "tco_basis"] == "landed + MOQ carrying + defect cost"
     note = next(n for n in res.tco_notes if n.startswith("SUCROSE"))
     assert "MOQ carrying cost is excluded" in note
+
+
+def test_moq_check_flags_a_plan_that_cannot_reach_the_awarded_supplier():
+    """Bags are awarded to a supplier quoting 6 weeks of cover but ordered weekly."""
+    res = run(BLG, fetch_prices=False)
+    bags = res.po_lines[res.po_lines["item"] == "BAG-25KG"]
+    moq = float(res.quotes[(res.quotes["item"] == "BAG-25KG") & (res.quotes["rank"] == 1)].iloc[0]["moq_qty"])
+    assert bags["awarded_moq_qty"].unique().tolist() == pytest.approx([moq])
+    assert bags["below_awarded_moq"].all()                 # every weekly order is far under it
+    note = next(n for n in res.sourcing_notes if n.startswith("BAG-25KG:"))
+    assert "below the awarded supplier's MOQ" in note and "next vendor" in note
+    assert "covers 17% of it" in note
+    # glucose buys in 250 t lots, well over its awarded 2-week MOQ, so it is not flagged
+    glucose = res.po_lines[res.po_lines["item"] == "GLUCOSE"]
+    assert not glucose["below_awarded_moq"].any()
+    # the nutrients sit a couple of percent under a one-week MOQ: lot rounding, not a
+    # sourcing problem, so the line is flagged in the data but not raised as a note
+    assert res.po_lines[res.po_lines["item"] == "NH3"]["below_awarded_moq"].any()
+    assert not any(n.startswith("NH3:") for n in res.sourcing_notes)

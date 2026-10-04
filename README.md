@@ -22,7 +22,7 @@ and **the demand is mock**.
 | **M3** | Purchasing: PO schedule, feedstock spend vs. FRED history, price scenarios | ✅ done |
 | **M4** | RCCP: batch starts vs. reactors, pull-forward leveling | ✅ done (fermenters; DSP throughput still unsourced) |
 | **M5** | Static chart report (local HTML: S&OP, MPS, RCCP, purchasing, feedstock cost) | ✅ done (public version: see status) |
-| **M6** | Sourcing: supplier master, should-cost, RFQ scoring and award, TCO, supplier scorecard, single/dual source and forward-buy scenarios | ✅ done (Odoo mirror unverified) |
+| **M6** | Sourcing: supplier master, should-cost, RFQ scoring and award, TCO, supplier scorecard, single/dual source and forward-buy scenarios | ✅ done (Odoo mirror verified) |
 | **ERP** | Case 1 in Odoo 19 Community: BOM → reorder rules → MO/PO, compared with the engine | ✅ built |
 
 Details: [`docs/status.md`](docs/status.md) · map of all docs: [`INDEX.md`](INDEX.md).
@@ -106,7 +106,12 @@ make odoo-demo    # reset → up → init → seed → run scheduler → compare
 
 Odoo covers the transaction flow: products, per-batch BOMs, vendor price lists (one line
 per bidder, the awarded supplier first), the RFQ round as draft purchase orders,
-reorder rules, replenishment runs, and the MOs and POs they generate. S&OP, the MPS
+reorder rules, replenishment runs, and the MOs and POs they generate. Two things the
+sourcing build only learned by running it: a **draft RFQ already counts as replenishment
+in progress**, so a bid round seeded before the scheduler stops it raising any PO at
+all; and **vendor selection respects the minimum order quantity**, so awarding the
+cheapest bid to a supplier asking six weeks of cover means weekly orders quietly go to
+the runner-up instead. S&OP, the MPS
 and capacity stay in the Python engine, because they're Enterprise-only in Odoo
 (ADR 0009). The [comparison](docs/odoo/comparison.md) shows the key difference:
 reorder rules replenish the whole 26-week window **now**, while the engine's MRP

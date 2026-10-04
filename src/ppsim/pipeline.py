@@ -163,6 +163,10 @@ def run(
         result.po_lines = purch_mod.po_schedule(cfg, records, vendor_of)
         if result.price_scenarios is not None:
             result.po_lines, result.spend, result.spend_excluded = purch_mod.spend(result.po_lines, result.price_scenarios)
+        if cfg.sourcing and result.awards is not None:
+            # does the plan actually reach the awarded supplier's minimum order quantity?
+            result.po_lines, moq = src_mod.check_moq(result.po_lines, result.quotes, result.awards)
+            result.sourcing_notes += moq
     return result
 
 

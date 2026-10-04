@@ -31,11 +31,19 @@ and the Odoo demo (PR #1–#5). M6 is on `m6-sourcing`, waiting for review and p
   of supply at risk (no backfill assumed), the safety-stock cost of lead-time variance,
   and forward buy vs spot passed through at the material share of the build-up. Glucose
   forward buy breaks even at $0.480/kg against a p50 of $0.434 and a p90 of $0.599.
-- **M6g Odoo mirror** (ADR 0016): price-list lines per bidder with the awarded supplier
-  at `sequence` 1, and the RFQ round as draft purchase orders marked
-  `origin = "RFQ round [mock]"`, excluded from the plan comparison. **Not verified
-  against a running instance** — Docker was unavailable; the payload builders are pure
-  functions and are tested.
+- **M6g Odoo mirror** (ADR 0016), **verified against Odoo 19.0 Community on 2026-10-04**:
+  24 price-list lines (one per bidder) with the awarded supplier at `sequence` 1, and the
+  RFQ round as 12 draft quotations created after the planning run. `make odoo-demo` now
+  ends with `make odoo-rfq`. The run found two real bugs, both fixed:
+  1. a **draft RFQ counts as replenishment in progress**, so seeding the bid round
+     before the scheduler suppressed every PO (glucose forecast +7.2 Mkg, every
+     `qty_to_order` 0, no error logged) and the comparison went to -100% per item;
+  2. Odoo's **vendor selection respects the MOQ**, so the bag award to a supplier asking
+     six weeks of cover was skipped on 13 of 22 weekly orders and the runner-up supplied
+     them. The engine was wrong to assume the award held: `sourcing.check_moq` now flags
+     it, and `compare_plans.py` prints an award-honoured column.
+  Verified result: 128 planned PO lines, the comparison back to -7% to -9% per item, and
+  6 of 7 items buying from the awarded supplier.
 - **Report:** 5 new charts (RFQ scorecard, should-cost vs quotes, TCO stack, delivered
   vs quoted OTIF, forward buy vs spot) and 2 tiles. 13 charts total.
 - **Also:** 58 new registry rows — 57 mock and one cited (`service_level_z`), 128 total
@@ -47,8 +55,8 @@ and the Odoo demo (PR #1–#5). M6 is on `m6-sourcing`, waiting for review and p
 
 ## Next 3 steps
 1. With the user's OK: pre-push check, push `m6-sourcing`, PR #6, merge.
-2. **Verify M6g:** `make odoo-demo`, then regenerate `docs/odoo/comparison.md` and the
-   screenshots (add one of the RFQ round and one of a multi-vendor price list).
+2. Screenshots for M6 (the RFQ round, a multi-vendor price list) — the stack is seeded
+   and running, so this is a browser job.
 3. Public-facing report variant: publish charts with mock/cited data plus derived cost
    (with IMF citation), without the raw price series. Decide hosting with the user first.
 
