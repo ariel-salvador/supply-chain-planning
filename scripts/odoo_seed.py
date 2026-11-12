@@ -6,10 +6,15 @@ Everything comes from the product YAML and the assumptions registry (cited or mo
 company, vendor and customer names are fictional and say so. Creates:
 
   company name + replenishment horizon, units of measure (batch / lot units),
-  products with routes (manufacture / buy), vendor price lists (lead time, min qty),
+  products with routes (manufacture / buy), vendor price lists (one per bidder, with
+  quoted price, lead time and minimum quantity, the awarded supplier first),
   bills of materials per batch, reorder rules, opening stock, open orders
   (WIP manufacturing orders and open purchase orders), and weekly demand as
   confirmed sales orders.
+
+The RFQ round is **not** seeded here: a draft purchase order counts as replenishment
+already in progress, so seeding one at the horizon volume stops the reorder rules from
+ordering anything. It is created by scripts/odoo_sourcing.py after the planning run.
 
 Dates: engine week 0 maps to the Monday after today, so Odoo's "today"-based
 scheduler sees the same relative horizon. The mapping is written to
@@ -35,6 +40,27 @@ from ppsim.registry import load_registry  # noqa: E402
 
 UOM_XMLID = {"kg": "uom.product_uom_kgm", "unit": "uom.product_uom_unit"}
 META = ROOT / "outputs" / "odoo" / "seed_meta.json"
+def supplier_prices(cfg, res, days_per_week: float, items):
+    """Vendor price list rows: one per (item, bidder), awarded supplier first.
+
+    Odoo replenishes from the lowest-``sequence`` ``product.supplierinfo`` line, so
+    putting the awarded supplier at sequence 1 makes the RFQ award the default source.
+    Pure function: returns (item, supplier id, vals) with no Odoo call, so it can be
+    tested offline.
+    """
+    if res.quotes is None or res.awards is None:
+        return []
+    out = []
+    for iid in items:
+        bids = res.quotes[res.quotes["item"] == iid].sort_values("rank")
+        for _, q in bids.iterrows():
+            out.append((iid, q["supplier"], {
+                "price": round(float(q["quoted_usd_per_uom"]), 4),
+                "min_qty": round(float(q["moq_qty"]), 4),
+                "delay": int(round(float(q["lead_time_weeks"]) * days_per_week)),
+                "sequence": int(q["rank"]),
+            }))
+    return out
 
 
 def anchor_monday(today: dt.date) -> dt.date:
@@ -59,7 +85,7 @@ def main() -> int:
 
     root = cfg.demand.item
     planned = bom_mod.reachable(root, cfg.bom)
-    lines = [b for b in cfg.bom if b.parent in planned]
+    bom_lines = [b for b in cfg.bom if b.parent in planned]
     anchor = anchor_monday(dt.date.today())
     week = lambda t: anchor + dt.timedelta(days=int(days_per_week) * t)  # noqa: E731
 
@@ -84,9 +110,13 @@ def main() -> int:
 
     # --- partners -----------------------------------------------------------
     partner = {}
-    for p in list(cfg.vendors.values()) + list(cfg.customers.values()):
+    bidders = cfg.suppliers or cfg.vendors          # the supplier master, or the M3 vendor list
+    for p in list(bidders.values()) + list(cfg.customers.values()):
         partner[p.id] = o.create("res.partner", {"name": p.name, "is_company": True})
-    vendor_of = {i: v.id for v in cfg.vendors.values() for i in v.supplies}
+    if res.awards is not None:
+        vendor_of = {i: r["awarded_to"] for i, r in res.awards.iterrows()}   # the RFQ award decides
+    else:
+        vendor_of = {i: v.id for v in bidders.values() for i in v.supplies}
     customer = next(iter(cfg.customers.values())).id
 
     # --- products -----------------------------------------------------------
@@ -121,21 +151,29 @@ def main() -> int:
         elif lot.multiple > 1:
             repl_uom[iid] = lot_uom(f"{iid} batch ({lot.multiple:,.0f} {it.uom})", it.uom, lot.multiple)
 
-        if buy:
-            if iid not in vendor_of:
-                raise SystemExit(f"{iid}: no vendor supplies this purchased item")
-            o.create("product.supplierinfo", {
-                "partner_id": partner[vendor_of[iid]],
-                "product_tmpl_id": tmpl[iid],
-                "min_qty": lot.quantity if lot.rule == "fixed_order_quantity" else lot.minimum,
-                "delay": int(it.planning.lead_time * days_per_week),
-            })
+        if buy and iid not in vendor_of:
+            raise SystemExit(f"{iid}: no vendor supplies this purchased item")
+
+    # --- vendor price lists (every bidder; the awarded supplier at sequence 1) ---
+    quoted = supplier_prices(cfg, res, days_per_week, [i for i in planned if cfg.items[i].type == "purchased"])
+    for iid, sid, vals in quoted:
+        o.create("product.supplierinfo", {"partner_id": partner[sid], "product_tmpl_id": tmpl[iid], **vals})
+    for iid in [i for i in planned if cfg.items[i].type == "purchased"]:
+        if any(q[0] == iid for q in quoted):
+            continue                                 # already has quoted price-list lines
+        lot = cfg.items[iid].planning.lot_sizing
+        o.create("product.supplierinfo", {
+            "partner_id": partner[vendor_of[iid]],
+            "product_tmpl_id": tmpl[iid],
+            "min_qty": lot.quantity if lot.rule == "fixed_order_quantity" else lot.minimum,
+            "delay": int(cfg.items[iid].planning.lead_time * days_per_week),
+        })
 
     # --- bills of materials (one per manufactured item, per batch) ----------
     for parent in [i for i in planned if cfg.items[i].type != "purchased"]:
         it = cfg.items[parent]
         base = it.batch_size or 1.0
-        comps = [b for b in lines if b.parent == parent]
+        comps = [b for b in bom_lines if b.parent == parent]
         o.create("mrp.bom", {
             "product_tmpl_id": tmpl[parent],
             "product_qty": base,
@@ -216,6 +254,8 @@ def main() -> int:
 
     META.parent.mkdir(parents=True, exist_ok=True)
     META.write_text(json.dumps({
+        "supplierinfo_rows": len(quoted),
+        "awarded_supplier": {i: vendor_of[i] for i in sorted(vendor_of)},
         "config": str(args.config),
         "anchor_week0": anchor.isoformat(),
         "engine_week0": cfg.start,
@@ -223,8 +263,8 @@ def main() -> int:
         "horizon_weeks": cfg.horizon,
         "products": {i: prod[i] for i in planned},
     }, indent=2))
-    print(f"seeded {len(planned)} products, {len(lines)} BOM lines, {len(weekly)} weekly sales orders; "
-          f"engine week 0 ({cfg.start}) -> Odoo {anchor}")
+    print(f"seeded {len(planned)} products, {len(bom_lines)} BOM lines, {len(quoted)} vendor price-list "
+          f"lines, {len(weekly)} weekly sales orders; engine week 0 ({cfg.start}) -> Odoo {anchor}")
     return 0
 
 

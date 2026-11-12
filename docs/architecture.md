@@ -19,8 +19,10 @@ FRED CSV ──(scripts/fetch_data.py, ppsim.fred)──► data/raw/ ──► 
                                                                                     │
 assumptions.csv ─► config loader (validates citations) ─► ProductConfig             │
                                                              │                      │
-                     mock demand ─► S&OP (M2) ─► MPS (M2) ─► MRP (M1) ─► POs (M3) ─► RCCP (M4)
-                                                             │           │           │
+                     mock demand ─► S&OP (M2) ─► MPS (M2) ─► MRP (M1) ─► RCCP (M4)
+                                                             │           │
+                        supplier master ─► should-cost ─► RFQ ─► award ─► POs (M3/M6)
+                                 (M6)      (prices ▲)                     │
                                                              └──── outputs/*.csv + manifest.json ──► reports/
 ```
 
@@ -36,6 +38,11 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 - **Built (M5):** `reports/build_report.py` renders a self-contained HTML report
   (dependency-free SVG charts with tooltips, table views, light/dark) from engine
   results. It stays local because it embeds IMF-derived prices (ADR 0003).
+- **Built (M6):** sourcing. A supplier master of bidders per purchased item, a
+  bottom-up should-cost target, an RFQ scored on price / lead time / quality / risk with
+  a written award rationale, total cost of ownership by incoterm, a simulated supplier
+  scorecard with PPV, and single-vs-dual-source and forward-buy scenarios
+  (ADR 0012–0016). The award decides which supplier the POs go to.
 - **Planned:** DSP capacity once sourced; a public report variant without raw price series.
 
 ## Engine modules
@@ -48,7 +55,9 @@ assumptions.csv ─► config loader (validates citations) ─► ProductConfig 
 | `sop.py` | week↔month weights, aggregation/disaggregation, chase/level plan with capacity |
 | `mps.py` | projected demand (DTF), planning-fence catch-up (PTF), PAB, ATP, mock order book |
 | `rccp.py` | bill of resources, load vs capacity per bucket, pull-forward leveling |
-| `purchasing.py` | PO schedule (vendor × release week), spend from linked prices, p10/p50/p90 scenarios |
+| `purchasing.py` | PO schedule (supplier × release week), spend from linked prices, p10/p50/p90 scenarios |
+| `sourcing.py` | planned usage, should-cost build-up, quote table, range-normalised RFQ scoring, award + rationale, TCO by incoterm |
+| `supplier_perf.py` | simulated delivery history, scorecard (OTIF, fill rate, PPV), safety-stock cost, single vs dual source, forward buy vs spot |
 | `bom.py` | low-level codes, cycle detection, explosion, summed requirements |
 | `mrp.py` | netting, lot sizing (LFL / FOQ / POQ / min / multiple), safety stock, lead-time offset, past-due |
 | `fred.py` | FRED CSV download + cache with retrieval metadata |

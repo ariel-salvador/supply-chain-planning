@@ -234,3 +234,195 @@ rccp:
 
 purchasing:                   # M3: PO schedule + spend from FRED-linked prices
   price_window_years: mock_price_window_years
+
+# ---------------------------------------------------------------------------
+# M6 sourcing. Supplier master = three bidders per material family, built from
+# three MOCK supplier archetypes (incumbent / low-cost / premium). Quotes are
+# simulated as a price index on the should-cost target price (ADR 0013), so no
+# dollar quote is invented per supplier. All suppliers are FICTIONAL.
+# ---------------------------------------------------------------------------
+suppliers:
+  - id: s_sugar_a
+    name: "Example Sugar Supply Co. (fictional)"
+    fictional: true
+    archetype: incumbent
+    supplies: [GLUCOSE, SUCROSE]
+    lane: domestic
+    incoterm: DAP
+    risk_tier: low
+    quote: &q_incumbent
+      price_index: mock_sup_inc_price_index
+      lead_time_delta: mock_sup_inc_lead_time_delta
+      moq_weeks: mock_sup_inc_moq_weeks
+      quality_ppm: mock_sup_inc_quality_ppm
+      otif: mock_sup_inc_otif
+      lead_time_sigma: mock_sup_inc_lt_sigma
+      short_ship_rate: mock_sup_inc_short_ship_rate
+
+  - id: s_sugar_b
+    name: "Example Cane Traders Ltd. (fictional)"
+    fictional: true
+    archetype: low-cost
+    supplies: [GLUCOSE, SUCROSE]
+    lane: import
+    incoterm: FOB
+    risk_tier: high
+    quote: &q_low_cost
+      price_index: mock_sup_low_price_index
+      lead_time_delta: mock_sup_low_lead_time_delta
+      moq_weeks: mock_sup_low_moq_weeks
+      quality_ppm: mock_sup_low_quality_ppm
+      otif: mock_sup_low_otif
+      lead_time_sigma: mock_sup_low_lt_sigma
+      short_ship_rate: mock_sup_low_short_ship_rate
+
+  - id: s_sugar_c
+    name: "Example Dextrose Partners LLC (fictional)"
+    fictional: true
+    archetype: premium
+    supplies: [GLUCOSE, SUCROSE]
+    lane: domestic
+    incoterm: DDP
+    risk_tier: low
+    quote: &q_premium
+      price_index: mock_sup_prem_price_index
+      lead_time_delta: mock_sup_prem_lead_time_delta
+      moq_weeks: mock_sup_prem_moq_weeks
+      quality_ppm: mock_sup_prem_quality_ppm
+      otif: mock_sup_prem_otif
+      lead_time_sigma: mock_sup_prem_lt_sigma
+      short_ship_rate: mock_sup_prem_short_ship_rate
+
+  - id: s_nutr_a
+    name: "Example Nutrients Ltd. (fictional)"
+    fictional: true
+    archetype: incumbent
+    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
+    lane: domestic
+    incoterm: DAP
+    risk_tier: medium
+    quote: *q_incumbent
+
+  - id: s_nutr_b
+    name: "Example Agri Salts Co. (fictional)"
+    fictional: true
+    archetype: low-cost
+    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
+    lane: import
+    incoterm: FOB
+    risk_tier: high
+    quote:                     # the low-cost archetype, with a better record on two terms
+      <<: *q_low_cost
+      quality_ppm: mock_sup_nutr_b_quality_ppm
+      lead_time_delta: mock_sup_nutr_b_lead_time_delta
+
+  - id: s_nutr_c
+    name: "Example Pharma Salts GmbH (fictional)"
+    fictional: true
+    archetype: premium
+    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
+    lane: import
+    incoterm: DDP
+    risk_tier: low
+    quote: *q_premium
+
+  - id: s_pack_a
+    name: "Example Packaging Inc. (fictional)"
+    fictional: true
+    archetype: incumbent
+    supplies: [BAG-25KG]
+    lane: domestic
+    incoterm: DAP
+    risk_tier: low
+    quote: *q_incumbent
+
+  - id: s_pack_b
+    name: "Example Fibre Sacks Co. (fictional)"
+    fictional: true
+    archetype: low-cost
+    supplies: [BAG-25KG]
+    lane: import
+    incoterm: FOB
+    risk_tier: medium
+    quote:                     # cheap, fast and nearly as good on quality: a credible bid
+      <<: *q_low_cost
+      quality_ppm: mock_sup_pack_b_quality_ppm
+      lead_time_delta: mock_sup_pack_b_lead_time_delta
+
+  - id: s_pack_c
+    name: "Example Barrier Packaging Co. (fictional)"
+    fictional: true
+    archetype: premium
+    supplies: [BAG-25KG]
+    lane: domestic
+    incoterm: DDP
+    risk_tier: low
+    quote: *q_premium
+
+  - id: s_memb_a
+    name: "Example Membranes GmbH (fictional)"
+    fictional: true
+    archetype: incumbent
+    supplies: [UFDF-MEMBRANE-SET]
+    lane: import
+    incoterm: DAP
+    risk_tier: medium
+    quote: *q_incumbent
+
+  - id: s_memb_b
+    name: "Example Filtration Supply Co. (fictional)"
+    fictional: true
+    archetype: low-cost
+    supplies: [UFDF-MEMBRANE-SET]
+    lane: import
+    incoterm: FOB
+    risk_tier: high
+    quote: *q_low_cost
+
+  - id: s_memb_c
+    name: "Example Validated Filtration AG (fictional)"
+    fictional: true
+    archetype: premium
+    supplies: [UFDF-MEMBRANE-SET]
+    lane: import
+    incoterm: DDP
+    risk_tier: low
+    quote: *q_premium
+
+sourcing:
+  weights:                     # RFQ award weights; must sum to 1 (ADR 0013)
+    price: mock_rfq_weight_price
+    lead_time: mock_rfq_weight_lead_time
+    quality: mock_rfq_weight_quality
+    risk: mock_rfq_weight_risk
+  risk_scores:                 # risk tier -> score (1 = lowest risk)
+    low: mock_risk_score_low
+    medium: mock_risk_score_medium
+    high: mock_risk_score_high
+  lanes:                       # inbound freight and duty as a share of ex-works cost
+    domestic: {freight_pct: mock_freight_pct_domestic, duty_pct: mock_duty_pct_domestic}
+    import: {freight_pct: mock_freight_pct_import, duty_pct: mock_duty_pct_import}
+  should_cost:                 # bottom-up target price (ADR 0014)
+    conversion_pct: mock_conversion_pct
+    margin_pct: mock_supplier_margin_pct
+    material_base:             # used when no public price index is linked to the item
+      GLUCOSE: mock_base_glucose
+      SUCROSE: mock_base_sucrose
+      NH3: mock_base_nh3
+      AMSULF: mock_base_amsulf
+      KPHOS: mock_base_kphos
+      MGSULF: mock_base_mgsulf
+      CACL2: mock_base_cacl2
+      BAG-25KG: mock_base_bag25
+      UFDF-MEMBRANE-SET: mock_base_membrane_set
+  carrying_cost_rate: mock_carrying_cost_rate
+  quality_cost_multiple: mock_quality_cost_multiple
+  scorecard_periods: mock_scorecard_periods
+  price_drift_cv: mock_price_drift_cv
+  short_ship_fraction: mock_short_ship_fraction
+  dual_source_split: mock_dual_source_split
+  disruption_prob_base: mock_disruption_prob_base
+  disruption_weeks: mock_disruption_weeks
+  forward_buy_weeks: mock_forward_buy_weeks
+  service_level_z: service_level_z
+  seed: 7                      # RNG seed for the simulated delivery history (structural)

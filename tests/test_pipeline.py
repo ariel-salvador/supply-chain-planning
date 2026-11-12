@@ -84,7 +84,10 @@ def test_po_schedule_and_spend(fake_prices):
     res = run(BLG)
     po = res.po_lines
     # every purchased item in the active BOM is ordered from its (fictional) vendor
-    assert set(po["vendor"]).issubset({v.name for v in res.cfg.vendors.values()})
+    assert set(po["vendor"]).issubset({s.name for s in res.cfg.suppliers.values()})
+    # POs go to the supplier the RFQ awarded (M6), not to a fixed vendor list
+    awarded = {i: r["awarded_name"] for i, r in res.awards.iterrows()}
+    assert all(awarded[r.item] == r.vendor for r in po.itertuples())
     assert (po["due_bucket"] - po["order_bucket"] >= 0).all()
     # PO quantities equal MRP planned releases for each purchased item
     for item, q in po.groupby("item")["qty"].sum().items():

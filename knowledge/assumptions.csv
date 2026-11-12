@@ -70,3 +70,60 @@ mock_packaging_lead_time,Bag purchase lead time,2,week,,,mock planning assumptio
 mock_membrane_lead_time,Membrane set purchase lead time,4,week,,,mock planning assumption,,,low,mock,blg_whey_protein
 mock_rccp_max_pull_forward,Max weeks a fermentation batch may be pulled earlier when leveling,2,week,,,mock planning policy,,,low,mock,blg_whey_protein
 mock_price_window_years,Trailing window for price scenarios,10,year,,,mock planning policy,,,low,mock,blg_whey_protein
+mock_sup_inc_price_index,Incumbent supplier quote as a multiple of the should-cost target price,1.00,fraction,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_inc_lead_time_delta,Incumbent supplier lead time vs the item's planning lead time,0,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_inc_moq_weeks,Incumbent supplier minimum order quantity in weeks of planned usage,2,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_inc_quality_ppm,Incumbent supplier defect rate,1200,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
+mock_sup_inc_otif,Incumbent supplier on-time in-full rate,0.94,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_inc_lt_sigma,Incumbent supplier lead time standard deviation,0.4,week,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_inc_short_ship_rate,Incumbent supplier share of deliveries short-shipped,0.04,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_low_price_index,Low-cost supplier quote as a multiple of the should-cost target price,0.91,fraction,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_low_lead_time_delta,Low-cost supplier lead time vs the item's planning lead time,3,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_low_moq_weeks,Low-cost supplier minimum order quantity in weeks of planned usage,6,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_low_quality_ppm,Low-cost supplier defect rate,4500,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
+mock_sup_low_otif,Low-cost supplier on-time in-full rate,0.82,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_low_lt_sigma,Low-cost supplier lead time standard deviation,1.5,week,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_low_short_ship_rate,Low-cost supplier share of deliveries short-shipped,0.11,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_prem_price_index,Premium supplier quote as a multiple of the should-cost target price,1.09,fraction,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_prem_lead_time_delta,Premium supplier lead time vs the item's planning lead time,-1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_prem_moq_weeks,Premium supplier minimum order quantity in weeks of planned usage,1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_prem_quality_ppm,Premium supplier defect rate,300,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
+mock_sup_prem_otif,Premium supplier on-time in-full rate,0.98,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_prem_lt_sigma,Premium supplier lead time standard deviation,0.2,week,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_sup_prem_short_ship_rate,Premium supplier share of deliveries short-shipped,0.01,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_freight_pct_domestic,Inbound freight on a domestic lane as a share of ex-works cost,0.04,fraction,,,mock landed-cost assumption,,,low,mock,blg_whey_protein
+mock_duty_pct_domestic,Import duty on a domestic lane,0,fraction,,,mock landed-cost assumption,,,low,mock,blg_whey_protein
+mock_freight_pct_import,Inbound freight on an import lane as a share of ex-works cost,0.11,fraction,,,mock landed-cost assumption,,,low,mock,blg_whey_protein
+mock_duty_pct_import,Import duty on an import lane,0.035,fraction,,,mock landed-cost assumption,,,low,mock,blg_whey_protein
+mock_risk_score_low,Supply risk score for a low-risk supplier,0.90,score,0,1,mock risk rating,,,low,mock,blg_whey_protein
+mock_risk_score_medium,Supply risk score for a medium-risk supplier,0.60,score,0,1,mock risk rating,,,low,mock,blg_whey_protein
+mock_risk_score_high,Supply risk score for a high-risk supplier,0.30,score,0,1,mock risk rating,,,low,mock,blg_whey_protein
+mock_conversion_pct,Should-cost conversion step as a share of material cost,0.22,fraction,,,mock should-cost build-up (ADR 0014),,,low,mock,blg_whey_protein
+mock_supplier_margin_pct,Should-cost supplier SG&A and margin as a share of landed cost,0.12,fraction,,,mock should-cost build-up (ADR 0014),,,low,mock,blg_whey_protein
+mock_base_glucose,Glucose material cost used when the corn index is unavailable,0.60,USD/kg,,,mock should-cost fallback base,,,low,mock,blg_whey_protein
+mock_base_sucrose,Sucrose material cost used when the sugar index is unavailable,0.80,USD/kg,,,mock should-cost fallback base,,,low,mock,blg_whey_protein
+mock_base_nh3,Ammonia material cost,0.70,USD/kg,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_amsulf,Ammonium sulfate material cost,0.35,USD/kg,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_kphos,Potassium phosphate material cost,1.60,USD/kg,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_mgsulf,Magnesium sulfate material cost,0.30,USD/kg,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_cacl2,Calcium chloride material cost,0.40,USD/kg,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_bag25,25 kg multiwall bag material cost,1.10,USD/unit,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_base_membrane_set,UF/DF membrane set material cost,9000,USD/set,,,mock should-cost base (no public series linked),,,low,mock,blg_whey_protein
+mock_rfq_weight_price,RFQ award weight on price,0.45,fraction,,,mock sourcing policy (ADR 0013),,,low,mock,blg_whey_protein
+mock_rfq_weight_lead_time,RFQ award weight on lead time,0.15,fraction,,,mock sourcing policy (ADR 0013),,,low,mock,blg_whey_protein
+mock_rfq_weight_quality,RFQ award weight on quality,0.25,fraction,,,mock sourcing policy (ADR 0013),,,low,mock,blg_whey_protein
+mock_rfq_weight_risk,RFQ award weight on supply risk,0.15,fraction,,,mock sourcing policy (ADR 0013),,,low,mock,blg_whey_protein
+mock_carrying_cost_rate,Annual inventory carrying cost rate,0.20,1/year,,,mock finance policy,,,low,mock,blg_whey_protein
+mock_quality_cost_multiple,Cost of a rejected unit as a multiple of its purchase price,3,multiple,,,mock quality-cost assumption,,,low,mock,blg_whey_protein
+mock_scorecard_periods,Delivery periods simulated for the supplier scorecard,12,period,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_price_drift_cv,Period-to-period variation of invoiced price around standard cost,0.06,fraction,,,mock purchase price variance assumption,,,low,mock,blg_whey_protein
+mock_short_ship_fraction,Share of the ordered quantity received on a short shipment,0.85,fraction,,,mock supplier performance record,,,low,mock,blg_whey_protein
+mock_dual_source_split,Share of volume awarded to the runner-up when dual sourcing,0.30,fraction,,,mock sourcing policy,,,low,mock,blg_whey_protein
+mock_disruption_prob_base,Annual supply disruption probability at zero risk score,0.50,1/year,,,mock risk model (ADR 0015),,,low,mock,blg_whey_protein
+mock_disruption_weeks,Weeks of supply lost in a disruption,6,week,,,mock risk model (ADR 0015),,,low,mock,blg_whey_protein
+mock_forward_buy_weeks,Coverage bought ahead in the forward-buy scenario,13,week,,,mock sourcing policy,,,low,mock,blg_whey_protein
+service_level_z,Standard normal quantile at a 95 percent service level,1.645,z,,,definition: standard normal quantile at 95 percent cumulative probability,,2026-10-04,high,cited,blg_whey_protein
+mock_sup_nutr_b_quality_ppm,Low-cost nutrient supplier defect rate (better than the archetype),1500,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
+mock_sup_nutr_b_lead_time_delta,Low-cost nutrient supplier lead time vs the item's planning lead time,1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_sup_pack_b_quality_ppm,Low-cost packaging supplier defect rate (near the incumbent),1300,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
+mock_sup_pack_b_lead_time_delta,Low-cost packaging supplier lead time vs the item's planning lead time,-1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein

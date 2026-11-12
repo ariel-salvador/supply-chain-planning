@@ -37,6 +37,11 @@ def week_short(label: str) -> str:
     return start.strftime("%b %d")
 
 
+def short_name(name: str) -> str:
+    """Chart labels: drop the "(fictional)" marker, which the subtitle already states."""
+    return name.replace(" (fictional)", "")
+
+
 def money(v: float) -> str:
     return f"${v / 1e6:,.2f}M" if abs(v) >= 1e5 else f"${v:,.0f}"
 
@@ -172,6 +177,90 @@ def main(argv=None) -> int:
     if purch_row:
         rows.append(purch_row)
 
+    # ---- sourcing (M6) ----------------------------------------------------
+    if res.awards is not None and len(res.awards):
+        aw, q, tc = res.awards, res.quotes, res.tco
+        item = priced[0] if priced else str(aw.index[0])
+        uom = cfg.items[item].uom
+        bids = q[q["item"] == item].sort_values("rank")
+        names = [short_name(n) for n in bids["supplier_name"]]
+        w = cfg.sourcing.weights
+        winners = aw["awarded_name"].nunique()
+        tiles.append({
+            "label": f"RFQ awards ({len(aw)} items, {len(cfg.suppliers)} suppliers)",
+            "value": f"{winners} different winner{'s' if winners > 1 else ''}",
+            "note": f"weights: price {w['price']:.0%}, quality {w['quality']:.0%}, "
+                    f"lead time {w['lead_time']:.0%}, risk {w['risk']:.0%} · quotes are MOCK",
+        })
+        tiles.append({
+            "label": "Items where the lowest price is not the lowest total cost",
+            "value": f"{len(res.tco_notes)} / {len(aw)}",
+            "status": ["bad", "price alone would mis-award"] if res.tco_notes else ["good", "price and TCO agree"],
+            "note": "freight and duty by incoterm, MOQ carrying cost, cost of defects",
+        })
+        rows.append([
+            {"title": f"RFQ scorecard: {item}", "sub": "weighted score by criterion, stacked to the total · "
+                      "each criterion range-normalised inside the bid set (best 1, worst 0) · quotes are MOCK",
+             "x": names, "xName": "Bidder", "unit": "score", "digits": 3, "stacked": True,
+             "series": [
+                 {"name": f"Price ({w['price']:.0%})", "kind": "bar", "slot": 1, "values": vals(bids["price_score"] * w["price"])},
+                 {"name": f"Quality ({w['quality']:.0%})", "kind": "bar", "slot": 2, "values": vals(bids["quality_score"] * w["quality"])},
+                 {"name": f"Lead time ({w['lead_time']:.0%})", "kind": "bar", "slot": 3, "values": vals(bids["lead_time_score"] * w["lead_time"])},
+                 {"name": f"Risk ({w['risk']:.0%})", "kind": "bar", "slot": 4, "values": vals(bids["risk_score_norm"] * w["risk"])},
+             ]},
+            {"title": f"Should-cost vs quotes: {item}", "sub": f"USD per {uom} · target = material "
+                      f"({res.should_cost.loc[item, 'material_basis']}) + conversion + margin [mock shares]",
+             "x": names, "xName": "Bidder", "unit": f"USD/{uom}", "digits": 3,
+             "series": [
+                 {"name": "Quoted price", "kind": "bar", "slot": 1, "values": vals(bids["quoted_usd_per_uom"])},
+                 {"name": "Should-cost target", "kind": "ref", "slot": "ref", "values": vals([res.should_cost.loc[item, "target_price_usd"]] * len(bids))},
+             ]},
+        ])
+        t_item = tc[tc["item"] == item].set_index("supplier").reindex(bids["supplier"])
+        sc_rows = []
+        if res.scorecard is not None and len(res.scorecard):
+            sc = res.scorecard.reset_index()
+            sc_rows.append({
+                "title": "Supplier scorecard: delivered vs quoted OTIF",
+                "sub": f"{cfg.sourcing.scorecard_periods} simulated delivery periods per awarded supplier · MOCK performance",
+                "x": list(sc["item"]), "xName": "Item", "unit": "share", "digits": 3,
+                "series": [
+                    {"name": "OTIF delivered", "kind": "bar", "slot": 1, "values": vals(sc["otif_pct"])},
+                    {"name": "On time", "kind": "bar", "slot": 3, "values": vals(sc["on_time_pct"])},
+                    {"name": "Quoted OTIF", "kind": "ref", "slot": "ref", "values": vals(sc["quoted_otif_pct"])},
+                ],
+            })
+        rows.append([
+            {"title": f"Total cost of ownership: {item}", "sub": f"USD per {uom}, stacked · "
+                      "quote plus what the quote does not say: freight and duty by incoterm, "
+                      "carrying cost of the MOQ, cost of defects",
+             "x": [f"{n} ({i})" for n, i in zip(names, t_item["incoterm"])], "xName": "Bidder", "unit": f"USD/{uom}",
+             "digits": 3, "stacked": True,
+             "series": [
+                 {"name": "Unit price", "kind": "bar", "slot": 1, "values": vals(t_item["unit_price_usd"])},
+                 {"name": "Freight", "kind": "bar", "slot": 2, "values": vals(t_item["freight_usd"])},
+                 {"name": "Duty", "kind": "bar", "slot": 3, "values": vals(t_item["duty_usd"])},
+                 {"name": "MOQ carrying", "kind": "bar", "slot": 4, "values": vals(t_item["moq_carrying_usd"])},
+                 {"name": "Defect cost", "kind": "bar", "slot": 5, "values": vals(t_item["quality_cost_usd"])},
+             ]},
+        ] + sc_rows)
+        if res.forward_buy is not None and len(res.forward_buy):
+            fb = res.forward_buy[res.forward_buy["item"] == item]
+            if len(fb):
+                rows.append([{
+                    "title": f"Forward buy vs spot: {item}",
+                    "sub": f"USD per {uom} over {int(fb['weeks_covered'].iloc[0])} weeks of cover · forward = "
+                           "today's quote plus carrying cost · spot passes each price scenario through at the "
+                           "material share of the build-up",
+                    "x": [r.replace("_", " ") for r in fb["scenario"]], "xName": "Price scenario",
+                    "unit": f"USD/{uom}", "digits": 3,
+                    "series": [
+                        {"name": "Spot", "kind": "bar", "slot": 2, "values": vals(fb["spot_usd_per_uom"])},
+                        {"name": "Forward buy (breakeven)", "kind": "ref", "slot": "ref", "values": vals(fb["forward_usd_per_uom"])},
+                    ],
+                    "source": IMF,
+                }])
+
     # ---- feedstock cost history -------------------------------------------
     if res.feedstock_cost is not None:
         hist = pd.DataFrame({"base": res.feedstock_cost["total"]})
@@ -198,11 +287,12 @@ def main(argv=None) -> int:
 
     data = {
         "title": cfg.name,
-        "subtitle": f"Planning report · S&OP → MPS → MRP → RCCP → purchasing · generated {dt.date.today().isoformat()}",
+        "subtitle": f"Planning report · S&OP → MPS → MRP → RCCP → purchasing → sourcing · generated {dt.date.today().isoformat()}",
         "banner": [
             ["Demand is MOCK.", "Inventory, lot sizes, reactor count and order book are mock planning assumptions."],
             ["Process parameters are cited", "(Behm et al. 2022, Humbird et al. 2011, EPA AP-42, USDA DME1)."],
             ["Prices:", "IMF via FRED. Spend and cost are feedstock-only."],
+            ["Suppliers, quotes and supplier performance are MOCK", "and fictional; commodity prices are cited."],
         ],
         "tiles": tiles,
         "rows": rows,

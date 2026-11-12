@@ -17,7 +17,7 @@ export
 DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
-.PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-demo odoo-down odoo-reset odoo-logs
+.PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-down odoo-reset odoo-logs
 
 report:              ## build outputs/report/index.html (static charts, local only)
 	$(PY) reports/build_report.py products/blg_whey_protein.yaml
@@ -47,7 +47,10 @@ odoo-run:            ## run the scheduler and export MOs / POs
 odoo-compare:        ## diff Odoo's plan against the Python MRP
 	$(PY) scripts/compare_plans.py products/blg_whey_protein.yaml
 
-odoo-demo: odoo-reset odoo-up odoo-init odoo-seed odoo-run odoo-compare  ## full rebuild
+odoo-rfq:            ## create the RFQ round (run AFTER odoo-run: drafts count as supply in progress)
+	$(PY) scripts/odoo_sourcing.py products/blg_whey_protein.yaml
+
+odoo-demo: odoo-reset odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq  ## full rebuild
 
 odoo-down:
 	$(COMPOSE) down

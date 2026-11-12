@@ -30,6 +30,26 @@ P1 blocks the next milestone, P2 improves fidelity, P3 is nice to have.
 
 - [ ] UF/DF membrane life / replacement rate: public source needed to replace the [mock] row (ADR 0008).
 - [ ] Odoo: demonstrate rolling time-phasing (short horizon + scheduler per simulated day) vs one-shot run.
+- [x] ~~Run `make odoo-demo` to verify the M6 Odoo mirror~~ **done 2026-10-04**: found
+  two real bugs (a seeded draft RFQ round suppressed every PO; the engine ignored the
+  awarded supplier's MOQ), both fixed; `docs/odoo/comparison.md` regenerated (ADR 0016).
+- [ ] Odoo screenshots for M6: the RFQ round and a multi-vendor price list (the existing
+  screenshots predate it).
+- [ ] Lot-sizing to match an awarded MOQ: bags are awarded to a supplier asking six weeks
+  of cover while the plan orders weekly. Try periods-of-supply lot sizing on BAG-25KG and
+  show the trade-off (fewer, larger orders and more inventory vs the awarded price).
+- [ ] Odoo purchase agreements (blanket orders) need the `purchase_requisition` module;
+  decide whether the demo is worth a fifth app (ADR 0016).
+- [ ] Sourcing: public data for the should-cost **conversion and margin shares**, which
+  are mock today — an industry cost structure for wet milling or for bulk salts would
+  replace two of the weakest rows in the registry (ADR 0014).
+- [ ] Sourcing: should the award feed back into planning automatically? Today an awarded
+  lead time that differs from the planning parameter is reported in `sourcing_notes` and
+  left to a human (ADR 0012). A second MRP pass would show the inventory effect.
+- [ ] Sourcing: a dual-source model **with backfill** (the alternate covers part of the
+  disrupted share), which would change the single-vs-dual conclusions (ADR 0015).
+- [ ] Sourcing: sensitivity of the award to the RFQ weights — at price 60% the packaging
+  and nutrient awards flip. Worth a small table in the report.
 
 - [ ] Public price series for ammonia, salts or packaging (e.g. USDA ERS fertilizer prices for NH3) to extend spend coverage.
 
