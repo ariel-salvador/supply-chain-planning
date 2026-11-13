@@ -92,3 +92,19 @@ def test_the_seed_does_not_create_the_rfq_round():
     demo = next(l for l in makefile.splitlines() if l.startswith("odoo-demo:"))
     assert demo.index("odoo-run") < demo.index("odoo-rfq")   # round created after the run
     assert demo.index("odoo-compare") < demo.index("odoo-rfq")
+
+
+def test_partners_are_tagged_by_role_so_the_two_lists_stay_separate(res):
+    """Odoo keeps one res.partner table; the ranks are what split Vendors from Customers."""
+    seed_py = (ROOT / "scripts" / "odoo_seed.py").read_text()
+    assert '"supplier_rank": 1' in seed_py and '"customer_rank": 1' in seed_py
+    cfg = res.cfg
+    assert not (set(cfg.suppliers) & set(cfg.customers))      # nobody is on both sides
+    assert len(cfg.customers) > 1                             # a real demand side, not one account
+    for party in list(cfg.suppliers.values()) + list(cfg.customers.values()):
+        assert "fictional" in party.name                      # public-safe rule
+
+
+def test_weekly_orders_spread_across_the_customer_list(res):
+    seed_py = (ROOT / "scripts" / "odoo_seed.py").read_text()
+    assert "customer_ids[t % len(customer_ids)]" in seed_py

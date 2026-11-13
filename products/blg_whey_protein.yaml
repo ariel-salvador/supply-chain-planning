@@ -187,9 +187,21 @@ vendors:                       # used by the Odoo demo; all FICTIONAL
     fictional: true
     supplies: [UFDF-MEMBRANE-SET]
 
-customers:                     # used by the Odoo demo; FICTIONAL
-  - id: c_demo
+customers:                     # the demand side; all FICTIONAL
+  - id: c_brands
     name: "Example Food Brands Inc. (fictional)"
+    fictional: true
+  - id: c_beverage
+    name: "Example Beverage Co. (fictional)"
+    fictional: true
+  - id: c_nutrition
+    name: "Example Sports Nutrition Ltd. (fictional)"
+    fictional: true
+  - id: c_distributor
+    name: "Example Ingredient Distributors LLC (fictional)"
+    fictional: true
+  - id: c_copacker
+    name: "Example Co-Packing Partners Inc. (fictional)"
     fictional: true
 
 variants:

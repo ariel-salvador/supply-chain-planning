@@ -6,6 +6,7 @@ Everything comes from the product YAML and the assumptions registry (cited or mo
 company, vendor and customer names are fictional and say so. Creates:
 
   company name + replenishment horizon, units of measure (batch / lot units),
+  partners tagged as vendors or customers so the two lists stay separate,
   products with routes (manufacture / buy), vendor price lists (one per bidder, with
   quoted price, lead time and minimum quantity, the awarded supplier first),
   bills of materials per batch, reorder rules, opening stock, open orders
@@ -109,15 +110,20 @@ def main() -> int:
         return o.create("uom.uom", {"name": name, "relative_uom_id": uom[base], "relative_factor": factor})
 
     # --- partners -----------------------------------------------------------
+    # Odoo keeps one res.partner table for everyone; `supplier_rank` and `customer_rank`
+    # are what make the Vendors and Customers lists (and the PO / SO dropdowns) filter
+    # to the right side. Without them every partner shows up in both.
     partner = {}
     bidders = cfg.suppliers or cfg.vendors          # the supplier master, or the M3 vendor list
-    for p in list(bidders.values()) + list(cfg.customers.values()):
-        partner[p.id] = o.create("res.partner", {"name": p.name, "is_company": True})
+    for p in bidders.values():
+        partner[p.id] = o.create("res.partner", {"name": p.name, "is_company": True, "supplier_rank": 1})
+    for p in cfg.customers.values():
+        partner[p.id] = o.create("res.partner", {"name": p.name, "is_company": True, "customer_rank": 1})
     if res.awards is not None:
         vendor_of = {i: r["awarded_to"] for i, r in res.awards.iterrows()}   # the RFQ award decides
     else:
         vendor_of = {i: v.id for v in bidders.values() for i in v.supplies}
-    customer = next(iter(cfg.customers.values())).id
+    customer_ids = [c.id for c in cfg.customers.values()]
 
     # --- products -----------------------------------------------------------
     route = {
@@ -244,8 +250,10 @@ def main() -> int:
     for t, q in enumerate(weekly):
         if q <= 0:
             continue
+        # round-robin across customers: structural presentation only, since the engine
+        # plans on aggregate demand and does not model demand per customer
         so = o.create("sale.order", {
-            "partner_id": partner[customer],
+            "partner_id": partner[customer_ids[t % len(customer_ids)]],
             "commitment_date": at_noon(week(t)),
             "client_order_ref": f"Week {t} demand [mock]",
             "order_line": [[0, 0, {"product_id": prod[root], "product_uom_qty": round(float(q), 2)}]],
