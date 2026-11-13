@@ -171,37 +171,37 @@ bom:
 
 vendors:                       # used by the Odoo demo; all FICTIONAL
   - id: v_sugar
-    name: "Example Sugar Supply Co. (fictional)"
+    name: "Sugar Vendor (fictional)"
     fictional: true
     supplies: [GLUCOSE, SUCROSE]
   - id: v_nutrients
-    name: "Example Nutrients Ltd. (fictional)"
+    name: "Nutrients Vendor (fictional)"
     fictional: true
     supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
   - id: v_packaging
-    name: "Example Packaging Inc. (fictional)"
+    name: "Packaging Vendor (fictional)"
     fictional: true
     supplies: [BAG-25KG]
   - id: v_membranes
-    name: "Example Membranes GmbH (fictional)"
+    name: "Membrane Vendor (fictional)"
     fictional: true
     supplies: [UFDF-MEMBRANE-SET]
 
 customers:                     # the demand side; all FICTIONAL
   - id: c_brands
-    name: "Example Food Brands Inc. (fictional)"
+    name: "Customer - Food Brand (fictional)"
     fictional: true
   - id: c_beverage
-    name: "Example Beverage Co. (fictional)"
+    name: "Customer - Beverage (fictional)"
     fictional: true
   - id: c_nutrition
-    name: "Example Sports Nutrition Ltd. (fictional)"
+    name: "Customer - Sports Nutrition (fictional)"
     fictional: true
   - id: c_distributor
-    name: "Example Ingredient Distributors LLC (fictional)"
+    name: "Customer - Distributor (fictional)"
     fictional: true
   - id: c_copacker
-    name: "Example Co-Packing Partners Inc. (fictional)"
+    name: "Customer - Co-Packer (fictional)"
     fictional: true
 
 variants:
@@ -255,7 +255,7 @@ purchasing:                   # M3: PO schedule + spend from FRED-linked prices
 # ---------------------------------------------------------------------------
 suppliers:
   - id: s_sugar_a
-    name: "Example Sugar Supply Co. (fictional)"
+    name: "Sugar Supplier - Incumbent (fictional)"
     fictional: true
     archetype: incumbent
     supplies: [GLUCOSE, SUCROSE]
@@ -272,7 +272,7 @@ suppliers:
       short_ship_rate: mock_sup_inc_short_ship_rate
 
   - id: s_sugar_b
-    name: "Example Cane Traders Ltd. (fictional)"
+    name: "Sugar Supplier - Low Cost (fictional)"
     fictional: true
     archetype: low-cost
     supplies: [GLUCOSE, SUCROSE]
@@ -289,7 +289,7 @@ suppliers:
       short_ship_rate: mock_sup_low_short_ship_rate
 
   - id: s_sugar_c
-    name: "Example Dextrose Partners LLC (fictional)"
+    name: "Sugar Supplier - Premium (fictional)"
     fictional: true
     archetype: premium
     supplies: [GLUCOSE, SUCROSE]
@@ -306,7 +306,7 @@ suppliers:
       short_ship_rate: mock_sup_prem_short_ship_rate
 
   - id: s_nutr_a
-    name: "Example Nutrients Ltd. (fictional)"
+    name: "Nutrients Supplier - Incumbent (fictional)"
     fictional: true
     archetype: incumbent
     supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
@@ -316,7 +316,7 @@ suppliers:
     quote: *q_incumbent
 
   - id: s_nutr_b
-    name: "Example Agri Salts Co. (fictional)"
+    name: "Nutrients Supplier - Low Cost (fictional)"
     fictional: true
     archetype: low-cost
     supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
@@ -329,7 +329,7 @@ suppliers:
       lead_time_delta: mock_sup_nutr_b_lead_time_delta
 
   - id: s_nutr_c
-    name: "Example Pharma Salts GmbH (fictional)"
+    name: "Nutrients Supplier - Premium (fictional)"
     fictional: true
     archetype: premium
     supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
@@ -339,7 +339,7 @@ suppliers:
     quote: *q_premium
 
   - id: s_pack_a
-    name: "Example Packaging Inc. (fictional)"
+    name: "Packaging Supplier - Incumbent (fictional)"
     fictional: true
     archetype: incumbent
     supplies: [BAG-25KG]
@@ -349,7 +349,7 @@ suppliers:
     quote: *q_incumbent
 
   - id: s_pack_b
-    name: "Example Fibre Sacks Co. (fictional)"
+    name: "Packaging Supplier - Low Cost (fictional)"
     fictional: true
     archetype: low-cost
     supplies: [BAG-25KG]
@@ -362,7 +362,7 @@ suppliers:
       lead_time_delta: mock_sup_pack_b_lead_time_delta
 
   - id: s_pack_c
-    name: "Example Barrier Packaging Co. (fictional)"
+    name: "Packaging Supplier - Premium (fictional)"
     fictional: true
     archetype: premium
     supplies: [BAG-25KG]
@@ -372,7 +372,7 @@ suppliers:
     quote: *q_premium
 
   - id: s_memb_a
-    name: "Example Membranes GmbH (fictional)"
+    name: "Membrane Supplier - Incumbent (fictional)"
     fictional: true
     archetype: incumbent
     supplies: [UFDF-MEMBRANE-SET]
@@ -382,7 +382,7 @@ suppliers:
     quote: *q_incumbent
 
   - id: s_memb_b
-    name: "Example Filtration Supply Co. (fictional)"
+    name: "Membrane Supplier - Low Cost (fictional)"
     fictional: true
     archetype: low-cost
     supplies: [UFDF-MEMBRANE-SET]
@@ -392,7 +392,7 @@ suppliers:
     quote: *q_low_cost
 
   - id: s_memb_c
-    name: "Example Validated Filtration AG (fictional)"
+    name: "Membrane Supplier - Premium (fictional)"
     fictional: true
     archetype: premium
     supplies: [UFDF-MEMBRANE-SET]
