@@ -67,3 +67,10 @@ and the Odoo demo (PR #1–#5). M6 is on `m6-sourcing`, waiting for review and p
 - Should the award feed back into the planning lead time automatically? Today it is a
   note for a human.
 - See `knowledge/backlog.md`.
+
+## Current work (2026-11-23)
+
+See `docs/plan-history-and-dashboard.md` — three years of operating history, then a
+dashboard. Supersedes the "Next 3 steps" above, which are stale: `m6-sourcing` was
+pushed and merged as PR #6 on 2026-11-12, and the screenshots and public report variant
+were deprioritised by the user.
