@@ -5,6 +5,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 ## Start here
 - `docs/status.md`: handoff: milestone, next steps, open questions. **Every session, first.**
 - `CLAUDE.md`: purpose, house rules, commands, skills. Read when unsure of a rule.
+- `CHANGELOG.md`: milestone history, one entry per merged milestone. Read for the project's story.
 - `README.md`: public overview and quick start. Read when explaining the project.
 
 ## Design

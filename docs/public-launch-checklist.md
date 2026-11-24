@@ -21,11 +21,11 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
 - [x] `scripts/pre_push_check.py` now fails on any commit author/committer that isn't a
       GitHub noreply address (masked output). `--all` currently reports **19** findings:
       the 7 merges + 6 commits × author/committer. It must report 0 before launch.
-- [ ] **User:** GitHub → Settings → Emails → enable *Keep my email addresses private*
+- [x] **User:** GitHub → Settings → Emails → enable *Keep my email addresses private*
       and *Block command line pushes that expose my email*. Must happen first, or the
       next `gh pr merge` stamps the personal address again.
 - [x] **User:** set the **global** git identity to the noreply address (was the Gmail).
-- [ ] **User:** update it again to the renamed account's noreply:
+- [x] **User:** update it again to the renamed account's noreply:
       `git config --global user.email 282146142+ariel-salvador@users.noreply.github.com`
 - [ ] Before any of the other private repos ever goes public, run the same
       full-history identity scan on it.
@@ -43,10 +43,10 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
       The callback lives **outside the repo** at `~/.config/pps/rewrite_identities.py`
       because it names the old private address. Run it at launch, not before:
       rewriting now would diverge local `main` from the private `origin`.
-- [ ] **At launch:** back up (`git bundle create`), run
+- [x] **At launch:** back up (`git bundle create`), run
       `git filter-repo --commit-callback "$(cat ~/.config/pps/rewrite_identities.py)"`,
       re-run `scripts/pre_push_check.py --all` (identity findings must be 0).
-- [ ] **User:** set the global git name too: `git config --global user.name "Ariel Salvador"`
+- [x] **User:** set the global git name too: `git config --global user.name "Ariel Salvador"`
       (repo-local name already set).
 
 ### Publishing
@@ -57,20 +57,18 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
 - [x] **New repo `ariel-salvador/supply-chain-planning`** created **private**, with
       description and 11 topics; clean history pushed. Verified from a fresh clone:
       251 file versions, 0 email/phone/key, 0 deny-list, 0 identity findings.
-- [x] Old repo **`ariel-salvador/production-planning-simulator` stays private** and
-      holds PRs #1–#8, which reference the old commits. **Never make it public.**
-      Renaming it to `-archive` was blocked for the agent and isn't needed (the new repo
-      has a different name). Optional for the user: rename or archive it in GitHub →
-      Settings.
+- [x] Old repo renamed (with the user's OK) to
+      **`ariel-salvador/production-planning-simulator-archive`**, private. It holds PRs
+      #1–#8, which reference the old commits. **Never make it public.**
 - [ ] **Launch:** flip `supply-chain-planning` to public, after the presentation items.
 
 ### Presentation
-- [ ] Clean `docs/status.md` (drop stale "next steps").
-- [ ] `CHANGELOG.md`: one entry per milestone (M1–M6, Odoo, launch prep), rebuilt from
+- [x] Clean `docs/status.md` (drop stale "next steps").
+- [x] `CHANGELOG.md`: one entry per milestone (M1–M6, Odoo, launch prep), rebuilt from
       the PR #1–#8 descriptions in the old private repo, so the story survives.
-- [ ] README section *How this was built*: the AI-assisted workflow (CLAUDE.md,
+- [x] README section *How this was built*: the AI-assisted workflow (CLAUDE.md,
       skills, ADRs, `Co-Authored-By` trailers), framed as: designed, decided and
       verified by the author; coded with Claude.
-- [ ] README opens with three lines: business problem, what was built, result.
-- [ ] Dashboard live on GitHub Pages (needs the public repo) with the IMF/FRED
-      citation on any derived cost chart (ADR 0003).
+- [x] README opens with the business problem, what was built, and results.
+- [ ] *(After launch)* Dashboard live on GitHub Pages with the IMF/FRED citation on any
+      derived cost chart (ADR 0003). Not a launch blocker: the README says it's in progress.
