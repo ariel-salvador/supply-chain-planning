@@ -35,12 +35,19 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
       allowed). Same account ID, so all existing attribution carries over. Repo
       `origin` and local git email updated; license holder updated (ADR 0005 amendment).
       The rewrite maps every identity to `282146142+ariel-salvador@users.noreply.github.com`.
-- [ ] Rewrite history locally: the 7 PR merge commits (#1–#7) carry the personal email
-      as author → replace with the GitHub noreply address.
-- [ ] Re-attribute the 6 commits authored as `noreply@anthropic.com` (742930c,
-      a0128cb, c00e667, 77388d6, 4999ce0, 4a603ed) to the user, keeping a Claude
-      `Co-Authored-By` trailer.
-- [ ] Show the before/after identity list for review before touching GitHub.
+- [x] **Dry run passed (2026-11-23)** on a mirror copy: 38 commits in, 38 out; every
+      branch tip has an **identical tree hash** (no file content changed); identity scan
+      **0**; the re-attributed commits carry a `Co-Authored-By: Claude` trailer. All
+      identities become `Ariel Salvador <282146142+ariel-salvador@users.noreply.github.com>`
+      except GitHub's own merge committer (`noreply@github.com`, allowed).
+      The callback lives **outside the repo** at `~/.config/pps/rewrite_identities.py`
+      because it names the old private address. Run it at launch, not before:
+      rewriting now would diverge local `main` from the private `origin`.
+- [ ] **At launch:** back up (`git bundle create`), run
+      `git filter-repo --commit-callback "$(cat ~/.config/pps/rewrite_identities.py)"`,
+      re-run `scripts/pre_push_check.py --all` (identity findings must be 0).
+- [ ] **User:** set the global git name too: `git config --global user.name "Ariel Salvador"`
+      (repo-local name already set).
 
 ### Publishing (blocking, needs the user's OK)
 - [ ] Rename the current repo to `production-planning-simulator-archive`; keep it
