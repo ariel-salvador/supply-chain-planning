@@ -8,6 +8,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `README.md`: public overview and quick start. Read when explaining the project.
 
 ## Design
+- `docs/public-launch-checklist.md`: what must happen before the repo goes public (identity rewrite, new repo, presentation).
 - `docs/architecture.md`: engine / config / UI split, data flow, module map. Read before adding a module.
 - `docs/decisions/0001-engine-config-ui-separation.md`: why the engine has no UI or product logic.
 - `docs/decisions/0002-assumptions-registry.md`: why every number is a registry id, and what the loader enforces.

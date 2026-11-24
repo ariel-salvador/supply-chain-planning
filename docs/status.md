@@ -74,3 +74,8 @@ See `docs/plan-history-and-dashboard.md` — three years of operating history, t
 dashboard. Supersedes the "Next 3 steps" above, which are stale: `m6-sourcing` was
 pushed and merged as PR #6 on 2026-11-12, and the screenshots and public report variant
 were deprioritised by the user.
+
+## Parked: public launch
+
+See `docs/public-launch-checklist.md`. Blocked on the user enabling GitHub email
+privacy; then a history rewrite (identity metadata only) and a fresh public repo.

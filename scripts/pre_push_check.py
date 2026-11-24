@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
-EMAIL_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@anthropic\.com|@example\.(com|org))$", re.I)
+EMAIL_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@github\.com|^noreply@anthropic\.com|@example\.(com|org))$", re.I)
 PHONE = re.compile(r"(?<![\w/.\-])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]\d{4}(?!\w)")
 API_KEYS = [
     ("aws access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
@@ -38,6 +38,8 @@ API_KEYS = [
     ("generic secret", re.compile(r"(?i)\b(?:api[_-]?key|secret|token|password)\b\s*[:=]\s*['\"][^'\"\s]{16,}['\"]")),
 ]
 DEFAULT_DENYLIST = "~/.config/pps/denylist.txt"
+# Commit identities allowed in pushed history: GitHub noreply addresses only.
+IDENTITY_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@github\.com)$", re.I)
 
 
 def git(*args: str) -> str:
@@ -76,6 +78,25 @@ def commit_messages(all_files: bool) -> List[Tuple[str, str]]:
             h, body = chunk.split("\x00", 1)
             msgs.append((f"commit {h.strip()}", body))
     return msgs
+
+
+def commit_identities(all_files: bool) -> List[Tuple[str, str, str]]:
+    """(commit, role, email) for every author/committer in the commits being checked."""
+    base = push_base()
+    rng = ["--all"] if (all_files or not base) else [f"{base}..HEAD"]
+    out = git("log", "--format=%h%x00%ae%x00%ce", *rng)
+    rows = []
+    for line in out.splitlines():
+        if line.count("\x00") == 2:
+            h, ae, ce = line.split("\x00")
+            rows += [(h, "author", ae), (h, "committer", ce)]
+    return rows
+
+
+def scan_identities(rows: Sequence[Tuple[str, str, str]]) -> List[str]:
+    """Flag commit identities that aren't GitHub noreply addresses (masked)."""
+    return [f"{role} email on commit {h} is not a GitHub noreply address ({mask(e)})"
+            for h, role, e in rows if not IDENTITY_ALLOWED.search(e)]
 
 
 def read_index(path: str) -> Optional[str]:
@@ -208,6 +229,7 @@ def main(argv: Optional[Iterable[str]] = None) -> int:
         failures += scan_text(name, text)
         if terms:
             failures += scan_denylist(name, text, terms)
+    failures += scan_identities(commit_identities(args.all))
     for name, body in msgs:
         failures += scan_text(name, body)
         if terms:
