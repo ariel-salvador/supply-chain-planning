@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
-EMAIL_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@anthropic\.com|@example\.(com|org))$", re.I)
+EMAIL_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@github\.com|^noreply@anthropic\.com|@example\.(com|org))$", re.I)
 PHONE = re.compile(r"(?<![\w/.\-])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]\d{4}(?!\w)")
 API_KEYS = [
     ("aws access key", re.compile(r"\bAKIA[0-9A-Z]{16}\b")),
