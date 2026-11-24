@@ -24,19 +24,17 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
 - [ ] **User:** GitHub → Settings → Emails → enable *Keep my email addresses private*
       and *Block command line pushes that expose my email*. Must happen first, or the
       next `gh pr merge` stamps the personal address again.
-- [ ] **User:** set the **global** git identity to the noreply address (today it's the
-      personal Gmail, so every repo without a local override, including the other
-      five private repos, commits with it):
-      `git config --global user.email 282146142+agenttofu0@users.noreply.github.com`
+- [x] **User:** set the **global** git identity to the noreply address (was the Gmail).
+- [ ] **User:** update it again to the renamed account's noreply:
+      `git config --global user.email 282146142+ariel-salvador@users.noreply.github.com`
 - [ ] Before any of the other private repos ever goes public, run the same
       full-history identity scan on it.
 - [x] **User** set the global git identity to the noreply address (2026-11-23).
-- [ ] **Decide the public GitHub identity before the rewrite.** The account email
-      (`agenttofu0@...`) is a separate account address, not the one used on job
-      applications, so the username-guesses-the-email risk is low. The open question is
-      presentation: keep `agenttofu0`, rename it to a name-based handle, or move the
-      public portfolio to a separate professional account. Whichever it is, the history
-      rewrite uses **that** account's noreply address, so decide first.
+- [x] **Public GitHub identity decided (2026-11-23):** account renamed to
+      `ariel-salvador` (name-based, matches the LinkedIn handle as closely as GitHub
+      allowed). Same account ID, so all existing attribution carries over. Repo
+      `origin` and local git email updated; license holder updated (ADR 0005 amendment).
+      The rewrite maps every identity to `282146142+ariel-salvador@users.noreply.github.com`.
 - [ ] Rewrite history locally: the 7 PR merge commits (#1–#7) carry the personal email
       as author → replace with the GitHub noreply address.
 - [ ] Re-attribute the 6 commits authored as `noreply@anthropic.com` (742930c,
