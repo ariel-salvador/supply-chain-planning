@@ -19,7 +19,7 @@ def _fmt_mrp(table: pd.DataFrame, max_cols: int) -> str:
 
 
 def main(argv: Optional[List[str]] = None) -> int:
-    ap = argparse.ArgumentParser(prog="ppsim", description="Production planning simulator")
+    ap = argparse.ArgumentParser(prog="ppsim", description="Supply chain planning engine")
     sub = ap.add_subparsers(dest="cmd", required=True)
 
     r = sub.add_parser("run", help="run demand -> [S&OP -> MPS] -> MRP for a product config")

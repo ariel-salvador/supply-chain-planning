@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ppsim"
 version = "0.1.0"
-description = "Product-agnostic production planning simulator: S&OP -> MPS -> MRP -> purchasing -> RCCP"
+description = "Product-agnostic supply chain planning engine: S&OP -> MPS -> MRP -> purchasing -> RCCP"
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }

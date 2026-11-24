@@ -1,4 +1,4 @@
-# Local-only Odoo Community demo for the production planning simulator.
+# Local-only Odoo Community demo for the supply chain planning project.
 # Nothing is published beyond 127.0.0.1. Secrets come from .env (gitignored).
 # Data lives in named Docker volumes, never in the repo.
 name: pps-odoo

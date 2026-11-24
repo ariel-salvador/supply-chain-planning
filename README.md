@@ -1,4 +1,4 @@
-# Production Planning Simulator
+# Supply Chain Planning
 
 A product-agnostic production planning engine covering
 **S&OP → MPS → MRP → purchasing → rough-cut capacity planning (RCCP) → sourcing**. Each
@@ -140,7 +140,7 @@ that gap is the engine's S&OP inventory build. Details and lessons:
 - **Code** (everything outside `docs/` and `knowledge/`): [MIT](LICENSE).
 - **Documentation and research content** (`docs/`, `knowledge/`):
   [CC BY 4.0](LICENSE-docs). Reuse is welcome with attribution to
-  *ariel-salvador, production-planning-simulator*.
+  *ariel-salvador, supply-chain-planning*.
 - **Third-party material is not covered by either license.** Cited papers, EPA
   documents and the IMF/FRED price series keep their own terms. The price data is
   not redistributed here, and published charts must cite "International Monetary
