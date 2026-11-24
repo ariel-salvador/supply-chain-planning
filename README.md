@@ -1,17 +1,36 @@
 # Supply Chain Planning
 
-A product-agnostic production planning engine covering
-**S&OP → MPS → MRP → purchasing → rough-cut capacity planning (RCCP) → sourcing**. Each
-product is one config file.
+**The problem:** a manufacturer has to turn a demand forecast into a plan it can actually
+run: how much to make each week, which materials to buy and from whom, and whether the
+plant has the capacity. Then it has to execute that plan in an ERP and measure how it went.
 
-**Case 1:** a *mock* precision-fermentation plant making recombinant
-beta-lactoglobulin (rBLG) whey protein powder. The feedstock prices are real (IMF
-commodity series via FRED), the process parameters are cited from public literature,
-and **the demand is mock**.
+**What I built:** an end-to-end planning system for a mock precision-fermentation plant
+making whey protein:
+- **Python planning engine:** S&OP → MPS → MRP → rough-cut capacity → purchasing →
+  supplier sourcing. Product-agnostic: each product is one config file.
+- **Odoo 19 ERP:** the same plant as products, BOMs, vendors, reorder rules,
+  manufacturing and purchase orders, seeded by script and compared with the engine.
+- **In progress:** Odoo becomes the system of record (my own transactions plus scripted
+  history), feeding a KPI dashboard (see [status](docs/status.md)).
 
-> Portfolio project. No personal information and no company's internal data. Every
-> model number lives in [`knowledge/assumptions.csv`](knowledge/assumptions.csv) with
-> its status (`cited` / `estimate` / `mock`), source and retrieval date.
+**What it shows** [estimate, mock demand]:
+- Leveling fermentation batches cuts peak fermenter load from **119% to 89%** of capacity.
+- The cheapest supplier quote is **not** the lowest total cost on **9 of 9** purchased
+  items, once freight, duty, MOQ carrying cost and quality are counted.
+- Odoo's reorder rules and the engine's MRP agree on quantities within **7–9%**, but
+  Odoo orders the whole 26-week need up front while MRP phases it week by week
+  ([comparison](docs/odoo/comparison.md)).
+
+**Integrity rules:** no personal information and no company's internal data. Every
+number lives in [`knowledge/assumptions.csv`](knowledge/assumptions.csv), labeled
+`cited` (public source + locator), `estimate` or `mock`, and the loader rejects
+process math resting on anything uncited. Demand is mock. Feedstock prices are real
+(IMF series via FRED).
+
+**Jump to:** [Hands-on ERP](#hands-on-erp) · [Sourcing](#sourcing) ·
+[Case 1 at a glance](#case-1-at-a-glance-per-kg-of-powder) ·
+[Decisions (ADRs)](docs/decisions/) · [How this was built](#how-this-was-built) ·
+[Changelog](CHANGELOG.md)
 
 ## Status
 
@@ -126,6 +145,26 @@ that gap is the engine's S&OP inventory build. Details and lessons:
 | ![Replenishment run](docs/odoo/replenishment-run.png) | ![Manufacturing order](docs/odoo/mo.png) |
 | **A generated RFQ (fictional vendor)** | **Odoo vs engine comparison** |
 | ![RFQ](docs/odoo/po.png) | ![Comparison](docs/odoo/comparison.png) |
+
+## How this was built
+
+I designed this project and made the decisions; I wrote the code with
+[Claude Code](https://claude.com/claude-code) as a pair programmer. Concretely:
+
+- **I set the scope and the rules:** which planning steps to model, which public sources
+  are acceptable, that demand stays mock, and that no employer or personal data enters
+  the repo.
+- **Every design choice is recorded** as an [ADR](docs/decisions/) (context, decision,
+  alternatives, consequences). That's where my reasoning is, in my words.
+- **Numbers are verified, not assumed:** parameters trace to cited sources or carry a
+  `mock` label, the engine has 170 hand-checkable tests, and the Odoo demo is checked
+  against the engine's own MRP.
+- **Guardrails are automated:** `scripts/pre_push_check.py` runs the tests, audits
+  citations, and blocks pushes containing personal emails, phone numbers, API keys,
+  private terms or non-noreply commit identities.
+- **The AI workflow is part of the repo:** [`CLAUDE.md`](CLAUDE.md) and the skills
+  in `.claude/skills/` are the instructions I gave it; commits it co-wrote carry a
+  `Co-Authored-By: Claude` trailer.
 
 ## Data sources and licensing
 
