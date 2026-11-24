@@ -30,6 +30,13 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
       `git config --global user.email 282146142+agenttofu0@users.noreply.github.com`
 - [ ] Before any of the other private repos ever goes public, run the same
       full-history identity scan on it.
+- [x] **User** set the global git identity to the noreply address (2026-11-23).
+- [ ] **Decide the public GitHub identity before the rewrite.** The account email
+      (`agenttofu0@...`) is a separate account address, not the one used on job
+      applications, so the username-guesses-the-email risk is low. The open question is
+      presentation: keep `agenttofu0`, rename it to a name-based handle, or move the
+      public portfolio to a separate professional account. Whichever it is, the history
+      rewrite uses **that** account's noreply address, so decide first.
 - [ ] Rewrite history locally: the 7 PR merge commits (#1–#7) carry the personal email
       as author → replace with the GitHub noreply address.
 - [ ] Re-attribute the 6 commits authored as `noreply@anthropic.com` (742930c,
