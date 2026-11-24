@@ -49,15 +49,25 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
 - [ ] **User:** set the global git name too: `git config --global user.name "Ariel Salvador"`
       (repo-local name already set).
 
-### Publishing (blocking, needs the user's OK)
-- [ ] Rename the current repo to `production-planning-simulator-archive`; keep it
-      **private** (closed PR pages there still link to the old merge commits).
-- [ ] Create a fresh public repo with the original name; push the rewritten history.
-      Full commit history is kept; PR pages are not.
-- [ ] Re-run the full-history scan on the new repo before announcing it.
+### Publishing
+- [x] **History rewritten in place (2026-11-24)** after a verified backup bundle
+      (`~/pps-backups/...-before-identity-rewrite-20261124.bundle`, outside the repo; it
+      holds the old identities, so never upload it). 41 commits in and out, identical
+      tree, dates and messages; `pre_push_check.py --all` clean.
+- [x] **New repo `ariel-salvador/supply-chain-planning`** created **private**, with
+      description and 11 topics; clean history pushed. Verified from a fresh clone:
+      251 file versions, 0 email/phone/key, 0 deny-list, 0 identity findings.
+- [x] Old repo **`ariel-salvador/production-planning-simulator` stays private** and
+      holds PRs #1–#8, which reference the old commits. **Never make it public.**
+      Renaming it to `-archive` was blocked for the agent and isn't needed (the new repo
+      has a different name). Optional for the user: rename or archive it in GitHub →
+      Settings.
+- [ ] **Launch:** flip `supply-chain-planning` to public, after the presentation items.
 
 ### Presentation
 - [ ] Clean `docs/status.md` (drop stale "next steps").
+- [ ] `CHANGELOG.md`: one entry per milestone (M1–M6, Odoo, launch prep), rebuilt from
+      the PR #1–#8 descriptions in the old private repo, so the story survives.
 - [ ] README section *How this was built*: the AI-assisted workflow (CLAUDE.md,
       skills, ADRs, `Co-Authored-By` trailers), framed as: designed, decided and
       verified by the author; coded with Claude.

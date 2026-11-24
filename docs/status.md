@@ -1,7 +1,8 @@
 # Status (handoff)
 
-_Last updated: 2026-10-04 · branch `m6-sourcing` (from `main` after PR #5; local only,
-not pushed). Repo is private._
+_Last updated: 2026-11-24 · repo **`ariel-salvador/supply-chain-planning`** (private, clean
+history; launch = flip to public). The old `production-planning-simulator` repo stays
+private forever._
 
 ## Current milestone
 **M6 sourcing is built** (6a–6f in the engine, 6g in the Odoo seed). `main` has M1–M5

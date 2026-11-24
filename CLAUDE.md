@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Product-agnostic **production planning simulator**: S&OP → MPS → MRP → purchasing →
+Product-agnostic **supply chain planning** engine: S&OP → MPS → MRP → purchasing →
 rough-cut capacity → sourcing. Case 1 is a **mock** precision-fermentation plant making
 recombinant beta-lactoglobulin (rBLG) whey protein. Feedstock prices are real (FRED),
 process parameters are cited, and demand is mock. This repo will be **public**.
