@@ -5,12 +5,31 @@ comes only from `products/blg_whey_protein.yaml` and `knowledge/assumptions.csv`
 (cited or [mock]). The company, vendors and customer are **fictional** and labeled
 as such. Why Odoo Community, and what stays in Python: ADR 0009.
 
-## Run it
+## Two databases (ADR 0017)
+
+| Database | Purpose | Rebuilt by scripts? | Sign in at |
+|---|---|---|---|
+| `pps_demo` | Reproducible demo: anyone can rebuild it with one command | **Yes**, `make odoo-demo` drops and rebuilds it | http://127.0.0.1:8069/web/login?db=pps_demo |
+| `pps_live` | **System of record**: your own transactions in the UI, plus append-only data from scripts | **Never.** No target drops it | http://127.0.0.1:8069/web/login?db=pps_live |
+
+User `admin`, password `ODOO_ADMIN_PASSWORD` from your local `.env`, for both. Scripts
+write to `pps_live` as the `pps-bot` user, so every record shows whether you or a script
+made it.
+
+| Command | What it does |
+|---|---|
+| `make odoo-live-init` | Creates `pps_live` **only if it doesn't exist**: apps, fictional company, the `x_pps_key` field, the `pps-bot` user and its 90-day API key (`.odoo-apikey-live`, gitignored) |
+| `make odoo-live-bootstrap` | Re-runs the setup (idempotent) and issues a fresh bot key |
+| `make odoo-backup` | Odoo-format zip (database + filestore) of `pps_live` → `backups/` (gitignored), verified. `BACKUP_DB=pps_demo` for the demo |
+| `make odoo-restore-test` | Loads the latest backup into a throwaway database, checks users and filestore, drops it |
+| `make odoo-nuke` | Deletes **every** volume. Refuses unless a verified `pps_live` backup from the last 24 h exists |
+
+## Run the demo
 
 Requirements: Docker (OrbStack or Docker Desktop) and the repo's `.venv`.
 
 ```bash
-make odoo-demo        # rebuild from scratch: reset → up → init → seed → run → compare → RFQ round (~2 min)
+make odoo-demo        # rebuild pps_demo only: up → drop pps_demo → init → seed → run → compare → RFQ round (~1 min)
 ```
 
 | Step | Command | What it does |
@@ -22,11 +41,10 @@ make odoo-demo        # rebuild from scratch: reset → up → init → seed →
 | 5 | `make odoo-compare` | `scripts/compare_plans.py`: diffs against the Python MRP and writes [`comparison.md`](comparison.md), including which supplier each PO went to |
 | 6 | `make odoo-rfq` | `scripts/odoo_sourcing.py`: the RFQ round, one draft quotation per bidding supplier. **Runs last on purpose** — see the lessons below |
 
-To sign in at http://127.0.0.1:8069, use the user `admin` and the password in your
-local `.env` (`ODOO_ADMIN_PASSWORD`). `make odoo-down` stops the stack, and
-`make odoo-reset` deletes it.
+Sign in at http://127.0.0.1:8069/web/login?db=pps_demo with `admin` and the password in
+your local `.env` (`ODOO_ADMIN_PASSWORD`). `make odoo-down` stops the stack (data kept).
 
-Secrets live in `.env` and `.odoo-apikey`, both gitignored. The database and
+Secrets live in `.env`, `.odoo-apikey` and `.odoo-apikey-live`, all gitignored. The database and
 filestore live in Docker volumes and are never committed.
 
 ## How the config maps to Odoo

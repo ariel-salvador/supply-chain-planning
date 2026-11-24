@@ -1,16 +1,16 @@
 # Status (handoff)
 
-_Last updated: 2026-11-24 · repo **`ariel-salvador/supply-chain-planning`** (public at
-launch). The old repo, now `production-planning-simulator-archive`, stays private
+_Last updated: 2026-11-24 · repo **`ariel-salvador/supply-chain-planning`**, **public**
+since 2026-11-24. The old repo, now `production-planning-simulator-archive`, stays private
 forever: its PR pages reference commits with the author's old email._
 
 ## Current state
 - **Built and merged:** M1–M6 (planning engine through sourcing), the Odoo 19 Community
   demo, the static chart report. Milestone history: [`CHANGELOG.md`](../CHANGELOG.md).
-- **Launch:** identity history rewritten and verified, new repo created, presentation
-  done (README opening, *How this was built*, changelog). Remaining items:
-  [`public-launch-checklist.md`](public-launch-checklist.md).
-- **Next milestone:** Odoo as the system of record, feeding a KPI dashboard.
+- **Launched:** public since 2026-11-24 ([`public-launch-checklist.md`](public-launch-checklist.md)).
+- **Dashboard Phase 0 done** (ADR 0017): `pps_live` exists as the system of record, with
+  the `pps-bot` user, append-only `Odoo.live().ensure()`, verified backups, a restore
+  test, and guarded operations. `make odoo-demo` now rebuilds only `pps_demo`.
 
 ## Decisions for the dashboard work (2026-11-24, delegated by the user)
 1. **Two Odoo databases.** `pps_demo` stays disposable (`make odoo-demo` rebuilds it, so
@@ -27,11 +27,11 @@ forever: its PR pages reference commits with the author's old email._
    didn't create.
 
 ## Next 3 steps
-1. **Phase 0, foundations:** `pps_live` database, `pps-bot` user and API key,
-   upsert-by-external-ID client, `make odoo-backup`, guarded reset targets. ADR 0017
-   ("Odoo is the system of record").
+1. **Master data into `pps_live`:** products, BOMs, vendors, customers, reorder rules
+   from `products/blg_whey_protein.yaml` through `ensure()`, with the diff-and-confirm
+   sync for anything the user has since edited. Reuses the demo seed's logic.
 2. **First data slice:** extract sales, purchase and manufacturing orders plus stock
-   from Odoo into marts (DuckDB + CSV), stamped "data as of".
+   from `pps_live` into marts (DuckDB + CSV), stamped "data as of".
 3. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
    PO in the Odoo UI and watching it appear after a refresh.
 
