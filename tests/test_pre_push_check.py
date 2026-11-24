@@ -59,3 +59,16 @@ def test_denylist_reports_location_only(tmp_path):
 def test_repo_assumptions_clean():
     errors, _ = ppc.check_assumptions()
     assert errors == []
+
+
+def test_identity_scan_allows_only_github_noreply():
+    rows = [
+        ("abc1234", "author", "123+someone@users.noreply.github.com"),
+        ("abc1234", "committer", "noreply@github.com"),
+        ("def5678", "author", "jane.doe" + "@example-mail.com"),
+        ("def5678", "committer", "noreply" + "@anthropic.com"),
+    ]
+    found = ppc.scan_identities(rows)
+    assert len(found) == 2
+    assert all("def5678" in f for f in found)
+    assert all("jane.doe" not in f for f in found)  # masked
