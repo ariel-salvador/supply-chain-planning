@@ -4,6 +4,13 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-25: Read-only extract for the dashboards
+- `make dashboard-extract` reads Odoo into tidy marts (CSV for Tableau, DuckDB for
+  Evidence): products, partners, sales, purchases, production, stock and reorder rules,
+  with week buckets and who created each document (script vs manual).
+- Runs as `pps-reader`, read-only on the server (a custom group) and in the client (a
+  `ReadOnlyOdoo` that refuses any write). Data dictionary in `docs/dashboard/marts.md`.
+
 ## 2026-11-25: Master data in the live ERP
 - `make odoo-live-master` loads the case-1 master data into `pps_live` (65 records:
   units, partners, products, vendor price lists, BOMs, reorder rules) as `pps-bot`.

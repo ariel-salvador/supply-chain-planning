@@ -30,13 +30,18 @@ forever: its PR pages reference commits with the author's old email._
   `make odoo-live-master`; reruns create nothing; UI edits are reported, not reverted.
   Reorder rules are manual-trigger (ADR 0017 amendment).
 
+- **Extract built** (2026-11-25): `make dashboard-extract` (live, read-only `pps-reader`)
+  or `SOURCE=demo` → `outputs/marts/<db>/` (CSV + DuckDB), documented in
+  `docs/dashboard/marts.md`. Live has master data only until transactions exist; the
+  demo extract has 26 weeks of orders.
+
 ## Next 3 steps
-1. **First data slice:** extract sales, purchase and manufacturing orders plus stock
-   from `pps_live` into marts (DuckDB + CSV), stamped "data as of".
-2. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
-   PO in the Odoo UI and watching it appear after a refresh.
-3. **History generator** (`docs/plan-history-and-dashboard.md`, Phase 1) writing three
+1. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
+   PO in the Odoo UI and watching it appear after a refresh. Start from the demo
+   marts (populated) while `pps_live` has no transactions.
+2. **History generator** (`docs/plan-history-and-dashboard.md`, Phase 1) writing three
    years of transactions into `pps_live` through `ensure()`.
+3. **Evidence site** on the same marts, embedding the Tableau dashboard.
 
 The three-year history generator (`docs/plan-history-and-dashboard.md`, Phase 1) then
 fills `pps_live` through the same append-only writer.

@@ -53,6 +53,7 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 make report                                   # static HTML charts -> outputs/report/
 make odoo-demo                                # rebuild the disposable pps_demo (Docker), ~1 min
 make odoo-backup && make odoo-restore-test    # back up pps_live and prove it restores
+make dashboard-extract [SOURCE=demo]          # Odoo -> outputs/marts/ (read-only, pps-reader)
 ```
 
 **Odoo has two databases (ADR 0017).** `pps_demo` is disposable. `pps_live` is the
