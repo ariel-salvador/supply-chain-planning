@@ -79,3 +79,16 @@
   - Customer service is near-perfect by design (orders are booked two weeks ahead, which
     matches the production lead time). Service problems in the story come from the
     events and from supplier lateness, not from forecast misses.
+
+## Verified (2026-11-25)
+
+- Rehearsal on a copy of `pps_live`, then the live run (backup
+  `pps_live-20261125T172707Z.zip` first): 3,162 steps, ~10 min, 21,828 API calls, no errors.
+- `scripts/check_history.py` on `pps_live` (as the read-only `pps-reader`), all pass:
+  on-hand stock of all 10 items equals the ledger to 4 decimals; 498 / 167 / 542 sales /
+  purchase / manufacturing orders; no past-due order open; order, delivery, receipt and
+  promised dates match; revenue 2024–2026 equal to the cent ($14.80M, $17.61M, $17.12M
+  to 2026-11-22); purchase bills within rounding; 14 open receivables, $1.92M.
+- A rerun creates nothing. Master data reloaded with cited prices: 34 diffs shown, then
+  applied (`APPLY_DIFFS=1`); a rerun shows none.
+- The extract's stock moves, summed per product, reproduce on-hand exactly.
