@@ -4,6 +4,17 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-24: Dashboard Phase 0, Odoo as the system of record
+- Two databases: `pps_demo` (disposable, rebuilt by `make odoo-demo`, which no longer
+  deletes volumes) and `pps_live` (the system of record, never dropped).
+- `scripts/odoo_admin.py`: guarded operations. `drop` refuses `pps_live`; `nuke`
+  refuses without a fresh verified backup; backups in Odoo's zip format (database +
+  filestore), verified on write; a restore test that proves the latest backup loads.
+- Scripts write as a least-privilege `pps-bot` user through an append-only
+  `ensure()`: stable `x_pps_key` per record, never edits or deletes, so manual work in
+  the UI is never overwritten. Verified: the bot can't escalate its rights, and a full
+  demo rebuild leaves `pps_live` identical.
+
 ## 2026-11-24: Public launch prep
 - Repository renamed to **Supply Chain Planning**; commit identities normalised to the
   author's GitHub noreply address.

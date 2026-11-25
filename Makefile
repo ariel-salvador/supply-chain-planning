@@ -1,4 +1,6 @@
-# Odoo Community demo (local only). `make odoo-demo` rebuilds everything from scratch.
+# Odoo Community (local only). Two databases in one instance (ADR 0017):
+#   pps_demo  disposable: `make odoo-demo` rebuilds it from scratch
+#   pps_live  the user's system of record: never dropped by any target here
 SHELL := /bin/bash
 PY    := .venv/bin/python
 XBIN  := /Applications/OrbStack.app/Contents/MacOS/xbin
@@ -17,7 +19,8 @@ export
 DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
-.PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-down odoo-reset odoo-logs
+.PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-demo-reset odoo-down odoo-logs \
+        odoo-live-init odoo-live-bootstrap odoo-backup odoo-restore-test odoo-nuke
 
 report:              ## build outputs/report/index.html (static charts, local only)
 	$(PY) reports/build_report.py products/blg_whey_protein.yaml
@@ -50,13 +53,28 @@ odoo-compare:        ## diff Odoo's plan against the Python MRP
 odoo-rfq:            ## create the RFQ round (run AFTER odoo-run: drafts count as supply in progress)
 	$(PY) scripts/odoo_sourcing.py products/blg_whey_protein.yaml
 
-odoo-demo: odoo-reset odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq  ## full rebuild
+odoo-demo: odoo-up odoo-demo-reset odoo-init odoo-seed odoo-run odoo-compare odoo-rfq  ## rebuild pps_demo only
+
+odoo-demo-reset:     ## drop pps_demo (database + filestore). Volumes and pps_live are untouched
+	$(PY) scripts/odoo_admin.py drop $(ODOO_DB_NAME) --if-exists
 
 odoo-down:
 	$(COMPOSE) down
 
-odoo-reset:          ## stop and DELETE the demo database volumes
-	$(COMPOSE) down -v
+odoo-live-init:      ## create pps_live (only if missing): apps, pps-bot user, API key
+	$(PY) scripts/odoo_admin.py init-live
+
+odoo-live-bootstrap: ## re-run the pps_live bootstrap (idempotent; issues a fresh bot key)
+	$(PY) scripts/odoo_admin.py bootstrap-live
+
+odoo-backup:         ## verified backup (db + filestore zip) -> backups/  (BACKUP_DB=pps_demo for the demo)
+	$(PY) scripts/odoo_admin.py backup $(or $(BACKUP_DB),$(ODOO_LIVE_DB_NAME),pps_live)
+
+odoo-restore-test:   ## prove the latest pps_live backup restores (into a throwaway DB, then dropped)
+	$(PY) scripts/odoo_admin.py restore-test $(or $(BACKUP_DB),$(ODOO_LIVE_DB_NAME),pps_live)
+
+odoo-nuke:           ## DELETE EVERY VOLUME incl. pps_live; refuses without a fresh pps_live backup
+	$(PY) scripts/odoo_admin.py nuke --i-understand-this-deletes-pps-live
 
 odoo-logs:
 	$(COMPOSE) logs --tail=100 odoo

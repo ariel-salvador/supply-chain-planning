@@ -60,7 +60,8 @@ Checked 2026-11-23: GitHub profile shows **no public email**, and the account ha
 - [x] Old repo renamed (with the user's OK) to
       **`ariel-salvador/production-planning-simulator-archive`**, private. It holds PRs
       #1–#8, which reference the old commits. **Never make it public.**
-- [ ] **Launch:** flip `supply-chain-planning` to public, after the presentation items.
+- [x] **Launched (2026-11-24):** the user flipped `supply-chain-planning` to public. Verified
+      logged out: repo page and README served, archive repo still 404.
 
 ### Presentation
 - [x] Clean `docs/status.md` (drop stale "next steps").

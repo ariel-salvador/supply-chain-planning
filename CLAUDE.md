@@ -51,8 +51,13 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/python -m ppsim run products/blg_whey_protein.yaml [--variant sucrose] [--offline]
 .venv/bin/python scripts/pre_push_check.py
 make report                                   # static HTML charts -> outputs/report/
-make odoo-demo                                # Odoo 19 Community demo (Docker), ~1 min
+make odoo-demo                                # rebuild the disposable pps_demo (Docker), ~1 min
+make odoo-backup && make odoo-restore-test    # back up pps_live and prove it restores
 ```
+
+**Odoo has two databases (ADR 0017).** `pps_demo` is disposable. `pps_live` is the
+user's system of record: never drop or reset it, write to it only through
+`Odoo.live().ensure()` (append-only, as `pps-bot`), and back it up before risky work.
 
 ## Skills (`.claude/skills/`)
 
