@@ -60,6 +60,7 @@ BOT_GROUPS = [
     "mrp.group_mrp_manager",
     "purchase.group_purchase_manager",
     "sales_team.group_sale_manager",
+    "account.group_account_invoice",   # Invoicing / Billing: customer invoices, vendor bills, payments
 ]
 groups = [env.ref(x, raise_if_not_found=False) for x in BOT_GROUPS]
 groups = [g.id for g in groups if g]
@@ -87,6 +88,7 @@ READ_MODELS = [
     "mrp.production", "stock.warehouse", "stock.location", "stock.quant", "stock.move",
     "stock.picking", "stock.warehouse.orderpoint", "sale.order", "sale.order.line",
     "purchase.order", "purchase.order.line", "account.move", "account.move.line",
+    "account.payment", "account.journal", "stock.scrap",
 ]
 reader_group = env["res.groups"].search([("name", "=", "PPS Reader (read-only)")], limit=1)
 if not reader_group:
@@ -116,6 +118,8 @@ REFS = [
     "uom.product_uom_kgm", "uom.product_uom_unit",
     "mrp.route_warehouse0_manufacture", "purchase_stock.route_warehouse0_buy",
     "stock.warehouse0", "stock.stock_location_stock",
+    "stock.stock_location_suppliers", "stock.stock_location_customers",
+    "stock.picking_type_in", "stock.picking_type_out", "account.account_payment_term_30days",
 ]
 refs = {}
 for x in REFS:

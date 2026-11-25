@@ -59,3 +59,17 @@ def test_write_produces_csv_and_duckdb(tmp_path):
     con = duckdb.connect(str(target / "pps.duckdb"), read_only=True)
     assert con.execute("select sum(qty) from fact_sales").fetchone()[0] == 3.0
     assert con.execute("select rows_fact_sales from meta").fetchone()[0] == 2
+
+
+@pytest.mark.parametrize("src,dst,kind,sign", [
+    ("supplier", "internal", "receipt", 1),
+    ("internal", "customer", "delivery", -1),
+    ("production", "internal", "production", 1),
+    ("internal", "production", "consumption", -1),
+    ("internal", "inventory", "scrap/adjustment", -1),
+    ("inventory", "internal", "scrap/adjustment", 1),
+    ("internal", "internal", "internal", 0),
+])
+def test_stock_move_kind_and_on_hand_sign(src, dst, kind, sign):
+    assert ox.move_kind(src, dst) == kind
+    assert ox.on_hand_sign(src, dst) == sign

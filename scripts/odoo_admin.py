@@ -233,6 +233,28 @@ def cmd_restore_test(db: str, env: Dict[str, str], outdir: Path) -> None:
             odoo_cli(["db", "drop", scratch], env, capture_output=True, text=True)
 
 
+def cmd_rehearse(env: Dict[str, str], outdir: Path) -> None:
+    """Replace the disposable demo with a copy of the latest live backup.
+
+    A rehearsal target for anything that writes to the live database (the history
+    backfill): same records, same bot and API keys, but losing it costs nothing.
+    `make odoo-demo` rebuilds the normal demo afterwards.
+    """
+    live, demo = env["ODOO_LIVE_DB_NAME"], env.get("ODOO_DB_NAME", "pps_demo")
+    path = latest_backup(live, outdir)
+    if path is None:
+        raise AdminError(f"no backup of {live} in {outdir}: run `make odoo-backup` first")
+    verify_backup(path)
+    check_droppable(demo, protected(env))
+    if db_exists(demo, env):
+        cmd_drop(demo, env, if_exists=True)
+    r = odoo_cli(["db", "load", demo, f"/backups/{path.name}"], env,
+                 mounts=[f"{outdir.resolve()}:/backups:ro"], capture_output=True, text=True)
+    if r.returncode != 0 or not db_exists(demo, env):
+        raise AdminError(f"loading {path.name} into {demo} failed")
+    print(f"rehearsal ready: {demo} is now a copy of {path.name} (rebuild the demo later with `make odoo-demo`)")
+
+
 def cmd_drop(db: str, env: Dict[str, str], if_exists: bool) -> None:
     check_droppable(db, protected(env))
     if not db_exists(db, env):
@@ -338,6 +360,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rt = sub.add_parser("restore-test")
     rt.add_argument("db")
     rt.add_argument("--out", type=Path, default=ROOT / "backups")
+    rh = sub.add_parser("rehearse", help="copy the latest pps_live backup into pps_demo")
+    rh.add_argument("--out", type=Path, default=ROOT / "backups")
     sub.add_parser("init-live")
     sub.add_parser("bootstrap-live")
     n = sub.add_parser("nuke")
@@ -354,6 +378,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             cmd_backup(args.db, env, args.out)
         elif args.cmd == "restore-test":
             cmd_restore_test(args.db, env, args.out)
+        elif args.cmd == "rehearse":
+            cmd_rehearse(env, args.out)
         elif args.cmd == "init-live":
             cmd_init_live(env)
         elif args.cmd == "bootstrap-live":

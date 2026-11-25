@@ -53,7 +53,8 @@ class History:
     purchases: pd.DataFrame                 # one row per purchase order line
     production: pd.DataFrame                # one row per manufacturing order
     flows: pd.DataFrame                     # week x item: opening, in, out, closing
-    standards: pd.DataFrame                 # year x item standard cost; selling price
+    standards: pd.DataFrame                 # year x item standard cost
+    price_list: pd.DataFrame                # list price of the finished item over time
     kpis: pd.DataFrame                      # weekly KPI series
     events: pd.DataFrame                    # what happened, when
     opening: Dict[str, float]
@@ -106,27 +107,50 @@ def target_prices(cfg: ProductConfig, prices: pd.DataFrame, when: pd.Timestamp) 
     return src_mod.should_cost(cfg, latest)["target_price_usd"].to_dict()
 
 
+def cost_at(cfg: ProductConfig, prices: pd.DataFrame, vendor_of: Dict[str, str], per_unit: Dict[str, Dict[str, float]],
+            root: str, mid: str, when: pd.Timestamp) -> Dict[str, float]:
+    """Cost per item at the prices of ``when``: awarded supplier's quote on the should-cost
+    target for purchased items; ``mid`` carries its material only; ``root`` adds conversion."""
+    tp = target_prices(cfg, prices, when)
+    c = {i: tp[i] * supplier_index(cfg, s) for i, s in vendor_of.items()}
+    c[mid] = sum(q * c[x] for x, q in per_unit[mid].items())
+    c[f"{root}:material"] = sum(q * c[x] for x, q in per_unit[root].items())
+    c[root] = c[f"{root}:material"] + cfg.history.conversion_usd_per_kg
+    return c
+
+
 def standards(cfg: ProductConfig, prices: pd.DataFrame, vendor_of: Dict[str, str], years: List[int],
               per_unit: Dict[str, Dict[str, float]], root: str, mid: str) -> pd.DataFrame:
-    """Standard cost per item and year, rolled from the prior December's prices.
-
-    Purchased items: awarded supplier's quote on the should-cost target. ``mid`` (the
-    intermediate) carries its material only; ``root`` adds the conversion cost. The
-    selling price is the root's standard cost grossed up by the target margin.
-    """
-    h = cfg.history
+    """Standard cost per item and year, rolled each January from the prior December's prices."""
     rows = []
     for y in years:
-        tp = target_prices(cfg, prices, pd.Timestamp(f"{y - 1}-12-01"))
-        std = {i: tp[i] * supplier_index(cfg, s) for i, s in vendor_of.items()}
-        std[mid] = sum(q * std[c] for c, q in per_unit[mid].items())
-        material = sum(q * std[c] for c, q in per_unit[root].items())
-        std[root] = material + h.conversion_usd_per_kg
-        for i, v in std.items():
+        for i, v in cost_at(cfg, prices, vendor_of, per_unit, root, mid, pd.Timestamp(f"{y - 1}-12-01")).items():
             rows.append({"year": y, "item": i, "std_usd_per_uom": v})
-        rows.append({"year": y, "item": "ASP", "std_usd_per_uom": round(std[root] / (1 - h.gross_margin), 2)})
-        rows.append({"year": y, "item": f"{root}:material", "std_usd_per_uom": material})
     return pd.DataFrame(rows)
+
+
+def list_prices(cfg: ProductConfig, prices: pd.DataFrame, vendor_of: Dict[str, str],
+                per_unit: Dict[str, Dict[str, float]], root: str, mid: str,
+                start: pd.Timestamp, end: pd.Timestamp) -> pd.DataFrame:
+    """The finished item's list price, reset every ``reprice_every_months`` from the prior
+    month's input costs: cost / (1 - target margin), in cents. Customers pay it less their
+    discount. Costs move with corn and the producer price indices, so prices do too."""
+    h = cfg.history
+    step = h.reprice_every_months
+    first = pd.Timestamp(year=start.year, month=1, day=1)
+    while first + pd.DateOffset(months=step) <= start:
+        first += pd.DateOffset(months=step)
+    rows, m = [], first
+    while m <= end:
+        c = cost_at(cfg, prices, vendor_of, per_unit, root, mid, m - pd.DateOffset(months=1))
+        rows.append({"valid_from": m, "list_price": round(c[root] / (1 - h.gross_margin), 2),
+                     "cost_basis": c[root]})
+        m += pd.DateOffset(months=step)
+    return pd.DataFrame(rows)
+
+
+def list_price_on(table: pd.DataFrame, when: pd.Timestamp) -> float:
+    return float(table[table["valid_from"] <= when]["list_price"].iloc[-1])
 
 
 # ---------------------------------------------------------------------------
@@ -213,7 +237,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
     for c in root_comps:
         if cfg.items[c].uom == "unit" and cfg.items[c].category == "packaging":
             bag = round(root_batch / root_comps[c], 2)            # kg of powder per bag
-    asp = {r.year: r.std_usd_per_uom for r in std[std["item"] == "ASP"].itertuples()}
+    plist = list_prices(cfg, prices, vendor_of, per_unit, root, mid,
+                        weeks[0] - pd.Timedelta(weeks=lead), end)
     orders = []
     customer_dem = np.zeros(T + extra)
     for k, (cid, p) in enumerate(h.customers.items()):
@@ -231,7 +256,9 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
             orders.append({
                 "key": f"hist:so:{cid}:{due_monday.date()}", "customer": cid, "due_week": due,
                 "date_order": at(placed, ORDER_DAY), "date_promised": at(due_monday, SHIP_DAY),
-                "qty": float(qty), "price_unit": asp[placed.year], "spike": bool(spike[cid][due] > 0),
+                "qty": float(qty), "list_price": list_price_on(plist, placed),
+                "price_unit": round(list_price_on(plist, placed) * (1 - p.discount), 2),
+                "spike": bool(spike[cid][due] > 0),
             })
     orders.sort(key=lambda o: (o["due_week"], o["key"]))
 
@@ -369,7 +396,7 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
                     arrival = o[1]
                     late = arrival - t - L
             for ln in lines:
-                indexed = cfg.items[ln["item"]].price is not None
+                indexed = ln["item"] in prices.columns
                 tp = target_prices(cfg, prices, monday)[ln["item"]]
                 price = tp * q.price_index
                 if not indexed:
@@ -377,7 +404,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
                 ln["price_unit"] = _round(price, PRICE_DIGITS)
                 ln["std"] = stdv[(monday.year, ln["item"])]
                 if indexed and price_at(prices, ln["item"], monday)[1]:
-                    notes.append(f"{monday.date()}: {ln['item']} price carried forward from the last published month")
+                    notes.append(f"{ln['item']}: price carried forward from the last published month "
+                                 f"(from {monday.date()})")
             pos.append({"key": f"hist:po:{sup}:{monday.date()}", "supplier": sup, "week": t,
                         "date_order": at(monday, ORDER_DAY), "promised_week": t + L,
                         "date_promised": at(monday + pd.Timedelta(weeks=L), RECEIPT_DAY),
@@ -460,8 +488,15 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
     kpis = kpis.merge(by_week["ppv_usd"].sum().rename("ppv_usd"), left_on="week", right_index=True, how="left")
     kpis[["purchases_received_usd", "ppv_usd"]] = kpis[["purchases_received_usd", "ppv_usd"]].fillna(0.0)
     return History(weeks=weeks, sales=sales, purchases=purchases, production=production.reset_index(drop=True),
-                   flows=pd.DataFrame(flows), standards=std, kpis=kpis, events=pd.DataFrame(ev_rows),
-                   opening=opening, notes=sorted(set(notes)))
+                   flows=pd.DataFrame(flows), standards=std, price_list=plist, kpis=kpis, events=pd.DataFrame(ev_rows),
+                   opening=opening, notes=_first_per_item(notes))
+
+
+def _first_per_item(notes: List[str]) -> List[str]:
+    seen: Dict[str, str] = {}
+    for n in notes:
+        seen.setdefault(n.split(":", 1)[0], n)
+    return sorted(seen.values())
 
 
 def conservation_errors(hist: History, tol: float = 1e-6) -> List[str]:

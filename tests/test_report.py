@@ -17,7 +17,15 @@ spec.loader.exec_module(br)
 def fake_prices(monkeypatch):
     idx = pd.date_range("2016-01-01", periods=24, freq="MS")
     data = {"PMAIZMTUSDM": pd.Series(200.0, index=idx), "PSUGAISAUSDM": pd.Series(15.0, index=idx)}
-    monkeypatch.setattr(fred, "fetch_series", lambda sid, **k: data[sid])
+    for ppi in ("PCU325311325311", "PCU325180325180", "PCU322220322220", "PCU326199326199"):
+        data[ppi] = pd.Series(100.0, index=idx)   # flat producer price indices
+
+    def fake(sid, **k):
+        if sid not in data:
+            raise fred.FredError(f"{sid} not in the test sample")
+        return data[sid]
+
+    monkeypatch.setattr(fred, "fetch_series", fake)
     monkeypatch.setattr(fred, "cache_metadata", lambda sid, *a: {"series": sid})
 
 

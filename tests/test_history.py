@@ -107,8 +107,13 @@ def test_standard_cost_and_selling_price_by_hand(case):
     idx = cfg.suppliers[res.awards.loc["GLUCOSE", "awarded_to"]].quote.price_index
     assert math.isclose(std[(2025, "GLUCOSE")], target * idx, rel_tol=1e-9)
     assert math.isclose(std[(2025, "BLG-PWD")], std[(2025, "BLG-PWD:material")] + 7.50)
-    assert math.isclose(std[(2025, "ASP")], round(std[(2025, "BLG-PWD")] / (1 - 0.30), 2))
-    assert 12 < std[(2025, "ASP")] < 16                                  # ~USD 14/kg
+    # list price: reset quarterly from the prior month's cost, grossed up by the 30% margin
+    pl = hist.price_list
+    assert (pl["valid_from"].dt.month.isin([1, 4, 7, 10])).all()
+    assert np.allclose(pl["list_price"], (pl["cost_basis"] / 0.7).round(2))
+    assert 12 < pl["list_price"].mean() < 16                             # ~USD 14/kg
+    jan = pl[pl["valid_from"] == "2025-01-01"].iloc[0]
+    assert math.isclose(jan["cost_basis"], std[(2025, "BLG-PWD")])       # January list = new standard
     # flat prices: an indexed item has no PPV at the awarded supplier
     glu = hist.purchases[(hist.purchases["item"] == "GLUCOSE") & ~hist.purchases["emergency"]]
     assert (glu["ppv_usd"].abs() <= glu["qty_received"] * 0.5e-4 + 1e-9).all()   # only 4-decimal price rounding
@@ -166,3 +171,26 @@ def test_history_config_is_validated(tmp_path):
     p.write_text(yaml.safe_dump(raw, sort_keys=False))
     with pytest.raises(ConfigError, match="outside the history window"):
         load_config(p)
+
+
+def test_customers_pay_list_less_their_discount(case):
+    cfg, _, _, hist = case
+    s = hist.sales
+    for cid, p in cfg.history.customers.items():
+        rows = s[s["customer"] == cid]
+        assert np.allclose(rows["price_unit"], (rows["list_price"] * (1 - p.discount)).round(2))
+    assert s.groupby("customer")["price_unit"].mean()["c_distributor"] < s["list_price"].mean()
+
+
+def test_mock_bases_move_with_their_cited_index():
+    from ppsim.feedstock import indexed_prices
+    cfg = load_config(BLG)
+    sid = cfg.sourcing.material_index["NH3"]
+    idx = pd.date_range("2025-01-01", periods=24, freq="MS")
+    series = pd.Series(100.0, index=idx)
+    series[idx >= "2026-06-01"] = 150.0                                  # a 50% index rise
+    out = indexed_prices(cfg, {sid: series})
+    base = cfg.sourcing.material_base["NH3"]
+    assert math.isclose(out.loc["2026-01-01", "NH3"], base)              # level = mock base at the base month
+    assert math.isclose(out.loc["2026-07-01", "NH3"], base * 1.5)        # movement = the index
+    assert set(out.columns) == {"NH3", "AMSULF"}                         # only items on that series

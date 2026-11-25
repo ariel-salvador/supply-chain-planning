@@ -26,7 +26,7 @@ from . import supplier_perf as perf_mod
 from . import demand as demand_mod
 from . import fred
 from .config import ProductConfig, apply_variant, load_config
-from .feedstock import item_prices, material_cost_per_unit
+from .feedstock import indexed_prices, item_prices, material_cost_per_unit
 from .mrp import MrpRecord, run_mrp, to_long
 
 
@@ -62,6 +62,7 @@ class RunResult:
     forward_buy: Optional[pd.DataFrame] = None
     sourcing_notes: List[str] = field(default_factory=list)  # award vs planning parameters
     fred_meta: List[dict] = field(default_factory=list)
+    index_prices: Optional[pd.DataFrame] = None  # mock bases moved by a cited index (should-cost, history)
     warnings: List[str] = field(default_factory=list)
 
     @property
@@ -137,7 +138,8 @@ def run(
     )
 
     if fetch_prices:
-        wanted = sorted({it.price.series for it in cfg.items.values() if it.price is not None})
+        wanted = sorted({it.price.series for it in cfg.items.values() if it.price is not None}
+                        | set(cfg.sourcing.material_index.values() if cfg.sourcing else ()))
         series = {}
         for sid in wanted:
             try:
@@ -149,6 +151,9 @@ def run(
         if priced:
             result.prices = item_prices(cfg, series)
             result.feedstock_cost = material_cost_per_unit(cfg, result.prices, root)
+        idx = indexed_prices(cfg, series)
+        if not idx.empty:
+            result.index_prices = idx
 
     if cfg.purchasing and result.prices is not None:
         result.price_scenarios = purch_mod.price_scenarios(result.prices, cfg.purchasing.price_window_years)
@@ -173,9 +178,11 @@ def run(
 def _sourcing(cfg: ProductConfig, result: RunResult, records) -> None:
     """M6: should-cost -> RFQ scoring -> award -> TCO -> scorecard -> strategy."""
     latest = {}
-    if result.prices is not None:
-        for col in result.prices.columns:
-            s = result.prices[col].dropna()
+    for frame in (result.prices, result.index_prices):
+        if frame is None:
+            continue
+        for col in frame.columns:
+            s = frame[col].dropna()
             if len(s):
                 latest[col] = float(s.iloc[-1])
     result.usage = src_mod.planned_usage(cfg, records)

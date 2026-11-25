@@ -222,6 +222,10 @@ class SourcingSpec:
     forward_buy_weeks: float
     service_level_z: float
     seed: int = 0
+    # mock base prices that move with a cited price index (FRED/BLS PPI): item -> series.
+    # price(t) = mock base x index(t) / index(index_base). The level is mock, the movement cited.
+    material_index: Dict[str, str] = field(default_factory=dict)
+    index_base: str = ""
 
 
 RFQ_CRITERIA = ("price", "lead_time", "quality", "risk")
@@ -282,6 +286,7 @@ class CustomerProfile:
     share: float        # share of total demand
     every_weeks: int    # order interval
     pay_days: float     # average days from invoice to payment
+    discount: float = 0.0  # off the list price
 
 
 @dataclass(frozen=True)
@@ -314,6 +319,7 @@ class HistorySpec:
     min_cover_weeks: float
     safety_cover_weeks: float
     customers: Dict[str, CustomerProfile]
+    reprice_every_months: int = 12
     events: Tuple[HistoryEvent, ...] = ()
 
 
@@ -747,7 +753,16 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             forward_buy_weeks=r.planning(_req(sr, "forward_buy_weeks", "sourcing"), "sourcing.forward_buy_weeks"),
             service_level_z=r.planning(_req(sr, "service_level_z", "sourcing"), "sourcing.service_level_z"),
             seed=int(sr.get("seed", 0)),  # RNG seed: structural, not a model number
+            material_index={str(k): str(v) for k, v in (sc.get("material_index") or {}).items()},
+            index_base=_iso_date(sc["index_base"], "sourcing.should_cost.index_base") if sc.get("index_base") else "",
         )
+        for iid in sourcing.material_index:
+            if iid not in material_base:
+                raise ConfigError(f"sourcing.should_cost.material_index: {iid!r} has no mock base to index")
+            if cfg_items_price(items, iid):
+                raise ConfigError(f"sourcing.should_cost.material_index: {iid!r} already has a cited price link")
+        if sourcing.material_index and not sourcing.index_base:
+            raise ConfigError("sourcing.should_cost: material_index needs an index_base month")
         if not 0.0 <= sourcing.dual_source_split <= 0.5:
             raise ConfigError("sourcing.dual_source_split: must be between 0 and 0.5")
     elif suppliers:
@@ -789,6 +804,10 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
     )
 
 
+def cfg_items_price(items: Mapping[str, Item], iid: str) -> bool:
+    return items[iid].price is not None
+
+
 def _iso_date(v: Any, where: str) -> str:
     import datetime as _dt
     try:
@@ -813,6 +832,7 @@ def _load_history(h: Mapping[str, Any], r: "_Resolver", customers: Mapping[str, 
             share=r.planning(_req(cp, "share", w), f"{w}.share"),
             every_weeks=_whole(r.planning(_req(cp, "every_weeks", w), f"{w}.every_weeks"), f"{w}.every_weeks") or 1,
             pay_days=r.planning(_req(cp, "pay_days", w), f"{w}.pay_days"),
+            discount=r.planning(cp.get("discount"), f"{w}.discount"),
         )
     total = sum(p.share for p in profiles.values())
     if abs(total - 1.0) > 1e-9:
@@ -852,6 +872,8 @@ def _load_history(h: Mapping[str, Any], r: "_Resolver", customers: Mapping[str, 
         min_cover_weeks=r.planning(_req(h, "min_cover_weeks", where), f"{where}.min_cover_weeks"),
         safety_cover_weeks=r.planning(_req(h, "safety_cover_weeks", where), f"{where}.safety_cover_weeks"),
         customers=profiles,
+        reprice_every_months=(_whole(r.planning(h["reprice_every_months"], f"{where}.reprice_every_months"),
+                                     f"{where}.reprice_every_months") or 12) if h.get("reprice_every_months") else 12,
         events=tuple(events),
     )
 

@@ -1,6 +1,6 @@
 # Status (handoff)
 
-_Last updated: 2026-11-24 · repo **`ariel-salvador/supply-chain-planning`**, **public**
+_Last updated: 2026-11-25 · repo **`ariel-salvador/supply-chain-planning`**, **public**
 since 2026-11-24. The old repo, now `production-planning-simulator-archive`, stays private
 forever: its PR pages reference commits with the author's old email._
 
@@ -35,21 +35,27 @@ forever: its PR pages reference commits with the author's old email._
   `docs/dashboard/marts.md`. Live has master data only until transactions exist; the
   demo extract has 26 weeks of orders.
 
-## Next 3 steps
-1. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
-   PO in the Odoo UI and watching it appear after a refresh. Start from the demo
-   marts (populated) while `pps_live` has no transactions.
-2. **History generator** (`docs/plan-history-and-dashboard.md`, Phase 1) writing three
-   years of transactions into `pps_live` through `ensure()`.
-3. **Evidence site** on the same marts, embedding the Tableau dashboard.
+- **History generator built** (2026-11-25, ADR 0018): `src/ppsim/history.py` simulates
+  2024-01-01 → 2026-11-22 (weekly; every item balances every week) and
+  `make odoo-history` writes it into `pps_live` as backdated documents: ~500 sales orders,
+  ~170 purchase orders, ~540 manufacturing orders, deliveries, receipts, invoices, bills
+  and payments. Prices move with real indices (FRED corn; BLS producer price indices for
+  the other inputs); the list price resets quarterly. Rehearsed first on a copy
+  (`make odoo-history-rehearse`), checked against the ledger by `scripts/check_history.py`.
+- **Tableau: on hold** until the user creates a Tableau Public account. The data is ready:
+  `make dashboard-extract` → `outputs/marts/pps_live/*.csv`, now with invoices, payments,
+  stock moves, forecast, standard costs and the price list (`docs/dashboard/marts.md`).
 
-The three-year history generator (`docs/plan-history-and-dashboard.md`, Phase 1) then
-fills `pps_live` through the same append-only writer.
+## Next 3 steps
+1. **Tableau MVP** (user, once the account exists): build from the live marts. Suggested
+   first views: revenue and margin by quarter, OTIF and PPV by supplier, inventory and
+   days of supply by week, AR aging.
+2. **Evidence site** on the same marts, embedding the Tableau dashboard.
+3. **Week driver** (parked idea): advance `pps_live` one week at a time from the plan,
+   so the history keeps growing past 2026-11-22.
 
 ## Open questions
-- Material cost: the history plan quotes $3.88/kg of powder, but the BOM against
-  should-cost target prices gives **$2.33/kg** today. Resolve with a proper standard-cost
-  roll-up before the ASP is set.
+- Resolved: the plan doc's $3.88/kg material cost was the mock glucose fallback (ADR 0018).
 - Should-cost conversion and margin shares are mock; membrane life (ADR 0008) and DSP
   throughput (ADR 0006) are unsourced.
 - See `knowledge/backlog.md`.

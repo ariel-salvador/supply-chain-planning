@@ -427,6 +427,17 @@ sourcing:
       CACL2: mock_base_cacl2
       BAG-25KG: mock_base_bag25
       UFDF-MEMBRANE-SET: mock_base_membrane_set
+    # the mock bases move with a cited US producer price index (BLS, via FRED):
+    # price(month) = mock base x index(month) / index(index_base). Level mock, movement real.
+    index_base: "2026-01-01"
+    material_index:
+      NH3: PCU325311325311               # PPI: nitrogenous fertilizer manufacturing
+      AMSULF: PCU325311325311
+      KPHOS: PCU325180325180             # PPI: other basic inorganic chemical manufacturing
+      MGSULF: PCU325180325180
+      CACL2: PCU325180325180
+      BAG-25KG: PCU322220322220          # PPI: paper bag and coated/treated paper manufacturing
+      UFDF-MEMBRANE-SET: PCU326199326199 # PPI: all other plastics products (proxy for PES membranes)
   carrying_cost_rate: mock_carrying_cost_rate
   quality_cost_multiple: mock_quality_cost_multiple
   scorecard_periods: mock_scorecard_periods
@@ -452,6 +463,7 @@ history:
   seed: 2024                   # RNG seed, separate from the plan's demand seed
   conversion_usd_per_kg: mock_conversion_usd_per_kg_powder
   gross_margin: mock_target_gross_margin
+  reprice_every_months: mock_reprice_every_months   # list price follows current input costs
   order_lead_weeks: mock_customer_order_lead_weeks
   customer_terms_days: mock_customer_payment_terms_days
   vendor_terms_days: mock_vendor_payment_terms_days
@@ -459,10 +471,10 @@ history:
   min_cover_weeks: mock_hist_min_cover_weeks
   safety_cover_weeks: mock_hist_safety_cover_weeks
   customers:
-    c_brands:      {share: mock_cust_share_brands,      every_weeks: 1, pay_days: mock_pay_days_prompt}
-    c_beverage:    {share: mock_cust_share_beverage,    every_weeks: 1, pay_days: mock_pay_days_standard}
+    c_brands:      {share: mock_cust_share_brands,      every_weeks: 1, pay_days: mock_pay_days_prompt, discount: mock_discount_key_account}
+    c_beverage:    {share: mock_cust_share_beverage,    every_weeks: 1, pay_days: mock_pay_days_standard, discount: mock_discount_key_account}
     c_nutrition:   {share: mock_cust_share_nutrition,   every_weeks: mock_order_every_weeks_regular, pay_days: mock_pay_days_standard}
-    c_distributor: {share: mock_cust_share_distributor, every_weeks: mock_order_every_weeks_monthly, pay_days: mock_pay_days_slow}
+    c_distributor: {share: mock_cust_share_distributor, every_weeks: mock_order_every_weeks_monthly, pay_days: mock_pay_days_slow, discount: mock_discount_distributor}
     c_copacker:    {share: mock_cust_share_copacker,    every_weeks: mock_order_every_weeks_regular, pay_days: mock_pay_days_prompt}
   events:
     - kind: contamination

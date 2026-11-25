@@ -15,6 +15,15 @@ Tables
 - ``fact_production``: manufacturing orders
 - ``fact_stock``: on-hand quantity per product and internal location (snapshot)
 - ``fact_reorder``: reorder rules with Odoo's forecast and suggested order quantity
+- ``fact_invoices``: posted customer invoices and vendor bills, with due date, amount
+  still open and payment state (receivables / payables aging)
+- ``fact_payments``: customer receipts and vendor payments
+- ``fact_stock_moves``: every done stock move, signed for on-hand (+ into an internal
+  location, - out of one) and typed (receipt, delivery, production, consumption,
+  scrap/adjustment): weekly inventory, turns and days of supply are built from it
+- ``fact_forecast``, ``dim_standard_cost``, ``dim_price_list``: from the engine's history ledger
+  (``outputs/history/``, written by ``scripts/odoo_history.py``) when present. Odoo
+  Community holds neither a statistical forecast nor a cost history
 - ``meta``: when, from which database, row counts
 
 Every document row says who made it: ``created_by`` = ``script`` (pps-bot or a
@@ -37,6 +46,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from odoo_client import PPS_KEY, Odoo, OdooError, ReadOnlyOdoo  # noqa: E402
 
 OUT = ROOT / "outputs" / "marts"
+LEDGER = ROOT / "outputs" / "history"
 
 
 # ---------------------------------------------------------------------------
@@ -99,6 +109,26 @@ def lines_with_orders(lines: List[dict], orders: List[dict], line_map: Dict[str,
     return pd.DataFrame(rows)
 
 
+def move_kind(src_usage: str, dst_usage: str) -> str:
+    """Business meaning of a stock move from its location types."""
+    if src_usage == "supplier":
+        return "receipt"
+    if dst_usage == "customer":
+        return "delivery"
+    if src_usage == "production":
+        return "production"
+    if dst_usage == "production":
+        return "consumption"
+    if "inventory" in (src_usage, dst_usage):
+        return "scrap/adjustment"
+    return "internal"
+
+
+def on_hand_sign(src_usage: str, dst_usage: str) -> int:
+    """+1 into the warehouse, -1 out of it, 0 for moves inside it."""
+    return int(dst_usage == "internal") - int(src_usage == "internal")
+
+
 def finish(df: pd.DataFrame, dates: Sequence[str], m2o: Sequence[str], week_from: Optional[str]) -> pd.DataFrame:
     """Flatten many2one columns into *_id / *_name, parse dates, add a week bucket."""
     if df.empty:
@@ -150,18 +180,20 @@ def extract(o: Odoo, demo: bool) -> Dict[str, pd.DataFrame]:
         dp = dp.drop(columns=[c for c in ("create_uid", PPS_KEY) if c in dp]).rename(columns={"id": "partner_id"})
     t["dim_partner"] = dp
 
-    so = o.search_read("sale.order", [], ["name", "date_order", "commitment_date", "partner_id", "state",
-                                          "create_uid", *key])
+    so = o.search_read("sale.order", [], ["name", "date_order", "commitment_date", "effective_date", "partner_id",
+                                          "state", "create_uid", *key])
     sol = o.search_read("sale.order.line", [["order_id", "in", [r["id"] for r in so]]],
                         ["order_id", "product_id", "product_uom_qty", "qty_delivered", "price_unit", "price_subtotal"])
     t["fact_sales"] = finish(lines_with_orders(
         sol, so,
         {"product": "product_id", "qty_ordered": "product_uom_qty", "qty_delivered": "qty_delivered",
          "price_unit": "price_unit", "amount": "price_subtotal"},
-        {"date_order": "date_order", "date_promised": "commitment_date", "customer": "partner_id", "state": "state"},
-        script_uids, demo), ["date_order", "date_promised"], ["product", "customer"], "date_promised")
+        {"date_order": "date_order", "date_promised": "commitment_date", "date_delivered": "effective_date",
+         "customer": "partner_id", "state": "state"},
+        script_uids, demo), ["date_order", "date_promised", "date_delivered"], ["product", "customer"], "date_promised")
 
-    po = o.search_read("purchase.order", [], ["name", "date_order", "partner_id", "state", "origin", "create_uid", *key])
+    po = o.search_read("purchase.order", [], ["name", "date_order", "effective_date", "partner_id", "state", "origin",
+                                              "create_uid", *key])
     pol = o.search_read("purchase.order.line", [["order_id", "in", [r["id"] for r in po]]],
                         ["order_id", "product_id", "product_qty", "qty_received", "price_unit", "price_subtotal",
                          "date_planned"])
@@ -169,8 +201,9 @@ def extract(o: Odoo, demo: bool) -> Dict[str, pd.DataFrame]:
         pol, po,
         {"product": "product_id", "qty_ordered": "product_qty", "qty_received": "qty_received",
          "price_unit": "price_unit", "amount": "price_subtotal", "date_planned": "date_planned"},
-        {"date_order": "date_order", "vendor": "partner_id", "state": "state", "origin": "origin"},
-        script_uids, demo), ["date_order", "date_planned"], ["product", "vendor"], "date_planned")
+        {"date_order": "date_order", "date_received": "effective_date", "vendor": "partner_id", "state": "state",
+         "origin": "origin"},
+        script_uids, demo), ["date_order", "date_planned", "date_received"], ["product", "vendor"], "date_planned")
 
     mos = o.search_read("mrp.production", [], ["name", "product_id", "product_qty", "qty_produced", "date_start",
                                                "date_finished", "state", "origin", "create_uid", *key])
@@ -191,6 +224,54 @@ def extract(o: Odoo, demo: bool) -> Dict[str, pd.DataFrame]:
                                                           "trigger", "qty_on_hand", "qty_forecast", "qty_to_order"])
     t["fact_reorder"] = finish(pd.DataFrame(ops).rename(columns={"id": "orderpoint_id", "product_id": "product"}),
                                [], ["product"], None)
+    inv = o.search_read("account.move", [["move_type", "in", ["out_invoice", "in_invoice", "out_refund", "in_refund"]],
+                                          ["state", "=", "posted"]],
+                        ["name", "move_type", "partner_id", "invoice_date", "invoice_date_due", "amount_untaxed",
+                         "amount_total", "amount_residual", "payment_state", "invoice_origin", "create_uid", *key])
+    fi = pd.DataFrame(inv)
+    if not fi.empty:
+        fi["kind"] = fi["move_type"].map({"out_invoice": "customer_invoice", "out_refund": "customer_credit",
+                                          "in_invoice": "vendor_bill", "in_refund": "vendor_credit"})
+        fi["created_by"] = [created_by(r, script_uids, demo) for r in inv]
+        fi = fi.drop(columns=[c for c in ("create_uid", PPS_KEY) if c in fi]).rename(
+            columns={"id": "move_id", "name": "move_ref", "partner_id": "partner"})
+    t["fact_invoices"] = finish(fi, ["invoice_date", "invoice_date_due"], ["partner"], "invoice_date")
+
+    pays = o.search_read("account.payment", [], ["name", "date", "amount", "payment_type", "partner_id", "state",
+                                                 "create_uid"])
+    fp = pd.DataFrame(pays)
+    if not fp.empty:
+        fp["created_by"] = [created_by(r, script_uids, demo) for r in pays]
+        fp = fp.drop(columns=["create_uid"]).rename(columns={"id": "payment_id", "name": "payment_ref",
+                                                             "partner_id": "partner"})
+    t["fact_payments"] = finish(fp, ["date"], ["partner"], "date")
+
+    usage = {r["id"]: r["usage"] for r in o.search_read("stock.location", [["active", "in", [True, False]]], ["usage"])}
+    moves = o.search_read("stock.move", [["state", "=", "done"]],
+                          ["date", "product_id", "quantity", "location_id", "location_dest_id", "reference",
+                           "origin", "create_uid"])
+    fm = pd.DataFrame(moves)
+    if not fm.empty:
+        src = [usage.get(m2o_id(v)) for v in fm["location_id"]]
+        dst = [usage.get(m2o_id(v)) for v in fm["location_dest_id"]]
+        fm["kind"] = [move_kind(a, b) for a, b in zip(src, dst)]
+        fm["on_hand_change"] = [on_hand_sign(a, b) * q for a, b, q in zip(src, dst, fm["quantity"])]
+        fm["created_by"] = [created_by(r, script_uids, demo) for r in moves]
+        fm = fm.drop(columns=["create_uid"]).rename(columns={"id": "move_id", "product_id": "product",
+                                                             "location_id": "from_location",
+                                                             "location_dest_id": "to_location"})
+    t["fact_stock_moves"] = finish(fm, ["date"], ["product", "from_location", "to_location"], "date")
+
+    if not demo:
+        for name, src in (("fact_forecast", "forecast.csv"), ("dim_standard_cost", "standards.csv"),
+                          ("dim_price_list", "price_list.csv")):
+            path = LEDGER / src
+            if path.exists():
+                df = pd.read_csv(path)
+                for col in ("week", "valid_from"):
+                    if col in df:
+                        df[col] = pd.to_datetime(df[col])
+                t[name] = df.assign(source="engine (mock)")
     return t
 
 

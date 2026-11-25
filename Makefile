@@ -20,7 +20,8 @@ DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
 .PHONY: report dashboard-extract odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-demo-reset odoo-down odoo-logs \
-        odoo-live-init odoo-live-bootstrap odoo-live-master odoo-backup odoo-restore-test odoo-nuke
+        odoo-live-init odoo-live-bootstrap odoo-live-master odoo-backup odoo-restore-test odoo-nuke \
+        odoo-history odoo-history-rehearse
 
 report:              ## build outputs/report/index.html (static charts, local only)
 	$(PY) reports/build_report.py products/blg_whey_protein.yaml
@@ -72,6 +73,15 @@ odoo-live-bootstrap: ## re-run the pps_live bootstrap (idempotent; issues a fres
 
 odoo-live-master:    ## load master data into pps_live (append-only; shows diffs, APPLY_DIFFS=1 to write them)
 	$(PY) scripts/odoo_master.py products/blg_whey_protein.yaml $(if $(APPLY_DIFFS),--apply-diffs,)
+
+odoo-history-rehearse: ## copy the latest pps_live backup into pps_demo and write the history there first
+	$(PY) scripts/odoo_admin.py backup $(or $(ODOO_LIVE_DB_NAME),pps_live)
+	$(PY) scripts/odoo_admin.py rehearse
+	$(PY) scripts/odoo_history.py products/blg_whey_protein.yaml --target rehearsal $(if $(UNTIL),--until $(UNTIL),)
+
+odoo-history:        ## write the mock 3-year history into pps_live (verified backup first; resumable)
+	$(PY) scripts/odoo_admin.py backup $(or $(ODOO_LIVE_DB_NAME),pps_live)
+	$(PY) scripts/odoo_history.py products/blg_whey_protein.yaml --target live $(if $(UNTIL),--until $(UNTIL),)
 
 odoo-backup:         ## verified backup (db + filestore zip) -> backups/  (BACKUP_DB=pps_demo for the demo)
 	$(PY) scripts/odoo_admin.py backup $(or $(BACKUP_DB),$(ODOO_LIVE_DB_NAME),pps_live)

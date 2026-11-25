@@ -81,8 +81,14 @@ class Report:
 # ---------------------------------------------------------------------------
 
 
-def plan(cfg, res, days_per_week: float, trigger: str = "manual") -> List[Spec]:
-    """Ordered master-data specs for the config: dependencies always come first."""
+def plan(cfg, res, days_per_week: float, trigger: str = "manual",
+         costs: Optional[Dict[str, float]] = None, list_price: Optional[float] = None) -> List[Spec]:
+    """Ordered master-data specs for the config: dependencies always come first.
+
+    ``costs`` (standard cost per item) and ``list_price`` (the finished item's selling
+    price), when given, are set on the products and diffed like any other field.
+    """
+    costs = costs or {}
     root = cfg.demand.item
     planned = bom_mod.reachable(root, cfg.bom)
     lines = [b for b in cfg.bom if b.parent in planned]
@@ -121,11 +127,19 @@ def plan(cfg, res, days_per_week: float, trigger: str = "manual") -> List[Spec]:
         if it.uom not in UOM_XMLID:
             raise ValueError(f"{iid}: unsupported uom {it.uom!r}")
         buy = it.type == "purchased"
-        specs.append(Spec("product.template", f"product:{iid}", {
+        vals = {
             "name": it.name, "default_code": iid, "type": "consu", "is_storable": True,
             "uom_id": XRef(UOM_XMLID[it.uom]), "sale_ok": it.type == "finished", "purchase_ok": buy,
             "route_ids": [[6, 0, [XRef(ROUTE_XMLID["buy" if buy else "make"])]]],
-        }, compare=("name", "default_code", "uom_id", "sale_ok", "purchase_ok")))
+        }
+        compare = ["name", "default_code", "uom_id", "sale_ok", "purchase_ok"]
+        if iid in costs:
+            vals["standard_price"] = round(costs[iid], 4)
+            compare.append("standard_price")
+        if list_price is not None and it.type == "finished":
+            vals["list_price"] = list_price
+            compare.append("list_price")
+        specs.append(Spec("product.template", f"product:{iid}", vals, compare=tuple(compare)))
 
     # vendor price lists: every bidder, the awarded supplier at sequence 1
     vendor_of = ({i: r["awarded_to"] for i, r in res.awards.iterrows()} if res.awards is not None
@@ -254,6 +268,33 @@ def print_report(report: Report, apply_diffs: bool) -> None:
                 print(f"  {spec.key:32s} {f}: Odoo has {have!r}, config says {want!r}")
 
 
+def current_costs(cfg, res, year: Optional[int] = None) -> Tuple[Dict[str, float], Optional[float]]:
+    """This year's standard costs and selling price (ADR 0018), or nothing without prices."""
+    if cfg.history is None or res.prices is None or res.awards is None:
+        return {}, None
+    import datetime as dt
+
+    import pandas as pd
+
+    from ppsim import history as H
+    y = year or dt.date.today().year
+    root = cfg.demand.item
+    mid = next(b.component for b in cfg.bom if b.parent == root and cfg.items[b.component].type != "purchased")
+    _, mid_comps = H._bom_per_batch(cfg, mid)
+    root_batch, root_comps = H._bom_per_batch(cfg, root)
+    mid_batch = H._round(cfg.items[mid].batch_size)
+    per_unit = {mid: {c: q / mid_batch for c, q in mid_comps.items()},
+                root: {c: q / root_batch for c, q in root_comps.items()}}
+    purchased = [c for c in list(mid_comps) + list(root_comps) if cfg.items[c].type == "purchased"]
+    vendor_of = {i: res.awards.loc[i, "awarded_to"] for i in purchased}
+    prices = res.prices.join(res.index_prices, how="outer") if res.index_prices is not None else res.prices
+    std = H.standards(cfg, prices, vendor_of, [y], per_unit, root, mid)
+    vals = dict(zip(std["item"], std["std_usd_per_uom"]))
+    today = pd.Timestamp(dt.date.today())
+    plist = H.list_prices(cfg, prices, vendor_of, per_unit, root, mid, today, today)
+    return {i: v for i, v in vals.items() if i in cfg.items}, H.list_price_on(plist, today)
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("config", type=Path)
@@ -266,9 +307,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     from ppsim.registry import load_registry
 
     cfg = load_config(args.config)
-    res = run(cfg, fetch_prices=False)
+    res = run(cfg)        # cited FRED prices (cached); without them should-cost falls back to mock bases
+    if res.prices is None:
+        print("warning: no FRED prices; vendor prices use the mock fallback bases", file=sys.stderr)
     days_per_week = load_registry(ROOT / "knowledge" / "assumptions.csv")["days_per_week"].value
-    specs = plan(cfg, res, days_per_week, trigger=args.trigger)
+    costs, asp = current_costs(cfg, res)
+    specs = plan(cfg, res, days_per_week, trigger=args.trigger, costs=costs, list_price=asp)
     o = Odoo.live()
     print(f"{o.db}: {len(specs)} master-data records planned from {args.config}")
     report = apply(o, specs, apply_diffs=args.apply_diffs)

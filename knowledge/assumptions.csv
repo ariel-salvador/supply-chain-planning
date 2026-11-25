@@ -148,3 +148,6 @@ mock_pay_days_slow,Average days to pay of a slow customer,55,day,,,mock customer
 mock_event_outage_weeks,Weeks a supplier cannot deliver in the outage event,4,week,,,mock event (history),,,low,mock,blg_whey_protein
 mock_event_spike_weeks,Weeks of the unforecast demand spike,6,week,,,mock event (history),,,low,mock,blg_whey_protein
 mock_event_spike_uplift,Demand uplift of the spiking customer during the spike,0.40,fraction,,,mock event (history),,,low,mock,blg_whey_protein
+mock_reprice_every_months,How often the powder list price is reset from current input costs,3,month,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_discount_key_account,Price discount for the two largest (weekly) accounts,0.03,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_discount_distributor,Price discount for the distributor (resale margin),0.06,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein

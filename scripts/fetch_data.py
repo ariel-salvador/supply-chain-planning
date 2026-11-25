@@ -39,6 +39,24 @@ DATASETS = {
     },
 }
 
+# BLS producer price indices that move the mock base prices of the other inputs
+# (knowledge/notes/bls-ppi-input-price-indices.md). US government data, citation requested.
+for _sid, _title in {
+    "PCU325311325311": "PPI by Industry: Nitrogenous Fertilizer Manufacturing",
+    "PCU325180325180": "PPI by Industry: Other Basic Inorganic Chemical Manufacturing",
+    "PCU322220322220": "PPI by Industry: Paper Bag and Coated and Treated Paper Manufacturing",
+    "PCU326199326199": "PPI by Industry: All Other Plastics Product Manufacturing",
+}.items():
+    DATASETS[_sid] = {
+        "title": _title,
+        "units": "Index, monthly, not seasonally adjusted",
+        "provider": "U.S. Bureau of Labor Statistics, Producer Price Index (via FRED)",
+        "url": fred.CSV_URL.format(series=_sid),
+        "page": fred.SERIES_URL.format(series=_sid),
+        "license": "U.S. government work (public domain); FRED requests citation",
+        "commit_ok": False,   # kept with the other downloads; fetched on demand
+    }
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
