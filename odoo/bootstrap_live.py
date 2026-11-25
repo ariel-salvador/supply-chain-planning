@@ -17,6 +17,15 @@ wh = env["stock.warehouse"].search([("company_id", "=", company.id)], limit=1)
 if wh:
     wh.name = "Demo Plant (fictional)"
 
+# --- settings that need admin rights (the bot deliberately has none) --------------
+# replenishment look-ahead = the engine's planning horizon, so both see the same window
+if os.environ.get("PPS_HORIZON_DAYS"):
+    company.horizon_days = float(os.environ["PPS_HORIZON_DAYS"])
+# 4 decimals so per-batch BOM quantities (e.g. 0.01 membrane set) don't round to zero
+prec = env["decimal.precision"].search([("name", "=", "Product Unit")], limit=1)
+if prec and prec.digits < 4:
+    prec.digits = 4
+
 # --- x_pps_key: the stable key of every record a script creates -------------------
 # A manual (x_) field, indexed, NOT copied on duplicate, so a record duplicated in the
 # UI never inherits a script's key. Only on models the scripts write to.
@@ -45,6 +54,7 @@ for model in KEYED_MODELS:
 # itself more. No password, so it can't log into the UI; it authenticates by API key.
 BOT_GROUPS = [
     "base.group_user",
+    "product.group_product_manager",   # "Products / Create": products and units of measure
     "stock.group_stock_manager",
     "mrp.group_mrp_manager",
     "purchase.group_purchase_manager",

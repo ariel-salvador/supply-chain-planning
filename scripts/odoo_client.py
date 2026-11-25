@@ -44,10 +44,12 @@ class OdooError(RuntimeError):
 PPS_KEY = "x_pps_key"
 
 
-def pending_changes(current: Dict[str, Any], desired: Dict[str, Any]) -> Dict[str, tuple]:
+def pending_changes(current: Dict[str, Any], desired: Dict[str, Any], float_tol: float = 1e-9) -> Dict[str, tuple]:
     """Fields whose current value differs from the desired one: {field: (current, desired)}.
 
     Many2one values come back from Odoo as ``[id, display_name]``; they compare by id.
+    Floats compare within ``float_tol``: pass half of Odoo's stored precision (e.g. 5e-5
+    for 4 decimals) so a value Odoo rounded on save isn't reported as a change.
     Used to *show* a diff before any master-data sync. Nothing is applied here.
     """
     out = {}
@@ -56,7 +58,7 @@ def pending_changes(current: Dict[str, Any], desired: Dict[str, Any]) -> Dict[st
         if isinstance(have, list) and len(have) == 2 and isinstance(have[0], int):
             have = have[0]
         if isinstance(have, float) and isinstance(want, (int, float)):
-            if abs(have - float(want)) <= 1e-9:
+            if abs(have - float(want)) <= float_tol:
                 continue
         elif have == want:
             continue

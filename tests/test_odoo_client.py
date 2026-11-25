@@ -76,3 +76,10 @@ def test_live_reads_refs_file(tmp_path, monkeypatch):
     o = oc.Odoo.live(url="http://x")
     assert o.db == "pps_live" and o.key == "abc"
     assert o.ref("uom.product_uom_kgm") == 16  # no API call needed
+
+
+def test_pending_changes_ignores_odoo_rounding_but_not_real_edits():
+    stored = {"product_qty": 13636.3636}                 # Odoo keeps 4 decimals
+    assert oc.pending_changes(stored, {"product_qty": 13636.363636363636}, float_tol=0.5e-4) == {}
+    assert oc.pending_changes(stored, {"product_qty": 13636.37}, float_tol=0.5e-4) != {}
+    assert oc.pending_changes(stored, {"product_qty": 13636.363636363636}) != {}  # strict by default

@@ -20,6 +20,7 @@ made it.
 |---|---|
 | `make odoo-live-init` | Creates `pps_live` **only if it doesn't exist**: apps, fictional company, the `x_pps_key` field, the `pps-bot` user and its 90-day API key (`.odoo-apikey-live`, gitignored) |
 | `make odoo-live-bootstrap` | Re-runs the setup (idempotent) and issues a fresh bot key |
+| `make odoo-live-master` | Loads master data from the config (units, partners, products, vendor price lists, BOMs, manual-trigger reorder rules) as `pps-bot`. Append-only: reruns create nothing; values you changed in the UI are **reported, not reverted**. `APPLY_DIFFS=1` writes the config values over them |
 | `make odoo-backup` | Odoo-format zip (database + filestore) of `pps_live` → `backups/` (gitignored), verified. `BACKUP_DB=pps_demo` for the demo |
 | `make odoo-restore-test` | Loads the latest backup into a throwaway database, checks users and filestore, drops it |
 | `make odoo-nuke` | Deletes **every** volume. Refuses unless a verified `pps_live` backup from the last 24 h exists |

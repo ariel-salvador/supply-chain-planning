@@ -54,6 +54,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `scripts/fetch_data.py`: dataset provenance and license; fetches into `data/raw/`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
 - `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `odoo_sourcing.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`). `odoo_sourcing.py` runs last on purpose (ADR 0016).
+- `scripts/odoo_master.py`: master data config → pps_live (append-only; diff, apply only on request).
 - `scripts/odoo_admin.py`: guarded DB operations (drop refuses pps_live, verified backups, restore test, nuke guard). `odoo/bootstrap_live.py`: pps_live setup.
 - `docker-compose.yml`, `Makefile`, `.env.example`, `odoo/bootstrap.py`: local Odoo stack.
 - `reports/build_report.py`, `reports/template.html`: static chart report (`make report`).

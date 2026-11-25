@@ -4,6 +4,14 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-25: Master data in the live ERP
+- `make odoo-live-master` loads the case-1 master data into `pps_live` (65 records:
+  units, partners, products, vendor price lists, BOMs, reorder rules) as `pps-bot`.
+- Append-only and idempotent: reruns create nothing. A value changed in the Odoo UI is
+  reported as a diff and left alone; `APPLY_DIFFS=1` reverts it to the config.
+- Reorder rules use the manual trigger in the live system, so the planner runs
+  replenishment rather than every sales order firing it.
+
 ## 2026-11-24: Dashboard Phase 0, Odoo as the system of record
 - Two databases: `pps_demo` (disposable, rebuilt by `make odoo-demo`, which no longer
   deletes volumes) and `pps_live` (the system of record, never dropped).

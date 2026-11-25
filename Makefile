@@ -20,7 +20,7 @@ DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
 .PHONY: report odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-demo-reset odoo-down odoo-logs \
-        odoo-live-init odoo-live-bootstrap odoo-backup odoo-restore-test odoo-nuke
+        odoo-live-init odoo-live-bootstrap odoo-live-master odoo-backup odoo-restore-test odoo-nuke
 
 report:              ## build outputs/report/index.html (static charts, local only)
 	$(PY) reports/build_report.py products/blg_whey_protein.yaml
@@ -66,6 +66,9 @@ odoo-live-init:      ## create pps_live (only if missing): apps, pps-bot user, A
 
 odoo-live-bootstrap: ## re-run the pps_live bootstrap (idempotent; issues a fresh bot key)
 	$(PY) scripts/odoo_admin.py bootstrap-live
+
+odoo-live-master:    ## load master data into pps_live (append-only; shows diffs, APPLY_DIFFS=1 to write them)
+	$(PY) scripts/odoo_master.py products/blg_whey_protein.yaml $(if $(APPLY_DIFFS),--apply-diffs,)
 
 odoo-backup:         ## verified backup (db + filestore zip) -> backups/  (BACKUP_DB=pps_demo for the demo)
 	$(PY) scripts/odoo_admin.py backup $(or $(BACKUP_DB),$(ODOO_LIVE_DB_NAME),pps_live)
