@@ -1,0 +1,6 @@
+# The live marts built by `make dashboard-extract` (read-only extract of pps_live).
+# Path is relative to this folder; the file is gitignored and rebuilt on demand.
+name: pps
+type: duckdb
+options:
+  filename: ../../../../outputs/marts/pps_live/pps.duckdb
