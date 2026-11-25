@@ -18,7 +18,7 @@ import math
 import operator
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Any, Dict, List, Mapping, Optional, Set
+from typing import Any, Dict, List, Mapping, Optional, Set, Tuple
 
 import yaml
 
@@ -276,6 +276,48 @@ class PurchasingSpec:
 
 
 @dataclass(frozen=True)
+class CustomerProfile:
+    """How one (fictional) customer orders and pays, for the MOCK history."""
+    id: str
+    share: float        # share of total demand
+    every_weeks: int    # order interval
+    pay_days: float     # average days from invoice to payment
+
+
+@dataclass(frozen=True)
+class HistoryEvent:
+    """A named disruption in the MOCK history. Dates are structural, sizes are ids."""
+    kind: str           # contamination | supplier_outage | demand_spike
+    start: str          # ISO date inside the history window
+    weeks: int = 1
+    size: float = 0.0   # contamination: batches lost; demand_spike: uplift
+    target: str = ""    # supplier (outage) or customer (spike) id
+    item: str = ""      # outage: the item whose supply stops
+    note: str = ""
+
+
+HISTORY_EVENTS = ("contamination", "supplier_outage", "demand_spike")
+
+
+@dataclass(frozen=True)
+class HistorySpec:
+    """Three years of MOCK operating history (ADR 0018)."""
+    start: str
+    end: str
+    seed: int
+    conversion_usd_per_kg: float
+    gross_margin: float
+    order_lead_weeks: int
+    customer_terms_days: float
+    vendor_terms_days: float
+    pay_days_cv: float
+    min_cover_weeks: float
+    safety_cover_weeks: float
+    customers: Dict[str, CustomerProfile]
+    events: Tuple[HistoryEvent, ...] = ()
+
+
+@dataclass(frozen=True)
 class ProductConfig:
     id: str
     name: str
@@ -302,6 +344,7 @@ class ProductConfig:
     purchasing: Optional[PurchasingSpec] = None
     suppliers: Dict[str, Supplier] = field(default_factory=dict)
     sourcing: Optional[SourcingSpec] = None
+    history: Optional[HistorySpec] = None
     path: Optional[Path] = None
 
     def names(self) -> Dict[str, float]:
@@ -710,6 +753,8 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
     elif suppliers:
         raise ConfigError("suppliers: needs a sourcing block (weights, should_cost, lanes)")
 
+    history = _load_history(raw.get("history"), r, customers, suppliers, items) if raw.get("history") else None
+
     missing = sorted(a for a in r.used if pid not in registry[a].used_in)
     if missing:
         raise ConfigError(f"assumptions used by {pid!r} but not listing it in used_in: {missing}")
@@ -739,7 +784,75 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
         purchasing=purchasing,
         suppliers=suppliers,
         sourcing=sourcing,
+        history=history,
         path=path,
+    )
+
+
+def _iso_date(v: Any, where: str) -> str:
+    import datetime as _dt
+    try:
+        return _dt.date.fromisoformat(str(v)).isoformat()
+    except ValueError:
+        raise ConfigError(f"{where}: not an ISO date: {v!r}") from None
+
+
+def _load_history(h: Mapping[str, Any], r: "_Resolver", customers: Mapping[str, Party],
+                  suppliers: Mapping[str, Supplier], items: Mapping[str, Item]) -> HistorySpec:
+    where = "history"
+    start, end = _iso_date(_req(h, "start", where), f"{where}.start"), _iso_date(_req(h, "end", where), f"{where}.end")
+    if end <= start:
+        raise ConfigError(f"{where}: end must be after start")
+    profiles: Dict[str, CustomerProfile] = {}
+    for cid, cp in (_req(h, "customers", where)).items():
+        w = f"{where}.customers.{cid}"
+        if cid not in customers:
+            raise ConfigError(f"{w}: unknown customer {cid!r}")
+        profiles[cid] = CustomerProfile(
+            id=cid,
+            share=r.planning(_req(cp, "share", w), f"{w}.share"),
+            every_weeks=_whole(r.planning(_req(cp, "every_weeks", w), f"{w}.every_weeks"), f"{w}.every_weeks") or 1,
+            pay_days=r.planning(_req(cp, "pay_days", w), f"{w}.pay_days"),
+        )
+    total = sum(p.share for p in profiles.values())
+    if abs(total - 1.0) > 1e-9:
+        raise ConfigError(f"{where}.customers: shares must sum to 1 (got {total:g})")
+    events = []
+    for i, ev in enumerate(h.get("events") or []):
+        w = f"{where}.events[{i}]"
+        kind = _req(ev, "kind", w)
+        if kind not in HISTORY_EVENTS:
+            raise ConfigError(f"{w}: unknown kind {kind!r}; known: {list(HISTORY_EVENTS)}")
+        e = HistoryEvent(
+            kind=kind,
+            start=_iso_date(_req(ev, "start", w), f"{w}.start"),
+            weeks=_whole(r.planning(ev.get("weeks", 1), f"{w}.weeks"), f"{w}.weeks") or 1,
+            size=r.planning(ev.get("size"), f"{w}.size"),
+            target=str(ev.get("target", "")),
+            item=str(ev.get("item", "")),
+            note=str(ev.get("note", "")),
+        )
+        if not start <= e.start <= end:
+            raise ConfigError(f"{w}: start {e.start} is outside the history window")
+        if kind == "supplier_outage" and (e.target not in suppliers or e.item not in suppliers[e.target].supplies):
+            raise ConfigError(f"{w}: outage needs a supplier 'target' that supplies 'item'")
+        if kind == "demand_spike" and e.target not in profiles:
+            raise ConfigError(f"{w}: spike needs a customer 'target'")
+        events.append(e)
+    return HistorySpec(
+        start=start,
+        end=end,
+        seed=int(h.get("seed", 0)),  # RNG seed: structural
+        conversion_usd_per_kg=r.planning(_req(h, "conversion_usd_per_kg", where), f"{where}.conversion_usd_per_kg"),
+        gross_margin=r.planning(_req(h, "gross_margin", where), f"{where}.gross_margin"),
+        order_lead_weeks=_whole(r.planning(_req(h, "order_lead_weeks", where), f"{where}.order_lead_weeks"), where),
+        customer_terms_days=r.planning(_req(h, "customer_terms_days", where), f"{where}.customer_terms_days"),
+        vendor_terms_days=r.planning(_req(h, "vendor_terms_days", where), f"{where}.vendor_terms_days"),
+        pay_days_cv=r.planning(h.get("pay_days_cv"), f"{where}.pay_days_cv"),
+        min_cover_weeks=r.planning(_req(h, "min_cover_weeks", where), f"{where}.min_cover_weeks"),
+        safety_cover_weeks=r.planning(_req(h, "safety_cover_weeks", where), f"{where}.safety_cover_weeks"),
+        customers=profiles,
+        events=tuple(events),
     )
 
 

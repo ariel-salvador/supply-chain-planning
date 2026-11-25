@@ -438,3 +438,46 @@ sourcing:
   forward_buy_weeks: mock_forward_buy_weeks
   service_level_z: service_level_z
   seed: 7                      # RNG seed for the simulated delivery history (structural)
+
+# ---------------------------------------------------------------------------
+# MOCK operating history (ADR 0018): weekly operations from `start` to `end` (the
+# last full week before the backfill), written into the live ERP by
+# scripts/odoo_history.py. Demand backcasts the plan's trend (growing into
+# mock_demand_base by time.start); commodity prices are the cited FRED series.
+# Dates and the seed are structural; every quantity is an id.
+# ---------------------------------------------------------------------------
+history:
+  start: "2024-01-01"
+  end: "2026-11-22"
+  seed: 2024                   # RNG seed, separate from the plan's demand seed
+  conversion_usd_per_kg: mock_conversion_usd_per_kg_powder
+  gross_margin: mock_target_gross_margin
+  order_lead_weeks: mock_customer_order_lead_weeks
+  customer_terms_days: mock_customer_payment_terms_days
+  vendor_terms_days: mock_vendor_payment_terms_days
+  pay_days_cv: mock_pay_days_cv
+  min_cover_weeks: mock_hist_min_cover_weeks
+  safety_cover_weeks: mock_hist_safety_cover_weeks
+  customers:
+    c_brands:      {share: mock_cust_share_brands,      every_weeks: 1, pay_days: mock_pay_days_prompt}
+    c_beverage:    {share: mock_cust_share_beverage,    every_weeks: 1, pay_days: mock_pay_days_standard}
+    c_nutrition:   {share: mock_cust_share_nutrition,   every_weeks: mock_order_every_weeks_regular, pay_days: mock_pay_days_standard}
+    c_distributor: {share: mock_cust_share_distributor, every_weeks: mock_order_every_weeks_monthly, pay_days: mock_pay_days_slow}
+    c_copacker:    {share: mock_cust_share_copacker,    every_weeks: mock_order_every_weeks_regular, pay_days: mock_pay_days_prompt}
+  events:
+    - kind: contamination
+      start: "2025-03-10"
+      size: 1                  # one fermentation batch lost
+      note: "Contaminated fermentation batch, scrapped [mock]"
+    - kind: supplier_outage
+      start: "2025-08-04"
+      weeks: mock_event_outage_weeks
+      target: s_sugar_a
+      item: GLUCOSE
+      note: "Glucose supplier outage; emergency buys from the runner-up [mock]"
+    - kind: demand_spike
+      start: "2026-05-04"
+      weeks: mock_event_spike_weeks
+      size: mock_event_spike_uplift
+      target: c_beverage
+      note: "Unforecast beverage launch volume [mock]"
