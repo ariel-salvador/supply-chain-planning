@@ -87,6 +87,14 @@ class Odoo:
         self.refs: Dict[str, int] = json.loads(rf.read_text()) if rf and rf.exists() else {}
 
     @classmethod
+    def reader(cls, **kw: Any) -> "ReadOnlyOdoo":
+        """The system of record, read-only, as pps-reader (the dashboard extract)."""
+        env = {**_dotenv(ROOT / ".env"), **os.environ}
+        kw.setdefault("db", env.get("ODOO_LIVE_DB_NAME", "pps_live"))
+        kw.setdefault("key_file", ".odoo-apikey-reader")
+        return ReadOnlyOdoo(**kw)
+
+    @classmethod
     def live(cls, **kw: Any) -> "Odoo":
         """The user's system of record, as the pps-bot user (ADR 0017)."""
         env = {**_dotenv(ROOT / ".env"), **os.environ}
@@ -155,3 +163,19 @@ class Odoo:
         if not rows:
             raise OdooError(f"xml id {xmlid} not found")
         return rows[0]["res_id"]
+
+
+# Methods that only read. ReadOnlyOdoo refuses to send anything else, a second safety
+# layer on top of the server-side read-only group (ADR 0017).
+READ_METHODS = frozenset({"search_read", "read", "search", "search_count", "fields_get",
+                          "context_get", "read_group", "formatted_read_group"})
+
+
+class ReadOnlyOdoo(Odoo):
+    def call(self, model: str, method: str, ids: Sequence[int] = (), **params: Any) -> Any:
+        if method not in READ_METHODS:
+            raise OdooError(f"read-only client: refusing {model}.{method}")
+        return super().call(model, method, ids, **params)
+
+    def ensure(self, *a: Any, **kw: Any) -> Tuple[int, bool]:
+        raise OdooError("read-only client: refusing ensure()")

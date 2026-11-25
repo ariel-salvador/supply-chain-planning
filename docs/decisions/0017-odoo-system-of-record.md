@@ -70,3 +70,19 @@ records for case 1). Learned while building it:
   rounding on save isn't reported as an edit.
 - Verified: first run creates 65, reruns create 0; a changed reorder minimum is reported
   and left alone, and is reverted only with `APPLY_DIFFS=1`.
+
+## Amendment: the read-only extract (2026-11-25)
+
+`scripts/odoo_extract.py` (`make dashboard-extract`) reads Odoo into marts
+(`docs/dashboard/marts.md`). It runs as a third identity, **`pps-reader`**, and is
+read-only in two independent layers:
+
+- **Server:** Odoo Community has no read-only role (even "User" levels can create and
+  edit), so the bootstrap creates a custom group, *PPS Reader (read-only)*, with read-only
+  access rules on the 23 business models the extract needs and no operational groups.
+  Verified: creating sales, purchase and manufacturing orders, and editing reorder rules,
+  products or contacts are all denied by the server.
+- **Client:** `Odoo.reader()` returns a `ReadOnlyOdoo`, which refuses to send anything but
+  read methods. The demo extract uses the same client with the demo's key.
+- Validated against known numbers: planned powder MOs in the demo extract total
+  699,244 kg, matching `docs/odoo/comparison.md` exactly.

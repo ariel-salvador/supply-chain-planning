@@ -257,10 +257,12 @@ def cmd_bootstrap_live(env: Dict[str, str]) -> None:
              {**env, "PPS_COMPANY_NAME": company, "PPS_HORIZON_DAYS": str(horizon_days)},
              input=script, capture_output=True, text=True)
     key = re.search(r"^PPS_BOT_API_KEY=(\S+)$", r.stdout, re.M)
+    reader = re.search(r"^PPS_READER_API_KEY=(\S+)$", r.stdout, re.M)
     refs = re.search(r"^PPS_REFS=(\{.*\})$", r.stdout, re.M)
-    if r.returncode != 0 or not key or not refs:
+    if r.returncode != 0 or not key or not reader or not refs:
         raise AdminError("bootstrap_live.py failed (see `make odoo-logs`); no key written")
-    for name, value in ((".odoo-apikey-live", key.group(1)), (".odoo-live-refs.json", refs.group(1))):
+    for name, value in ((".odoo-apikey-live", key.group(1)), (".odoo-apikey-reader", reader.group(1)),
+                        (".odoo-live-refs.json", refs.group(1))):
         p = ROOT / name
         p.write_text(value + "\n")
         p.chmod(0o600)
@@ -268,7 +270,7 @@ def cmd_bootstrap_live(env: Dict[str, str]) -> None:
     # shell process aren't seen until it restarts (a new bot group stays "denied").
     _run(compose(env) + ["restart", "odoo"], env, capture_output=True)
     wait_for_odoo(env)
-    print(f"{live}: bootstrap ok (pps-bot key -> .odoo-apikey-live, refs -> .odoo-live-refs.json); odoo restarted")
+    print(f"{live}: bootstrap ok (keys -> .odoo-apikey-live, .odoo-apikey-reader; refs -> .odoo-live-refs.json); odoo restarted")
 
 
 def wait_for_odoo(env: Dict[str, str], tries: int = 60) -> None:
