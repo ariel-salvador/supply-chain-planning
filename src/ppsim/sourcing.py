@@ -90,7 +90,12 @@ def should_cost(cfg: ProductConfig, latest_prices: Optional[Mapping[str, float]]
         item = cfg.items[iid]
         if iid in latest and np.isfinite(latest[iid]):
             material = float(latest[iid])
-            basis = f"cited index {item.price.series}" if item.price else "linked index"
+            if item.price:
+                basis = f"cited index {item.price.series}"
+            elif iid in s.material_index:
+                basis = f"mock base x cited index {s.material_index[iid]}"
+            else:
+                basis = "linked index"
         else:
             material = s.material_base[iid]
             basis = "mock base"

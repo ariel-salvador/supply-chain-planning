@@ -4,6 +4,19 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-25: Three years of operating history in the live ERP
+- `src/ppsim/history.py`: a weekly mock ledger, 2024-01 to 2026-11. Demand grows into the
+  plan, whole fermentation batches run within capacity, reorder-point buying uses the
+  awarded suppliers' late and short rates, and invoices and payments follow customer
+  behaviour. Named events: a contaminated batch, a supplier outage, a demand spike.
+- Prices move like real markets: FRED corn for glucose, BLS producer price indices for
+  the other inputs, standard costs rolled each January, a quarterly list price with
+  customer discounts.
+- `make odoo-history` writes it into `pps_live` as ~3,200 backdated, closed documents
+  (resumable, append-only); `make odoo-history-rehearse` tries it on a copy first;
+  `scripts/check_history.py` proves Odoo matches the ledger. The extract gains invoices,
+  payments, stock moves, forecast, standard costs and the price list.
+
 ## 2026-11-25: Read-only extract for the dashboards
 - `make dashboard-extract` reads Odoo into tidy marts (CSV for Tableau, DuckDB for
   Evidence): products, partners, sales, purchases, production, stock and reorder rules,

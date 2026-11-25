@@ -127,3 +127,27 @@ mock_sup_nutr_b_quality_ppm,Low-cost nutrient supplier defect rate (better than 
 mock_sup_nutr_b_lead_time_delta,Low-cost nutrient supplier lead time vs the item's planning lead time,1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
 mock_sup_pack_b_quality_ppm,Low-cost packaging supplier defect rate (near the incumbent),1300,ppm,,,mock supplier quality record,,,low,mock,blg_whey_protein
 mock_sup_pack_b_lead_time_delta,Low-cost packaging supplier lead time vs the item's planning lead time,-1,week,,,mock RFQ quote (ADR 0013),,,low,mock,blg_whey_protein
+mock_conversion_usd_per_kg_powder,"Plant conversion cost per kg powder (utilities, labour, maintenance, depreciation)",7.50,USD/kg,,,mock standard cost (ADR 0018),,,low,mock,blg_whey_protein
+mock_target_gross_margin,Target gross margin used to set the yearly selling price,0.30,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_customer_order_lead_weeks,Weeks between a customer order and its requested delivery,2,week,,,mock order book (history),,,low,mock,blg_whey_protein
+mock_customer_payment_terms_days,Customer payment terms,30,day,,,mock credit policy (history),,,low,mock,blg_whey_protein
+mock_vendor_payment_terms_days,Vendor payment terms (bills paid on the due date),30,day,,,mock payables policy (history),,,low,mock,blg_whey_protein
+mock_pay_days_cv,Variation of customer days-to-pay around their average,0.20,fraction,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_hist_min_cover_weeks,Minimum weeks of usage per purchase order,2,week,,,mock purchasing policy (history),,,low,mock,blg_whey_protein
+mock_hist_safety_cover_weeks,Safety stock in weeks of usage for items without a set safety stock,1,week,,,mock purchasing policy (history),,,low,mock,blg_whey_protein
+mock_cust_share_brands,Food brand customer share of demand,0.30,fraction,,,mock customer mix (history),,,low,mock,blg_whey_protein
+mock_cust_share_beverage,Beverage customer share of demand,0.25,fraction,,,mock customer mix (history),,,low,mock,blg_whey_protein
+mock_cust_share_nutrition,Sports nutrition customer share of demand,0.20,fraction,,,mock customer mix (history),,,low,mock,blg_whey_protein
+mock_cust_share_distributor,Distributor customer share of demand,0.15,fraction,,,mock customer mix (history),,,low,mock,blg_whey_protein
+mock_cust_share_copacker,Co-packer customer share of demand,0.10,fraction,,,mock customer mix (history),,,low,mock,blg_whey_protein
+mock_order_every_weeks_regular,Order interval of a fortnightly customer,2,week,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_order_every_weeks_monthly,Order interval of a monthly customer,4,week,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_pay_days_prompt,Average days to pay of a prompt customer,27,day,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_pay_days_standard,Average days to pay of a typical customer,35,day,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_pay_days_slow,Average days to pay of a slow customer,55,day,,,mock customer behaviour (history),,,low,mock,blg_whey_protein
+mock_event_outage_weeks,Weeks a supplier cannot deliver in the outage event,4,week,,,mock event (history),,,low,mock,blg_whey_protein
+mock_event_spike_weeks,Weeks of the unforecast demand spike,6,week,,,mock event (history),,,low,mock,blg_whey_protein
+mock_event_spike_uplift,Demand uplift of the spiking customer during the spike,0.40,fraction,,,mock event (history),,,low,mock,blg_whey_protein
+mock_reprice_every_months,How often the powder list price is reset from current input costs,3,month,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_discount_key_account,Price discount for the two largest (weekly) accounts,0.03,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_discount_distributor,Price discount for the distributor (resale margin),0.06,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein

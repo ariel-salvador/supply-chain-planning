@@ -35,3 +35,25 @@ def material_cost_per_unit(cfg: ProductConfig, prices: pd.DataFrame, root: str) 
     out = pd.DataFrame({c: prices[c] * req[c] for c in used}, index=prices.index)
     out["total"] = out.sum(axis=1, min_count=1) if used else float("nan")
     return out.dropna(how="all")
+
+
+def indexed_prices(cfg: ProductConfig, series: Mapping[str, pd.Series]) -> pd.DataFrame:
+    """USD per uom over time for mock-base items linked to a cited price index.
+
+    price(t) = mock base x index(t) / index(base month): the level stays the mock base
+    (at the base month), the month-to-month movement is the published index.
+    """
+    s = cfg.sourcing
+    if s is None or not s.material_index:
+        return pd.DataFrame()
+    base = pd.Timestamp(s.index_base)
+    cols: Dict[str, pd.Series] = {}
+    for iid, sid in s.material_index.items():
+        if sid not in series:
+            continue
+        x = series[sid].dropna()
+        ref = x[x.index <= base]
+        if ref.empty:
+            raise ValueError(f"{sid}: no observation on or before the index base {s.index_base}")
+        cols[iid] = s.material_base[iid] * x / float(ref.iloc[-1])
+    return pd.DataFrame(cols).sort_index()

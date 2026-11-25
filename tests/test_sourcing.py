@@ -74,8 +74,10 @@ def test_blg_should_cost_uses_the_cited_corn_index_when_prices_are_available():
     res = run(BLG, offline=True)
     basis = res.should_cost.loc["GLUCOSE", "material_basis"]
     assert basis == "cited index PMAIZMTUSDM"
-    # items with no linked series fall back to a labelled mock base
-    assert res.should_cost.loc["NH3", "material_basis"] == "mock base"
+    # mock bases linked to a producer price index say so; without the series they stay plain mock
+    assert res.should_cost.loc["NH3", "material_basis"] in ("mock base x cited index PCU325311325311", "mock base")
+    plain = run(BLG, fetch_prices=False)
+    assert plain.should_cost.loc["NH3", "material_basis"] == "mock base"
 
 
 # --- M6b: quotes, scoring, award -----------------------------------------

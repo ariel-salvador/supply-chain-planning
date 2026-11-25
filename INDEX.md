@@ -28,6 +28,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0015-supplier-performance-and-risk.md`: simulated delivery history, PPV, exposure-based single vs dual source.
 - `docs/decisions/0016-odoo-sourcing-mirror.md`: multi-vendor price lists and draft RFQs in Odoo Community (unverified).
 - `docs/decisions/0017-odoo-system-of-record.md`: two databases, guarded ops, pps-bot, append-only `ensure()`, backups. Read before writing to Odoo.
+- `docs/decisions/0018-mock-operating-history.md`: the 3-year history: how it's simulated, priced (real indices) and written into Odoo.
 - `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
 - `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.
@@ -46,6 +47,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `knowledge/notes/usda-dme1-dairy-powder-packaging.md`: 25 kg multiwall bag spec (analog dairy powder).
 - `knowledge/notes/epa-ap42-corn-wet-milling.md`: corn → starch yield.
 - `knowledge/notes/fred-imf-commodity-prices.md`: series, units, license, fetch quirks.
+- `knowledge/notes/bls-ppi-input-price-indices.md`: BLS producer price indices (via FRED) that move the non-commodity input prices; fit of each proxy.
 - `knowledge/notes/unit-constants.md`: lb/kg, molar masses.
 
 ## Code and data
@@ -54,6 +56,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `scripts/fetch_data.py`: dataset provenance and license; fetches into `data/raw/`.
 - `scripts/pre_push_check.py`: pre-push gate used by `/pre-push-check`.
 - `scripts/odoo_client.py`, `odoo_seed.py`, `odoo_run.py`, `odoo_sourcing.py`, `compare_plans.py`: Odoo JSON-2 demo (`make odoo-demo`). `odoo_sourcing.py` runs last on purpose (ADR 0016).
+- `src/ppsim/history.py` + `scripts/odoo_history.py`: weekly mock history → backdated Odoo documents (`make odoo-history[-rehearse]`); `scripts/check_history.py` verifies Odoo against the ledger.
 - `scripts/odoo_extract.py`: Odoo → marts (CSV + DuckDB), read-only. `docs/dashboard/marts.md`: data dictionary for Tableau/Evidence.
 - `scripts/odoo_master.py`: master data config → pps_live (append-only; diff, apply only on request).
 - `scripts/odoo_admin.py`: guarded DB operations (drop refuses pps_live, verified backups, restore test, nuke guard). `odoo/bootstrap_live.py`: pps_live setup.
