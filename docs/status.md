@@ -26,14 +26,17 @@ forever: its PR pages reference commits with the author's old email._
    created record has a stable external ID; scripts never edit or delete records they
    didn't create.
 
+- **Master data loaded into `pps_live`** (2026-11-25): 65 records via
+  `make odoo-live-master`; reruns create nothing; UI edits are reported, not reverted.
+  Reorder rules are manual-trigger (ADR 0017 amendment).
+
 ## Next 3 steps
-1. **Master data into `pps_live`:** products, BOMs, vendors, customers, reorder rules
-   from `products/blg_whey_protein.yaml` through `ensure()`, with the diff-and-confirm
-   sync for anything the user has since edited. Reuses the demo seed's logic.
-2. **First data slice:** extract sales, purchase and manufacturing orders plus stock
+1. **First data slice:** extract sales, purchase and manufacturing orders plus stock
    from `pps_live` into marts (DuckDB + CSV), stamped "data as of".
-3. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
+2. **Tableau MVP** on those marts: the user builds it; the loop is proven by creating a
    PO in the Odoo UI and watching it appear after a refresh.
+3. **History generator** (`docs/plan-history-and-dashboard.md`, Phase 1) writing three
+   years of transactions into `pps_live` through `ensure()`.
 
 The three-year history generator (`docs/plan-history-and-dashboard.md`, Phase 1) then
 fills `pps_live` through the same append-only writer.

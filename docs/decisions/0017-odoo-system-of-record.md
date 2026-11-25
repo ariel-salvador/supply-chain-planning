@@ -49,3 +49,24 @@
     appends connection flags that `odoo db` rejects (we pass a short-lived config file
     instead, so the password never hits a command line), and that config must set
     `data_dir`, or dumps silently skip the filestore.
+
+## Amendment: master data (2026-11-25)
+
+`scripts/odoo_master.py` (`make odoo-live-master`) loads the config's master data into
+`pps_live`: units, partners, products, vendor price lists, BOMs and reorder rules (65
+records for case 1). Learned while building it:
+
+- **The bot also needs `product.group_product_manager`** ("Products / Create"): creating
+  products and units of measure requires it. It grants no user or settings rights;
+  re-verified that the bot still can't escalate.
+- **The running server caches each user's groups.** A group added from the bootstrap's
+  shell process stays "denied" until Odoo restarts, so the bootstrap now restarts it.
+- **Admin-only settings live in the bootstrap**, not the loader: the replenishment
+  horizon (182 days = the engine's 26 weeks) and 4-decimal "Product Unit" precision.
+- **Reorder rules in `pps_live` use the manual trigger.** With auto, confirming any sales
+  order (by hand, or from the history backfill) would immediately create orders. The
+  planner runs replenishment instead, and can switch a rule to auto in the UI.
+- **Diffs compare to Odoo's stored precision** (half a unit in the 4th decimal), so
+  rounding on save isn't reported as an edit.
+- Verified: first run creates 65, reruns create 0; a changed reorder minimum is reported
+  and left alone, and is reverted only with `APPLY_DIFFS=1`.

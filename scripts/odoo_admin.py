@@ -250,11 +250,12 @@ def cmd_bootstrap_live(env: Dict[str, str]) -> None:
     live = env["ODOO_LIVE_DB_NAME"]
     if not db_exists(live, env):
         raise AdminError(f"{live} does not exist: run `make odoo-live-init`")
-    company = env.get("PPS_COMPANY_NAME") or _company_name()
+    company, horizon_days = _config_settings()
     script = (ROOT / "odoo" / "bootstrap_live.py").read_text()
     r = _run(compose(env) + ["run", "--rm", "-T", "-e", "ODOO_ADMIN_PASSWORD", "-e", "PPS_COMPANY_NAME",
-                             "odoo", "odoo", "shell", "-d", live, "--no-http"],
-             {**env, "PPS_COMPANY_NAME": company}, input=script, capture_output=True, text=True)
+                             "-e", "PPS_HORIZON_DAYS", "odoo", "odoo", "shell", "-d", live, "--no-http"],
+             {**env, "PPS_COMPANY_NAME": company, "PPS_HORIZON_DAYS": str(horizon_days)},
+             input=script, capture_output=True, text=True)
     key = re.search(r"^PPS_BOT_API_KEY=(\S+)$", r.stdout, re.M)
     refs = re.search(r"^PPS_REFS=(\{.*\})$", r.stdout, re.M)
     if r.returncode != 0 or not key or not refs:
@@ -263,7 +264,25 @@ def cmd_bootstrap_live(env: Dict[str, str]) -> None:
         p = ROOT / name
         p.write_text(value + "\n")
         p.chmod(0o600)
-    print(f"{live}: bootstrap ok (pps-bot key -> .odoo-apikey-live, refs -> .odoo-live-refs.json)")
+    # The running server caches each user's groups; changes made from this separate
+    # shell process aren't seen until it restarts (a new bot group stays "denied").
+    _run(compose(env) + ["restart", "odoo"], env, capture_output=True)
+    wait_for_odoo(env)
+    print(f"{live}: bootstrap ok (pps-bot key -> .odoo-apikey-live, refs -> .odoo-live-refs.json); odoo restarted")
+
+
+def wait_for_odoo(env: Dict[str, str], tries: int = 60) -> None:
+    import time
+    import urllib.request
+
+    url = env.get("ODOO_URL", "http://127.0.0.1:8069").rstrip("/") + "/web/login"
+    for _ in range(tries):
+        try:
+            with urllib.request.urlopen(url, timeout=5):
+                return
+        except Exception:
+            time.sleep(2)
+    raise AdminError("odoo did not come back after restart")
 
 
 def cmd_init_live(env: Dict[str, str]) -> None:
@@ -292,12 +311,16 @@ def cmd_nuke(env: Dict[str, str], outdir: Path) -> None:
           "`odoo db load` from the latest zip in backups/.")
 
 
-def _company_name() -> str:
+def _config_settings() -> tuple:
+    """(fictional company name, replenishment horizon in days) from the product config."""
     sys.path.insert(0, str(ROOT / "src"))
     from ppsim.config import load_config  # noqa: E402
+    from ppsim.registry import load_registry  # noqa: E402
 
     cfg = load_config(ROOT / "products" / "blg_whey_protein.yaml")
-    return cfg.company.name if cfg.company else "Demo company (fictional)"
+    days_per_week = load_registry(ROOT / "knowledge" / "assumptions.csv")["days_per_week"].value
+    name = cfg.company.name if cfg.company else "Demo company (fictional)"
+    return name, cfg.horizon * days_per_week
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
