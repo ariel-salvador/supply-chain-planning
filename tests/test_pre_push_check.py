@@ -72,3 +72,9 @@ def test_identity_scan_allows_only_github_noreply():
     assert len(found) == 2
     assert all("def5678" in f for f in found)
     assert all("jane.doe" not in f for f in found)  # masked
+
+
+def test_lockfile_maintainer_emails_are_not_findings():
+    line = '"deprecated": "contact ' + "maintainer" + "@" + 'example.net"'
+    assert not any(f.startswith("email") for f in ppc.scan_text("web/package-lock.json", line))
+    assert any(f.startswith("email") for f in ppc.scan_text("notes.md", line))
