@@ -449,6 +449,8 @@ history:
   pay_days_cv: mock_pay_days_cv
   min_cover_weeks: mock_hist_min_cover_weeks
   safety_cover_weeks: mock_hist_safety_cover_weeks
+  rush_order_share: mock_rush_order_share       # ordered inside the lead time: production can't see them in time
+  ship_hold_rate: mock_ship_hold_rate           # carrier no-show / quality release: ships a week late
   customers:
     c_brands:      {share: mock_cust_share_brands,      every_weeks: 1, pay_days: mock_pay_days_prompt, discount: mock_discount_key_account}
     c_beverage:    {share: mock_cust_share_beverage,    every_weeks: 1, pay_days: mock_pay_days_standard, discount: mock_discount_key_account}
@@ -459,7 +461,8 @@ history:
     - kind: contamination
       start: "2025-03-10"
       size: 1                  # one fermentation batch lost
-      note: "Contaminated fermentation batch, scrapped [mock]"
+      weeks: mock_event_contamination_down_weeks   # one fermenter offline for the investigation
+      note: "Contaminated fermentation batch, scrapped; fermenter offline for investigation [mock]"
     - kind: supplier_outage
       start: "2025-08-04"
       weeks: mock_event_outage_weeks

@@ -325,6 +325,8 @@ class HistorySpec:
     safety_cover_weeks: float
     customers: Dict[str, CustomerProfile]
     reprice_every_months: int = 12
+    rush_order_share: float = 0.0     # orders placed one week before due
+    ship_hold_rate: float = 0.0       # shipments held one week
     events: Tuple[HistoryEvent, ...] = ()
 
 
@@ -888,6 +890,8 @@ def _load_history(h: Mapping[str, Any], r: "_Resolver", customers: Mapping[str, 
         reprice_every_months=(_whole(r.planning(h["reprice_every_months"], f"{where}.reprice_every_months"),
                                      f"{where}.reprice_every_months") or 12) if h.get("reprice_every_months") else 12,
         events=tuple(events),
+        rush_order_share=r.planning(h.get("rush_order_share"), f"{where}.rush_order_share"),
+        ship_hold_rate=r.planning(h.get("ship_hold_rate"), f"{where}.ship_hold_rate"),
     )
 
 

@@ -87,3 +87,17 @@ def test_restore_test_db_is_droppable_but_live_is_not():
     oa.check_droppable("pps_live_restore_test", oa.protected(env))
     with pytest.raises(oa.AdminError):
         oa.check_droppable("pps_live", oa.protected(env))
+
+
+def test_restore_live_only_takes_a_verified_live_backup(tmp_path):
+    with pytest.raises(oa.AdminError, match="not a pps_live backup"):
+        oa.check_restore_source(tmp_path / "pps_demo-20261125T000000Z.zip", "pps_live")
+    bad = tmp_path / "pps_live-20261125T000000Z.zip"
+    bad.write_bytes(b"not a zip")
+    with pytest.raises(Exception):
+        oa.check_restore_source(bad, "pps_live")
+
+
+def test_restore_live_refuses_without_the_flag(capsys):
+    assert oa.main(["restore-live", "backups/pps_live-x.zip"]) == 2
+    assert "refusing" in capsys.readouterr().err

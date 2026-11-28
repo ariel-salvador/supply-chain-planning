@@ -199,6 +199,9 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
                 root: {c: q / root_batch for c, q in root_comps.items() if c != mid}}
     per_unit[root][mid] = root_comps[mid] / root_batch
     cap, cap_rate = max_batches_per_week(cfg, mid, mid_batch)
+    units = min(cfg.resources[ln.resource].units for ln in cfg.bill_of_resources if ln.item == mid)
+    rate_down = cap_rate * (units - 1) / units                # one unit offline
+    cap_down = int(math.floor(rate_down))
     purchased = [c for c in list(mid_comps) + list(root_comps) if cfg.items[c].type == "purchased"]
     vendor_of = {i: awards.loc[i, "awarded_to"] for i in purchased}
     years = list(range(weeks[0].year - 1, end.year + 1))
@@ -220,6 +223,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
     ev_rows = []
     spike = {c: np.zeros(T + extra) for c in h.customers}
     contamination_weeks: List[int] = []
+    downtime = np.zeros(T + extra, dtype=bool)          # a fermenter offline (contamination investigation)
+    dsp_down = np.zeros(T + extra, dtype=bool)          # powder line sanitised after a contamination
     outages: List[Tuple[str, str, int, int]] = []       # supplier, item, first week, end week (excl.)
     for e in h.events:
         s = wk(e.start)
@@ -227,6 +232,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
             spike[e.target][s:s + e.weeks] = e.size
         elif e.kind == "contamination":
             contamination_weeks += [s] * int(e.size or 1)
+            downtime[s:s + e.weeks] = True
+            dsp_down[s + 1] = True                          # the week the batch would have reached it
         elif e.kind == "supplier_outage":
             outages.append((e.target, e.item, s, s + e.weeks))
         ev_rows.append({"kind": e.kind, "start": weeks[s] if s < T else pd.NaT, "weeks": e.weeks,
@@ -241,6 +248,7 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
                         weeks[0] - pd.Timedelta(weeks=lead), end)
     orders = []
     customer_dem = np.zeros(T + extra)
+    rng_orders = np.random.default_rng([h.seed, 5])     # rush orders and shipment holds
     for k, (cid, p) in enumerate(h.customers.items()):
         offset = k % p.every_weeks
         for due in range(offset, T + lead, p.every_weeks):
@@ -249,8 +257,12 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
             for d in span:
                 customer_dem[d] += p.share * dem[d] * (1 + spike[cid][d])
             qty = round(raw / bag) * bag if bag else round(raw)
-            placed = pd.Timestamp(weeks[0]) + pd.Timedelta(weeks=due - lead)
-            if due - lead > T - 1 or qty <= 0:
+            rush = bool(rng_orders.random() < h.rush_order_share)
+            hold = bool(rng_orders.random() < h.ship_hold_rate)
+            rush = rush or bool(spike[cid][due] > 0)       # launch volume arrives at short notice
+            placed_week = due - (min(1, lead) if rush else lead)
+            placed = pd.Timestamp(weeks[0]) + pd.Timedelta(weeks=placed_week)
+            if placed_week > T - 1 or qty <= 0:
                 continue
             due_monday = weeks[0] + pd.Timedelta(weeks=due)
             orders.append({
@@ -258,7 +270,7 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
                 "date_order": at(placed, ORDER_DAY), "date_promised": at(due_monday, SHIP_DAY),
                 "qty": float(qty), "list_price": list_price_on(plist, placed),
                 "price_unit": round(list_price_on(plist, placed) * (1 - p.discount), 2),
-                "spike": bool(spike[cid][due] > 0),
+                "spike": bool(spike[cid][due] > 0), "rush": rush, "hold": hold, "placed_week": placed_week,
             })
     orders.sort(key=lambda o: (o["due_week"], o["key"]))
 
@@ -301,7 +313,7 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
         root_out = 0.0
         still = []
         for b in waiting_mid:
-            if all(stock[c] + 1e-9 >= q for c, q in root_comps.items()):
+            if not dsp_down[t] and all(stock[c] + 1e-9 >= q for c, q in root_comps.items()):
                 for c, q in root_comps.items():
                     stock[c] -= q
                     f[c]["consumed"] += q
@@ -318,6 +330,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
         for o in list(unshipped):
             if o["due_week"] > t:
                 break
+            if o["hold"] and t == o["due_week"]:
+                continue                                # carrier no-show / quality hold: ships next week
             if stock[root] + 1e-9 < o["qty"]:
                 break                                   # first-in-line waits; nothing jumps the queue
             stock[root] -= o["qty"]
@@ -330,10 +344,12 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
         due_qty = sum(o["qty"] for o in due_now)
 
         # 4. start fermentation batches: cover safety stock after the booked orders
-        booked = sum(o["qty"] for o in unshipped if o["due_week"] <= t + 2)
+        # only orders already placed: a rush order is a surprise until it arrives
+        booked = sum(o["qty"] for o in unshipped if o["due_week"] <= t + 2 and o["placed_week"] <= t)
         ss = cfg.items[root].planning.safety_stock
         need = ss + booked - (stock[root] + root_out)
-        n = max(0, min(cap, math.ceil(need / root_batch - 1e-9)))
+        cap_t, rate_t = (cap_down, rate_down) if downtime[t] else (cap, cap_rate)
+        n = max(0, min(cap_t, math.ceil(need / root_batch - 1e-9)))
         for c, q in mid_comps.items():
             n = min(n, int((stock[c] + 1e-9) // q))
         scrapped = 0
@@ -428,8 +444,8 @@ def simulate(cfg: ProductConfig, prices: pd.DataFrame, quotes: pd.DataFrame, awa
             "shipped_qty": shipped, "shipped_on_time_qty": on_time, "past_due_qty": late_backlog,
             "orders_due": len(due_now),
             "orders_on_time": sum(1 for o in due_now if o.get("ship_week") == t),
-            "batches_started": n, "batches_scrapped": scrapped, "batch_capacity": cap_rate,
-            "utilisation": n / cap_rate,
+            "batches_started": n, "batches_scrapped": scrapped, "batch_capacity": rate_t,
+            "utilisation": n / rate_t,
             "revenue": sum(o["qty"] * o["price_unit"] for o in orders if o.get("ship_week") == t),
             "cogs_std": shipped * stdv[(y, root)],
             "inventory_value_std": sum(stock[i] * stdv[(y, i)] for i in stock),

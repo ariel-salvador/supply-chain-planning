@@ -160,3 +160,6 @@ mock_sup_exp_quality_ppm,Express distributor defect rate,800,ppm,,,mock supplier
 mock_sup_exp_otif,Express distributor on-time in-full rate,0.97,fraction,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein
 mock_sup_exp_lt_sigma,Express distributor lead time standard deviation,0.25,week,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein
 mock_sup_exp_short_ship_rate,Express distributor share of deliveries short-shipped,0.02,fraction,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein
+mock_rush_order_share,Share of customer orders placed only one week before delivery (inside the lead time),0.10,fraction,,,mock order book (history),,,low,mock,blg_whey_protein
+mock_ship_hold_rate,Share of shipments held one week (carrier no-show or quality release),0.03,fraction,,,mock outbound performance (history),,,low,mock,blg_whey_protein
+mock_event_contamination_down_weeks,Weeks a fermenter is offline for the sterility investigation after a contamination,2,week,,,mock event (history),,,low,mock,blg_whey_protein

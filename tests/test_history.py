@@ -77,7 +77,9 @@ def test_nothing_in_the_past_stays_open(case):
     end = hist.end + pd.Timedelta(hours=12)
     s = hist.sales
     past_due = s[s["date_promised"] <= end]
-    assert past_due["date_shipped"].notna().all()                        # every order due by the end shipped
+    open_late = past_due[past_due["date_shipped"].isna()]
+    # every order due by the end shipped, except one held in the very last week (ships next week)
+    assert (open_late["hold"] & (open_late["due_week"] == len(hist.weeks) - 1)).all()
     shipped = s[s["date_shipped"].notna()]
     assert (shipped["date_shipped"] <= end).all() and shipped["invoice_date"].notna().all()
     assert (s["date_paid"].dropna() <= end).all()
@@ -194,3 +196,35 @@ def test_mock_bases_move_with_their_cited_index():
     assert math.isclose(out.loc["2026-01-01", "NH3"], base)              # level = mock base at the base month
     assert math.isclose(out.loc["2026-07-01", "NH3"], base * 1.5)        # movement = the index
     assert set(out.columns) == {"NH3", "AMSULF"}                         # only items on that series
+
+
+def test_rush_orders_are_placed_one_week_ahead_and_spike_volume_is_rush(case):
+    cfg, _, _, hist = case
+    s = hist.sales
+    lead = cfg.history.order_lead_weeks
+    weeks_ahead = s["due_week"] - s["placed_week"]
+    assert set(weeks_ahead[s["rush"]]) == {1} and set(weeks_ahead[~s["rush"]]) == {lead}
+    assert s.loc[s["spike"], "rush"].all()
+    assert 0.03 < s["rush"].mean() < 0.25
+
+
+def test_held_shipments_ship_one_week_late_and_otif_is_believable(case):
+    _, _, _, hist = case
+    s = hist.sales[hist.sales["date_shipped"].notna()]
+    held = s[s["hold"]]
+    assert len(held) > 0 and (held["ship_week"] >= held["due_week"] + 1).all()
+    otif = (s["ship_week"] == s["due_week"]).mean()
+    assert 0.93 < otif < 0.99
+
+
+def test_contamination_takes_a_fermenter_and_the_powder_line_offline(case):
+    cfg, _, _, hist = case
+    ev = next(e for e in cfg.history.events if e.kind == "contamination")
+    k = hist.kpis.set_index("week")
+    a = pd.Timestamp(ev.start)
+    down = k.loc[a:a + pd.Timedelta(weeks=ev.weeks - 1)]
+    assert (down["batch_capacity"] < k["batch_capacity"].max()).all()      # one fermenter of three offline
+    assert (down["batches_started"] <= 2).all()
+    pwd = hist.production[hist.production["product"] == "BLG-PWD"]
+    sanitised = a + pd.Timedelta(weeks=1)
+    assert not ((pwd["date_start"] >= sanitised) & (pwd["date_start"] < sanitised + pd.Timedelta(weeks=1))).any()
