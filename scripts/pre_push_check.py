@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 EMAIL = re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)*\.[A-Za-z]{2,}")
+LOCKFILES = ("package-lock.json", "yarn.lock", "pnpm-lock.yaml")
 EMAIL_ALLOWED = re.compile(r"(@users\.noreply\.github\.com|^noreply@github\.com|^noreply@anthropic\.com|@example\.(com|org))$", re.I)
 PHONE = re.compile(r"(?<![\w/.\-])(?:\+\d{1,3}[\s.-]?)?(?:\(\d{3}\)\s?|\d{3}[\s.-])\d{3}[\s.-]\d{4}(?!\w)")
 API_KEYS = [
@@ -117,9 +118,12 @@ def mask(s: str) -> str:
 def scan_text(name: str, text: str) -> List[str]:
     """Email / phone / API-key findings as 'kind in name:line (masked)'."""
     found = []
+    # lockfiles hold third-party package metadata (maintainer contacts in deprecation
+    # notices), not project data: still scanned for keys and phone numbers, not emails
+    lockfile = name.endswith(LOCKFILES)
     for n, line in enumerate(text.splitlines(), start=1):
         for m in EMAIL.finditer(line):
-            if not EMAIL_ALLOWED.search(m.group(0)):
+            if not lockfile and not EMAIL_ALLOWED.search(m.group(0)):
                 found.append(f"email in {name}:{n} ({mask(m.group(0))})")
         for m in PHONE.finditer(line):
             found.append(f"phone-like number in {name}:{n} ({mask(m.group(0))})")

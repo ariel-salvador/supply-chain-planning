@@ -19,7 +19,7 @@ export
 DB ?= $(ODOO_DB_NAME)
 APPS := stock,mrp,purchase,sale_management
 
-.PHONY: report dashboard-extract odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-demo-reset odoo-down odoo-logs \
+.PHONY: report dashboard-extract evidence-dev odoo-env odoo-up odoo-init odoo-seed odoo-run odoo-compare odoo-rfq odoo-demo odoo-demo-reset odoo-down odoo-logs \
         odoo-live-init odoo-live-bootstrap odoo-live-master odoo-backup odoo-restore-test odoo-nuke \
         odoo-history odoo-history-rehearse
 
@@ -28,6 +28,9 @@ report:              ## build outputs/report/index.html (static charts, local on
 
 dashboard-extract:   ## Odoo -> marts (CSV + DuckDB) in outputs/marts/<db>/, read-only. SOURCE=demo for the demo
 	$(PY) scripts/odoo_extract.py --source $(or $(SOURCE),live)
+
+evidence-dev:        ## Evidence dashboard on localhost:3000 from the live marts (run dashboard-extract first)
+	cd dashboard/evidence && ([ -d node_modules ] || npm ci --no-audit --no-fund) && npm run sources && npm run dev
 
 odoo-env:            ## create .env with random secrets if missing (never printed)
 	@test -f .env || $(PY) -c "import secrets,re; s=open('.env.example').read(); \
