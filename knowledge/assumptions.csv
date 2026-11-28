@@ -153,3 +153,10 @@ mock_discount_key_account,Price discount for the two largest (weekly) accounts,0
 mock_discount_distributor,Price discount for the distributor (resale margin),0.06,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
 mock_lot_bulk_tanker_kg,Bulk sweetener delivered per road tanker (order lot),25000,kg,,,mock shipping lot (ADR 0019),,,low,mock,blg_whey_protein
 mock_lot_bags_per_pallet,Empty multiwall bags per pallet (order lot),1000,unit,,,mock shipping lot (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_price_index,Express distributor quote as a multiple of the should-cost target price,1.09,fraction,,,mock RFQ quote (ADR 0019; equal to the premium archetype),,,low,mock,blg_whey_protein
+mock_sup_exp_lead_time_delta,Express distributor lead time vs the item's planning lead time,-1,week,,,mock RFQ quote (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_moq_weeks,Express distributor minimum order in weeks of planned usage,1,week,,,mock RFQ quote (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_quality_ppm,Express distributor defect rate,800,ppm,,,mock supplier quality record (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_otif,Express distributor on-time in-full rate,0.97,fraction,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_lt_sigma,Express distributor lead time standard deviation,0.25,week,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein
+mock_sup_exp_short_ship_rate,Express distributor share of deliveries short-shipped,0.02,fraction,,,mock supplier performance record (ADR 0019),,,low,mock,blg_whey_protein

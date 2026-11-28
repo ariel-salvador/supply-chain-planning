@@ -11,7 +11,7 @@ and lot policies are [mock]; process quantities are [source] (see
 |---|---|---|---|---|---|---|---|---|---|
 | BLG-PWD | MO | 749,409 | 699,244 | -7% | 24 | 24 | w2 … w25 | w0 | 11.9 → -1.0 |
 | UFDF-MEMBRANE-SET | PO | 0 | 0 | – | 0 | 0 | – | – | – |
-| BAG-25KG | PO | 26,704 | 24,698 | -8% | 23 | 22 | w2 … w24 | w0 | 11.2 → -1.0 |
+| BAG-25KG | PO | 26,704 | 24,697 | -8% | 23 | 22 | w2 … w24 | w0 | 11.2 → -1.0 |
 | BLG-FERM | MO | 636,000 | 588,000 | -8% | 24 | 23 | w1 … w24 | w0 | 11.3 → -1.0 |
 | CACL2 | PO | 4,512 | 4,128 | -9% | 22 | 21 | w2 … w23 | w0 | 11.7 → -1.0 |
 | MGSULF | PO | 3,384 | 3,096 | -9% | 22 | 21 | w2 … w23 | w0 | 11.7 → -1.0 |
@@ -38,15 +38,15 @@ scheduler buys from the awarded supplier by default.
 
 | item | awarded by the RFQ | Odoo bought from | award honoured |
 |---|---|---|---|
-| AMSULF | Nutrients Supplier - Premium | Nutrients Supplier - Premium (21 lines, 14,448) | yes |
-| BAG-25KG | Packaging Supplier - Low Cost | Packaging Supplier - Premium (13 lines, 15,638) · Packaging Supplier - Low Cost (9 lines, 9,060) | no |
-| CACL2 | Nutrients Supplier - Premium | Nutrients Supplier - Premium (21 lines, 4,128) | yes |
-| GLUCOSE | Sugar Supplier - Incumbent | Sugar Supplier - Incumbent (1 lines, 2,500,000) | yes |
-| KPHOS | Nutrients Supplier - Premium | Nutrients Supplier - Premium (21 lines, 20,640) | yes |
-| MGSULF | Nutrients Supplier - Premium | Nutrients Supplier - Premium (21 lines, 3,096) | yes |
-| NH3 | Nutrients Supplier - Premium | Nutrients Supplier - Premium (21 lines, 72,240) | yes |
+| AMSULF | Process Chemicals Distributor | Process Chemicals Distributor (21 lines, 14,448) | yes |
+| BAG-25KG | Packaging Converter | Packaging Converter (22 lines, 24,697) | yes |
+| CACL2 | Process Chemicals Distributor | Process Chemicals Distributor (21 lines, 4,128) | yes |
+| GLUCOSE | Corn Sweeteners Mill | Corn Sweeteners Mill (1 lines, 2,500,000) | yes |
+| KPHOS | Process Chemicals Distributor | Process Chemicals Distributor (21 lines, 20,640) | yes |
+| MGSULF | Process Chemicals Distributor | Process Chemicals Distributor (21 lines, 3,096) | yes |
+| NH3 | Process Chemicals Distributor | Process Chemicals Distributor (21 lines, 72,240) | yes |
 
-**Where it was not honoured** (BAG-25KG): Odoo filters the vendor price list by the order quantity, so a supplier whose **minimum order quantity** the order does not reach is skipped and the next vendor in sequence is used. The engine reports the same condition as a sourcing note (`below_awarded_moq` on the PO lines): either the lot-sizing policy consolidates orders up to the MOQ, or the award price does not apply.
+All awards were honoured.
 
 ## Why they differ
 

@@ -248,16 +248,21 @@ purchasing:                   # M3: PO schedule + spend from FRED-linked prices
   price_window_years: mock_price_window_years
 
 # ---------------------------------------------------------------------------
-# M6 sourcing. Supplier master = three bidders per material family, built from
-# three MOCK supplier archetypes (incumbent / low-cost / premium). Quotes are
-# simulated as a price index on the should-cost target price (ADR 0013), so no
-# dollar quote is invented per supplier. All suppliers are FICTIONAL.
+# M6 sourcing. Supplier master (consolidated 2026-11-27, ADR 0019): four PREFERRED
+# partners, one per material family, and three APPROVED backups that each cover
+# several families (economies of scale: one supplier, many items). Names say what
+# a supplier sells; status (preferred / approved) and traits are tags in the ERP.
+# Quote terms reuse the MOCK archetypes (incumbent / low-cost / premium / express);
+# quotes are a price index on the should-cost target (ADR 0013), so no dollar quote
+# is invented per supplier. All suppliers are FICTIONAL.
 # ---------------------------------------------------------------------------
 suppliers:
-  - id: s_sugar_a
-    name: "Sugar Supplier - Incumbent (fictional)"
+  - id: s_sweeteners
+    name: "Corn Sweeteners Mill"
     fictional: true
     archetype: incumbent
+    status: preferred
+    tags: [Domestic]
     supplies: [GLUCOSE, SUCROSE]
     lane: domestic
     incoterm: DAP
@@ -271,11 +276,63 @@ suppliers:
       lead_time_sigma: mock_sup_inc_lt_sigma
       short_ship_rate: mock_sup_inc_short_ship_rate
 
-  - id: s_sugar_b
-    name: "Sugar Supplier - Low Cost (fictional)"
+  - id: s_chemicals
+    name: "Process Chemicals Distributor"
+    fictional: true
+    archetype: premium
+    status: preferred
+    tags: [Domestic, High quality]
+    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
+    lane: domestic
+    incoterm: DAP
+    risk_tier: low
+    quote: &q_premium
+      price_index: mock_sup_prem_price_index
+      lead_time_delta: mock_sup_prem_lead_time_delta
+      moq_weeks: mock_sup_prem_moq_weeks
+      quality_ppm: mock_sup_prem_quality_ppm
+      otif: mock_sup_prem_otif
+      lead_time_sigma: mock_sup_prem_lt_sigma
+      short_ship_rate: mock_sup_prem_short_ship_rate
+
+  - id: s_packaging
+    name: "Packaging Converter"
     fictional: true
     archetype: low-cost
-    supplies: [GLUCOSE, SUCROSE]
+    status: preferred
+    tags: [Import, Low cost]
+    supplies: [BAG-25KG]
+    lane: import
+    incoterm: FOB
+    risk_tier: medium
+    quote: &q_packaging        # cheap and fast, with quality close to an incumbent's
+      price_index: mock_sup_low_price_index
+      lead_time_delta: mock_sup_pack_b_lead_time_delta
+      moq_weeks: mock_sup_low_moq_weeks
+      quality_ppm: mock_sup_pack_b_quality_ppm
+      otif: mock_sup_low_otif
+      lead_time_sigma: mock_sup_low_lt_sigma
+      short_ship_rate: mock_sup_low_short_ship_rate
+
+  - id: s_filtration
+    name: "Filtration Systems Maker"
+    fictional: true
+    archetype: incumbent
+    status: preferred
+    tags: [Import, Original equipment]
+    supplies: [UFDF-MEMBRANE-SET]
+    lane: import
+    incoterm: DAP
+    risk_tier: medium
+    quote: *q_incumbent
+
+  - id: s_broadline
+    name: "Broadline Ingredients Distributor"
+    fictional: true
+    archetype: low-cost
+    status: approved
+    tags: [Import, Low cost]
+    supplies: [GLUCOSE, SUCROSE, NH3, AMSULF, KPHOS, MGSULF, CACL2]
     lane: import
     incoterm: FOB
     risk_tier: high
@@ -288,118 +345,36 @@ suppliers:
       lead_time_sigma: mock_sup_low_lt_sigma
       short_ship_rate: mock_sup_low_short_ship_rate
 
-  - id: s_sugar_c
-    name: "Sugar Supplier - Premium (fictional)"
+  - id: s_express
+    name: "Regional Express Supply"
     fictional: true
-    archetype: premium
-    supplies: [GLUCOSE, SUCROSE]
+    archetype: express
+    status: approved
+    tags: [Domestic, Fast delivery]
+    supplies: [GLUCOSE, SUCROSE, NH3, AMSULF, KPHOS, MGSULF, CACL2, BAG-25KG]
     lane: domestic
     incoterm: DDP
     risk_tier: low
-    quote: &q_premium
-      price_index: mock_sup_prem_price_index
-      lead_time_delta: mock_sup_prem_lead_time_delta
-      moq_weeks: mock_sup_prem_moq_weeks
-      quality_ppm: mock_sup_prem_quality_ppm
-      otif: mock_sup_prem_otif
-      lead_time_sigma: mock_sup_prem_lt_sigma
-      short_ship_rate: mock_sup_prem_short_ship_rate
+    quote:
+      price_index: mock_sup_exp_price_index
+      lead_time_delta: mock_sup_exp_lead_time_delta
+      moq_weeks: mock_sup_exp_moq_weeks
+      quality_ppm: mock_sup_exp_quality_ppm
+      otif: mock_sup_exp_otif
+      lead_time_sigma: mock_sup_exp_lt_sigma
+      short_ship_rate: mock_sup_exp_short_ship_rate
 
-  - id: s_nutr_a
-    name: "Nutrients Supplier - Incumbent (fictional)"
-    fictional: true
-    archetype: incumbent
-    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
-    lane: domestic
-    incoterm: DAP
-    risk_tier: medium
-    quote: *q_incumbent
-
-  - id: s_nutr_b
-    name: "Nutrients Supplier - Low Cost (fictional)"
+  - id: s_aftermarket
+    name: "Aftermarket Membrane Supply"
     fictional: true
     archetype: low-cost
-    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
-    lane: import
-    incoterm: FOB
-    risk_tier: high
-    quote:                     # the low-cost archetype, with a better record on two terms
-      <<: *q_low_cost
-      quality_ppm: mock_sup_nutr_b_quality_ppm
-      lead_time_delta: mock_sup_nutr_b_lead_time_delta
-
-  - id: s_nutr_c
-    name: "Nutrients Supplier - Premium (fictional)"
-    fictional: true
-    archetype: premium
-    supplies: [NH3, AMSULF, KPHOS, MGSULF, CACL2]
-    lane: import
-    incoterm: DDP
-    risk_tier: low
-    quote: *q_premium
-
-  - id: s_pack_a
-    name: "Packaging Supplier - Incumbent (fictional)"
-    fictional: true
-    archetype: incumbent
-    supplies: [BAG-25KG]
-    lane: domestic
-    incoterm: DAP
-    risk_tier: low
-    quote: *q_incumbent
-
-  - id: s_pack_b
-    name: "Packaging Supplier - Low Cost (fictional)"
-    fictional: true
-    archetype: low-cost
-    supplies: [BAG-25KG]
-    lane: import
-    incoterm: FOB
-    risk_tier: medium
-    quote:                     # cheap, fast and nearly as good on quality: a credible bid
-      <<: *q_low_cost
-      quality_ppm: mock_sup_pack_b_quality_ppm
-      lead_time_delta: mock_sup_pack_b_lead_time_delta
-
-  - id: s_pack_c
-    name: "Packaging Supplier - Premium (fictional)"
-    fictional: true
-    archetype: premium
-    supplies: [BAG-25KG]
-    lane: domestic
-    incoterm: DDP
-    risk_tier: low
-    quote: *q_premium
-
-  - id: s_memb_a
-    name: "Membrane Supplier - Incumbent (fictional)"
-    fictional: true
-    archetype: incumbent
-    supplies: [UFDF-MEMBRANE-SET]
-    lane: import
-    incoterm: DAP
-    risk_tier: medium
-    quote: *q_incumbent
-
-  - id: s_memb_b
-    name: "Membrane Supplier - Low Cost (fictional)"
-    fictional: true
-    archetype: low-cost
+    status: approved
+    tags: [Import, Low cost]
     supplies: [UFDF-MEMBRANE-SET]
     lane: import
     incoterm: FOB
     risk_tier: high
     quote: *q_low_cost
-
-  - id: s_memb_c
-    name: "Membrane Supplier - Premium (fictional)"
-    fictional: true
-    archetype: premium
-    supplies: [UFDF-MEMBRANE-SET]
-    lane: import
-    incoterm: DDP
-    risk_tier: low
-    quote: *q_premium
 
 sourcing:
   weights:                     # RFQ award weights; must sum to 1 (ADR 0013)
@@ -488,7 +463,7 @@ history:
     - kind: supplier_outage
       start: "2025-08-04"
       weeks: mock_event_outage_weeks
-      target: s_sugar_a
+      target: s_sweeteners
       item: GLUCOSE
       note: "Glucose supplier outage; emergency buys from the runner-up [mock]"
     - kind: demand_spike

@@ -192,6 +192,8 @@ class Supplier:
     incoterm: str
     risk_tier: str
     archetype: str = ""
+    status: str = "approved"      # preferred | approved: shown as a tag in the ERP
+    tags: Tuple[str, ...] = ()    # descriptive traits (Low cost, Fast delivery, Import, ...)
 
 
 @dataclass(frozen=True)
@@ -231,6 +233,7 @@ class SourcingSpec:
 
 
 RFQ_CRITERIA = ("price", "lead_time", "quality", "risk")
+SUPPLIER_STATUS = ("preferred", "approved")
 
 # Incoterm -> (seller pays inbound freight, seller pays import duty). Used by the TCO
 # build-up: anything the seller does not pay is a buyer cost on top of the quote.
@@ -695,7 +698,11 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             incoterm=_incoterm(_req(sp, "incoterm", where), where),
             risk_tier=str(_req(sp, "risk_tier", where)),
             archetype=str(sp.get("archetype", "")),
+            status=str(sp.get("status", "approved")),
+            tags=tuple(str(t) for t in (sp.get("tags") or ())),
         )
+        if suppliers[sid].status not in SUPPLIER_STATUS:
+            raise ConfigError(f"{where}: status must be one of {list(SUPPLIER_STATUS)}")
 
     sourcing = None
     if raw.get("sourcing"):

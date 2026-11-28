@@ -30,8 +30,15 @@ class FakeOdoo(oc.Odoo):
         self.refs = {x: i for i, x in enumerate([
             "uom.product_uom_kgm", "uom.product_uom_unit", "mrp.route_warehouse0_manufacture",
             "purchase_stock.route_warehouse0_buy", "stock.stock_location_stock"], start=100)}
-        self.rows = {}
+        self.rows = {"res.partner.category": [{"id": i, "name": n} for i, n in enumerate(
+            ["Approved supplier", "Domestic", "Fast delivery", "High quality", "Import", "Low cost",
+             "Original equipment", "Preferred supplier"], start=1)]}
         self.writes = []
+
+    @staticmethod
+    def _m2m(vals):  # Odoo stores a many2many "replace" command as the list of ids
+        return {k: (v[0][2] if isinstance(v, list) and v and isinstance(v[0], list) and v[0][:2] == [6, 0]
+                    and k == "category_id" else v) for k, v in vals.items()}
 
     def call(self, model, method, ids=(), **p):
         rows = self.rows.setdefault(model, [])
@@ -40,7 +47,7 @@ class FakeOdoo(oc.Odoo):
             hits = [r for r in rows if r.get(f) == v]
             return [{k: r.get(k) for k in ["id", *p["fields"]]} for r in hits][: p.get("limit") or None]
         if method == "create":
-            vals = p["vals_list"][0]
+            vals = self._m2m(p["vals_list"][0])
             rows.append({"id": len(rows) + 1, **vals})
             if model == "product.template":  # Odoo creates the variant automatically
                 pp = self.rows.setdefault("product.product", [])
@@ -49,7 +56,7 @@ class FakeOdoo(oc.Odoo):
         if method == "write":
             for r in rows:
                 if r["id"] in ids:
-                    r.update(p["vals"])
+                    r.update(self._m2m(p["vals"]))
             self.writes.append((model, list(ids), p["vals"]))
             return True
         raise AssertionError(f"unexpected {model}.{method}")
@@ -120,3 +127,12 @@ def test_kanban_levels_set_purchased_reorder_rules():
     assert (op["orderpoint:AMSULF"]["product_min_qty"], op["orderpoint:AMSULF"]["product_max_qty"]) == (928.0, 1613.0)
     ss = cfg.items["BLG-PWD"].planning.safety_stock
     assert op["orderpoint:BLG-PWD"]["product_min_qty"] == op["orderpoint:BLG-PWD"]["product_max_qty"] == ss
+
+
+def test_suppliers_carry_status_and_trait_tags(specs):
+    tags = {s.key: [t.name for t in s.vals["category_id"][0][2]] for s in specs
+            if s.model == "res.partner" and "category_id" in s.vals}
+    assert tags["partner:s_chemicals"] == ["Preferred supplier", "Domestic", "High quality"]
+    assert tags["partner:s_express"] == ["Approved supplier", "Domestic", "Fast delivery"]
+    assert sum(t[0] == "Preferred supplier" for t in tags.values()) == 4
+    assert "partner:c_brands" not in tags                       # customers get no supplier tags

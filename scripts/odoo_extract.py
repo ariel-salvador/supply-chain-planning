@@ -109,6 +109,14 @@ def lines_with_orders(lines: List[dict], orders: List[dict], line_map: Dict[str,
     return pd.DataFrame(rows)
 
 
+def supplier_status(tag_names: List[str]) -> Optional[str]:
+    """'preferred' / 'approved' from a supplier's contact tags (ADR 0019), else None."""
+    for status in ("preferred", "approved"):
+        if f"{status.capitalize()} supplier" in tag_names:
+            return status
+    return None
+
+
 def move_kind(src_usage: str, dst_usage: str) -> str:
     """Business meaning of a stock move from its location types."""
     if src_usage == "supplier":
@@ -170,14 +178,19 @@ def extract(o: Odoo, demo: bool) -> Dict[str, pd.DataFrame]:
                                                                    "uom_id": "uom"}),
                               [], ["uom"], None)
 
-    parts = o.search_read("res.partner", [["is_company", "=", True]],
-                          ["name", "supplier_rank", "customer_rank", "create_uid", *key])
+    parts = o.search_read("res.partner", [["is_company", "=", True], ["active", "in", [True, False]]],
+                          ["name", "supplier_rank", "customer_rank", "category_id", "active", "create_uid", *key])
+    tag_name = {t["id"]: t["name"] for t in o.search_read("res.partner.category", [], ["name"])}
     dp = pd.DataFrame(parts)
     if not dp.empty:
         dp["role"] = [("supplier" if s else "") + ("+" if s and c else "") + ("customer" if c else "") or "other"
                       for s, c in zip(dp["supplier_rank"], dp["customer_rank"])]
         dp["created_by"] = [created_by(r, script_uids, demo) for r in parts]
-        dp = dp.drop(columns=[c for c in ("create_uid", PPS_KEY) if c in dp]).rename(columns={"id": "partner_id"})
+        names = [[tag_name.get(i, "") for i in (r.get("category_id") or [])] for r in parts]
+        dp["supplier_status"] = [supplier_status(n) for n in names]
+        dp["tags"] = [", ".join(sorted(n)) for n in names]
+        dp = dp.drop(columns=[c for c in ("create_uid", PPS_KEY, "category_id") if c in dp]).rename(
+            columns={"id": "partner_id"})
     t["dim_partner"] = dp
 
     so = o.search_read("sale.order", [], ["name", "date_order", "commitment_date", "effective_date", "partner_id",

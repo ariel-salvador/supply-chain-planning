@@ -37,10 +37,11 @@ def purchased(res):
 
 def test_every_bidder_gets_a_price_list_line_awarded_first(res, purchased):
     rows = seed.supplier_prices(res.cfg, res, 7.0, purchased)
-    assert len(rows) == 3 * len(purchased)                       # three bidders per item
+    bids = sum(1 for i in purchased for sp in res.cfg.suppliers.values() if i in sp.supplies)
+    assert len(rows) == bids and all(any(r[0] == i for r in rows) for i in purchased)   # every bidder, every item
     for iid in purchased:
         item_rows = [r for r in rows if r[0] == iid]
-        assert [v["sequence"] for _, _, v in item_rows] == [1, 2, 3]
+        assert [v["sequence"] for _, _, v in item_rows] == list(range(1, len(item_rows) + 1))
         first_supplier = item_rows[0][1]
         assert first_supplier == res.awards.loc[iid, "awarded_to"]   # Odoo buys from sequence 1
         # price, minimum quantity and lead time come straight off the quote
@@ -101,8 +102,10 @@ def test_partners_are_tagged_by_role_so_the_two_lists_stay_separate(res):
     cfg = res.cfg
     assert not (set(cfg.suppliers) & set(cfg.customers))      # nobody is on both sides
     assert len(cfg.customers) > 1                             # a real demand side, not one account
-    for party in list(cfg.suppliers.values()) + list(cfg.customers.values()):
-        assert "fictional" in party.name                      # public-safe rule
+    # public-safe rule: every party is flagged `fictional: true` (the loader rejects any that
+    # isn't). Supplier names are generic roles since ADR 0019; customers still say so in the name.
+    for party in cfg.customers.values():
+        assert "fictional" in party.name
 
 
 def test_weekly_orders_spread_across_the_customer_list(res):
