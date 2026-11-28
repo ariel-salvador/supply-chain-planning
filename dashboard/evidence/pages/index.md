@@ -46,6 +46,9 @@ weekly operations recorded in an Odoo ERP. Data as of
 <BigValue data={turns} value=fg_turns title="Finished-goods turns, last 52 weeks" fmt=num1 />
 <BigValue data={wos} value=weeks_of_supply sparkline=week title="Weeks of supply (latest)" fmt=num1 />
 
+**Explore:** [Customer service](/service) · [Purchasing](/purchasing) ·
+[Inventory](/inventory) · [Finance](/finance)
+
 ## Is supply keeping up with demand?
 
 Customer orders by month against the statistical forecast the plant planned on.
