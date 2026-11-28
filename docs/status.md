@@ -45,8 +45,9 @@ forever: its PR pages reference commits with the author's old email._
 - **Supplier master consolidated** (2026-11-27, ADR 0019): 12 → 7 suppliers named for what
   they sell, tagged *Preferred* / *Approved* plus traits; buyable minimums; kanban reorder
   levels on every purchased item. Applied to `pps_live` (history intact, checks pass).
-- **Evidence MVP** on branch `evidence-mvp` (not pushed): KPI row, demand vs forecast,
-  finished-goods inventory vs safety stock. `make evidence-dev`.
+- **Evidence MVP published** (2026-11-27) at https://ariel-salvador.github.io/supply-chain-planning/
+  (`make evidence-publish`); live but not yet shared on applications. Next: purchasing and
+  finance pages, then share.
 - **Tableau: on hold** until the user creates a Tableau Public account. The data is ready:
   `make dashboard-extract` → `outputs/marts/pps_live/*.csv`, now with invoices, payments,
   stock moves, forecast, standard costs and the price list (`docs/dashboard/marts.md`).
@@ -63,8 +64,7 @@ forever: its PR pages reference commits with the author's old email._
 - Resolved: the plan doc's $3.88/kg material cost was the mock glucose fallback (ADR 0018).
 - Company name: drop "(fictional)" only after choosing a new invented name ("Precision
   Proteins" is a real company's business line). On hold by the user.
-- Customer OTIF is 100% by construction (orders booked 2 weeks ahead = production lead
-  time); add rush orders / delivery delays if the dashboard should show dips.
+- Resolved: customer OTIF is now ~96% (rush orders, shipment holds; ADR 0018 amendment).
 - Should-cost conversion and margin shares are mock; membrane life (ADR 0008) and DSP
   throughput (ADR 0006) are unsourced.
 - See `knowledge/backlog.md`.

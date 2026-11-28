@@ -49,7 +49,8 @@ weekly operations recorded in an Odoo ERP. Data as of
 ## Is supply keeping up with demand?
 
 Customer orders by month against the statistical forecast the plant planned on.
-Every order shipped in full and on time, so shipments sit on top of the orders line. Forecast bias: **<Value data={accuracy} column=bias fmt=pct1 />**
+About one order in 25 ships a week late: rush orders placed inside the lead time, and
+shipments held for a carrier or quality release. Forecast bias: **<Value data={accuracy} column=bias fmt=pct1 />**
 (positive = demand above forecast).
 
 ```sql demand_chart

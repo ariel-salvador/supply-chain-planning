@@ -256,6 +256,33 @@ def cmd_rehearse(env: Dict[str, str], outdir: Path) -> None:
     print(f"rehearsal ready: {demo} is now a copy of {path.name} (rebuild the demo later with `make odoo-demo`)")
 
 
+def check_restore_source(path: Path, live: str) -> None:
+    """A live restore only takes a verified backup of the live database itself."""
+    if not path.name.startswith(f"{live}-") or path.suffix != ".zip":
+        raise AdminError(f"{path.name} is not a {live} backup")
+    verify_backup(path)
+
+
+def cmd_restore_live(env: Dict[str, str], outdir: Path, source: Path) -> None:
+    """Replace pps_live with an earlier backup of itself (e.g. to rebuild the history).
+
+    Always backs up the current state first, so this step can itself be undone by
+    restoring that backup. The only command that drops the protected database.
+    """
+    live = env["ODOO_LIVE_DB_NAME"]
+    check_restore_source(source, live)
+    safety = cmd_backup(live, env, outdir)
+    print(f"current {live} saved to {safety.name}; restore it with this same command to undo")
+    r = odoo_cli(["db", "drop", live], env, capture_output=True, text=True)
+    if r.returncode != 0 or db_exists(live, env):
+        raise AdminError(f"could not drop {live}; nothing restored")
+    r = odoo_cli(["db", "load", live, f"/backups/{source.name}"], env,
+                 mounts=[f"{source.parent.resolve()}:/backups:ro"], capture_output=True, text=True)
+    if r.returncode != 0 or not db_exists(live, env):
+        raise AdminError(f"loading {source.name} failed: restore {safety.name} to recover")
+    print(f"{live} restored from {source.name}; rerun `make odoo-live-bootstrap` (API keys are per state)")
+
+
 def cmd_drop(db: str, env: Dict[str, str], if_exists: bool) -> None:
     check_droppable(db, protected(env))
     if not db_exists(db, env):
@@ -379,6 +406,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     rt.add_argument("--out", type=Path, default=ROOT / "backups")
     rh = sub.add_parser("rehearse", help="copy the latest pps_live backup into pps_demo")
     rh.add_argument("--out", type=Path, default=ROOT / "backups")
+    rl = sub.add_parser("restore-live", help="replace pps_live with an earlier backup of itself")
+    rl.add_argument("backup", type=Path)
+    rl.add_argument("--i-understand-this-replaces-pps-live", dest="confirm", action="store_true")
+    rl.add_argument("--out", type=Path, default=ROOT / "backups")
     sub.add_parser("init-live")
     sub.add_parser("bootstrap-live")
     n = sub.add_parser("nuke")
@@ -397,6 +428,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             cmd_restore_test(args.db, env, args.out)
         elif args.cmd == "rehearse":
             cmd_rehearse(env, args.out)
+        elif args.cmd == "restore-live":
+            if not args.confirm:
+                raise AdminError("refusing: pass --i-understand-this-replaces-pps-live")
+            cmd_restore_live(env, args.out, args.backup)
         elif args.cmd == "init-live":
             cmd_init_live(env)
         elif args.cmd == "bootstrap-live":
