@@ -76,9 +76,8 @@
     exported with the ledger (`outputs/history/forecast.csv`) and joined in the marts.
   - FRED publishes monthly with a lag; months after the last observation carry the last
     price forward, and the run prints a note saying so.
-  - Customer service is near-perfect by design (orders are booked two weeks ahead, which
-    matches the production lead time). Service problems in the story come from the
-    events and from supplier lateness, not from forecast misses.
+  - Customer service was 100% in the first version (every order booked two weeks ahead,
+    matching the production lead time). See the amendment below.
 
 ## Verified (2026-11-25)
 
@@ -92,3 +91,24 @@
 - A rerun creates nothing. Master data reloaded with cited prices: 34 diffs shown, then
   applied (`APPLY_DIFFS=1`); a rerun shows none.
 - The extract's stock moves, summed per product, reproduce on-hand exactly.
+
+## Amendment: believable customer service (2026-11-27)
+
+A 100% on-time rate reads as fake to any planner. Three realistic causes were added
+(mock rates in the registry):
+
+- **Rush orders:** 10% of customer orders are placed one week ahead instead of two, and
+  production only plans on orders already placed. The unforecast launch volume arrives
+  this way.
+- **Shipment holds:** 3% of shipments slip a week (carrier no-show, quality release).
+- **Contamination hits supply:** besides the scrapped batch, one of three fermenters is
+  offline for two weeks and the powder line is sanitised for a week.
+
+Result: customer OTIF 96.3% (98.8% / 94.8% / 95.3% for 2024 / 2025 / 2026). The
+contamination costs no order: powder stock falls from ~58 t to ~29 t and safety stock
+covers it, which the dashboard shows as an inventory drawdown.
+
+**Rebuild:** `pps_live` was restored from the pre-history backup with a new guarded
+command (`odoo_admin.py restore-live`, which always saves the current state first), the
+later setup was re-applied (bootstrap, supplier migration, master data) and the history
+rewritten. Checked by `check_history.py` as before.

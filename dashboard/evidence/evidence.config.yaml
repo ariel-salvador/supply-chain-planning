@@ -67,3 +67,8 @@ plugins:
   datasources:
     # only DuckDB: the marts from `make dashboard-extract` (docs/dashboard/marts.md)
     "@evidence-dev/duckdb": { }
+
+deployment:
+  # served from GitHub Pages at https://<user>.github.io/supply-chain-planning/
+  # (set to "" when the site moves to its own (sub)domain)
+  basePath: /supply-chain-planning

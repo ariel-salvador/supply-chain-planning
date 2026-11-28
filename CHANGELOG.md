@@ -4,6 +4,11 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-27: Believable customer service in the history
+- Rush orders, shipment holds, and a contamination that takes a fermenter and the powder
+  line offline: customer OTIF ~96% instead of 100%. `pps_live` rebuilt from its
+  pre-history backup (new guarded `restore-live`) and re-verified.
+
 ## 2026-11-27: Consolidated suppliers, buyable minimums, kanban reorder levels
 - 12 suppliers → 7, named for what they sell: four preferred partners and three approved
   backups covering several families. Status and traits are Odoo contact tags.
