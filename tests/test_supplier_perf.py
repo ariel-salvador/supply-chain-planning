@@ -5,6 +5,8 @@ Fixture (conftest): item B, 18 units per weekly bucket (936/yr), awarded to s1 a
 half the order, z = 2, carrying 20%/yr, dual split 50/50, disruption 2 weeks at
 P = 1.0 x (1 - risk score) -> s1 (low, 0.9) 0.10, s2 (high, 0.1) 0.90.
 """
+import math
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -149,3 +151,22 @@ def test_blg_forward_buy_only_covers_items_with_a_linked_series():
     r = run("products/blg_whey_protein.yaml", offline=True)
     assert set(r.forward_buy["item"]) == {"GLUCOSE"}       # the only priced item in the base BOM
     assert (r.forward_buy["breakeven_usd_per_uom"] > r.forward_buy["carrying_usd_per_uom"]).all()
+
+
+def test_reorder_levels_by_hand():
+    from conftest import BLG
+    from ppsim.pipeline import run
+    res = run(BLG, fetch_prices=False)
+    lv = perf.reorder_levels(res.cfg, res.quotes, res.awards, res.usage)
+    z, cv = res.cfg.sourcing.service_level_z, res.cfg.demand.noise_cv
+    r = lv.loc["NH3"]
+    d, L, sl = r["weekly_usage"], r["lead_time_weeks"], r["lead_time_sigma"]
+    ss = z * math.sqrt(L * (cv * d) ** 2 + (d * sl) ** 2)
+    assert math.isclose(r["safety_stock"], ss)
+    assert r["min_qty"] == math.ceil(d * L + ss)                         # whole kg
+    assert r["max_qty"] == r["min_qty"] + r["order_qty"]
+    g = lv.loc["GLUCOSE"]
+    assert g["safety_stock"] >= res.cfg.items["GLUCOSE"].planning.safety_stock   # plan's floor kept
+    assert g["order_qty"] % 250000 == 0 and g["min_qty"] % 25000 == 0     # fixed lot, whole tankers
+    m = lv.loc["UFDF-MEMBRANE-SET"]
+    assert m["min_qty"] >= 1 and m["order_qty"] == 1 and float(m["min_qty"]).is_integer()

@@ -438,6 +438,10 @@ sourcing:
       CACL2: PCU325180325180
       BAG-25KG: PCU322220322220          # PPI: paper bag and coated/treated paper manufacturing
       UFDF-MEMBRANE-SET: PCU326199326199 # PPI: all other plastics products (proxy for PES membranes)
+  order_lots:                  # minimums and kanban quantities round up to whole lots
+    GLUCOSE: mock_lot_bulk_tanker_kg
+    SUCROSE: mock_lot_bulk_tanker_kg
+    BAG-25KG: mock_lot_bags_per_pallet
   carrying_cost_rate: mock_carrying_cost_rate
   quality_cost_multiple: mock_quality_cost_multiple
   scorecard_periods: mock_scorecard_periods

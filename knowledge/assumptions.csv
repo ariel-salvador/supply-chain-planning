@@ -151,3 +151,5 @@ mock_event_spike_uplift,Demand uplift of the spiking customer during the spike,0
 mock_reprice_every_months,How often the powder list price is reset from current input costs,3,month,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
 mock_discount_key_account,Price discount for the two largest (weekly) accounts,0.03,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
 mock_discount_distributor,Price discount for the distributor (resale margin),0.06,fraction,,,mock pricing policy (ADR 0018),,,low,mock,blg_whey_protein
+mock_lot_bulk_tanker_kg,Bulk sweetener delivered per road tanker (order lot),25000,kg,,,mock shipping lot (ADR 0019),,,low,mock,blg_whey_protein
+mock_lot_bags_per_pallet,Empty multiwall bags per pallet (order lot),1000,unit,,,mock shipping lot (ADR 0019),,,low,mock,blg_whey_protein

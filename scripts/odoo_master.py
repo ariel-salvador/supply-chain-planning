@@ -82,11 +82,14 @@ class Report:
 
 
 def plan(cfg, res, days_per_week: float, trigger: str = "manual",
-         costs: Optional[Dict[str, float]] = None, list_price: Optional[float] = None) -> List[Spec]:
+         costs: Optional[Dict[str, float]] = None, list_price: Optional[float] = None,
+         levels=None) -> List[Spec]:
     """Ordered master-data specs for the config: dependencies always come first.
 
     ``costs`` (standard cost per item) and ``list_price`` (the finished item's selling
     price), when given, are set on the products and diffed like any other field.
+    ``levels`` (``supplier_perf.reorder_levels``) sets kanban min/max on purchased items;
+    without it, min = max = the planning safety stock.
     """
     costs = costs or {}
     root = cfg.demand.item
@@ -181,11 +184,14 @@ def plan(cfg, res, days_per_week: float, trigger: str = "manual",
         }, compare=("product_qty", "produce_delay"),
             note="component lines are set on creation; later line edits are not diffed"))
 
-    # reorder rules: min = max = safety stock, lot / batch unit as the multiple
+    # reorder rules: kanban min/max for purchased items when given, else min = max = safety stock
     for iid in planned:
         ss = cfg.items[iid].planning.safety_stock
+        lo, hi = ss, ss
+        if levels is not None and iid in levels.index:
+            lo, hi = float(levels.loc[iid, "min_qty"]), float(levels.loc[iid, "max_qty"])
         vals: Dict[str, Any] = {"product_id": Variant(f"product:{iid}"), "location_id": XRef(STOCK_XMLID),
-                                "product_min_qty": ss, "product_max_qty": ss, "trigger": trigger}
+                                "product_min_qty": lo, "product_max_qty": hi, "trigger": trigger}
         if iid in lot_uom:
             vals["replenishment_uom_id"] = Ref("uom.uom", lot_uom[iid])
         specs.append(Spec("stock.warehouse.orderpoint", f"orderpoint:{iid}", vals,
@@ -312,7 +318,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("warning: no FRED prices; vendor prices use the mock fallback bases", file=sys.stderr)
     days_per_week = load_registry(ROOT / "knowledge" / "assumptions.csv")["days_per_week"].value
     costs, asp = current_costs(cfg, res)
-    specs = plan(cfg, res, days_per_week, trigger=args.trigger, costs=costs, list_price=asp)
+    from ppsim.supplier_perf import reorder_levels
+    levels = reorder_levels(cfg, res.quotes, res.awards, res.usage) if res.awards is not None else None
+    specs = plan(cfg, res, days_per_week, trigger=args.trigger, costs=costs, list_price=asp, levels=levels)
     o = Odoo.live()
     print(f"{o.db}: {len(specs)} master-data records planned from {args.config}")
     report = apply(o, specs, apply_diffs=args.apply_diffs)

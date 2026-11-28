@@ -109,3 +109,14 @@ def _refs(value):
     elif isinstance(value, (list, tuple)):
         for v in value:
             yield from _refs(v)
+
+
+def test_kanban_levels_set_purchased_reorder_rules():
+    import pandas as pd
+    cfg = load_config(BLG)
+    levels = pd.DataFrame({"min_qty": [928.0], "max_qty": [1613.0]}, index=["AMSULF"])
+    specs = om.plan(cfg, run(cfg, fetch_prices=False), days_per_week=7, levels=levels)
+    op = {s.key: s.vals for s in specs if s.model == "stock.warehouse.orderpoint"}
+    assert (op["orderpoint:AMSULF"]["product_min_qty"], op["orderpoint:AMSULF"]["product_max_qty"]) == (928.0, 1613.0)
+    ss = cfg.items["BLG-PWD"].planning.safety_stock
+    assert op["orderpoint:BLG-PWD"]["product_min_qty"] == op["orderpoint:BLG-PWD"]["product_max_qty"] == ss

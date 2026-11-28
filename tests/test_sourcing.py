@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from ppsim import sourcing as src
-from ppsim.config import ConfigError, parse_config
+from ppsim.config import ConfigError, load_config, parse_config
 from ppsim.pipeline import run
 from conftest import BLG
 
@@ -304,3 +304,20 @@ def test_moq_check_flags_a_plan_that_cannot_reach_the_awarded_supplier():
     # sourcing problem, so the line is flagged in the data but not raised as a note
     assert res.po_lines[res.po_lines["item"] == "NH3"]["below_awarded_moq"].any()
     assert not any(n.startswith("NH3:") for n in res.sourcing_notes)
+
+
+def test_minimums_are_buyable_quantities():
+    res = run(BLG, fetch_prices=False)
+    q = res.quotes.set_index(["item", "supplier"])["moq_qty"]
+    assert (q.xs("UFDF-MEMBRANE-SET") == 1.0).all()              # a sliver of a set rounds up to one set
+    assert (q.xs("BAG-25KG") % 1000 == 0).all()                  # whole pallets
+    assert (q.xs("GLUCOSE") % 25000 == 0).all()                  # whole tankers
+    assert (q.xs("NH3") % 1 == 0).all()                          # everything else: whole kg
+
+
+def test_buyable_rounds_up_to_the_lot():
+    cfg = load_config(BLG)
+    assert src.buyable(cfg, "GLUCOSE", 25000.0) == 25000.0
+    assert src.buyable(cfg, "GLUCOSE", 25000.1) == 50000.0
+    assert src.buyable(cfg, "UFDF-MEMBRANE-SET", 0.04) == 1.0
+    assert src.buyable(cfg, "NH3", 0.0) == 0.0

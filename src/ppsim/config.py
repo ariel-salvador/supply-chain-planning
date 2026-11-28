@@ -226,6 +226,8 @@ class SourcingSpec:
     # price(t) = mock base x index(t) / index(index_base). The level is mock, the movement cited.
     material_index: Dict[str, str] = field(default_factory=dict)
     index_base: str = ""
+    # shipping lot per item (tanker, pallet): minimums and kanban quantities round up to it
+    order_lots: Dict[str, float] = field(default_factory=dict)
 
 
 RFQ_CRITERIA = ("price", "lead_time", "quality", "risk")
@@ -755,7 +757,11 @@ def parse_config(raw: Mapping[str, Any], registry: Mapping[str, Assumption], pat
             seed=int(sr.get("seed", 0)),  # RNG seed: structural, not a model number
             material_index={str(k): str(v) for k, v in (sc.get("material_index") or {}).items()},
             index_base=_iso_date(sc["index_base"], "sourcing.should_cost.index_base") if sc.get("index_base") else "",
+            order_lots={str(k): r.planning(v, f"sourcing.order_lots.{k}") for k, v in (sr.get("order_lots") or {}).items()},
         )
+        for iid, lot in sourcing.order_lots.items():
+            if iid not in purchased or lot <= 0:
+                raise ConfigError(f"sourcing.order_lots.{iid}: needs a purchased item and a lot > 0")
         for iid in sourcing.material_index:
             if iid not in material_base:
                 raise ConfigError(f"sourcing.should_cost.material_index: {iid!r} has no mock base to index")
