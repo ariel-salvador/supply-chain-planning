@@ -1,0 +1,1 @@
+[{"name":"revenue_ttm_usd","evidenceType":"number","typeFidelity":"precise"},{"name":"otif_ttm","evidenceType":"number","typeFidelity":"precise"},{"name":"open_receivables_usd","evidenceType":"number","typeFidelity":"precise"},{"name":"data_as_of","evidenceType":"date","typeFidelity":"precise"},{"name":"source_database","evidenceType":"string","typeFidelity":"precise"}]

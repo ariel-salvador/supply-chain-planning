@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="/supply-chain-planning/favicon.ico" sizes="32x32" />
+		<link rel="icon" href="/supply-chain-planning/icon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="/supply-chain-planning/apple-touch-icon.png" />
+		<link rel="manifest" href="/supply-chain-planning/manifest.webmanifest" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			try {
+				/** @type {'light' | 'dark' | 'system'} */
+				const savedTheme = localStorage.getItem('evidence-theme') ?? 'system';
+				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const theme = savedTheme === 'system' ? (prefersDark ? 'dark' : 'light') : savedTheme;
+				document.documentElement.setAttribute('data-theme', theme);
+			} catch (e) {}
+		</script>
+		
+		<link href="/supply-chain-planning/_app/immutable/assets/0.CxtZmWHu.css" rel="stylesheet">
+		<link href="/supply-chain-planning/_app/immutable/assets/VennDiagram.BCpuTJYF.css" rel="stylesheet">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/entry/start.vDdUcuYB.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/entry._2xH9Zkd.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/scheduler.v3ijTZs9.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/entry/app.ClioEexf.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/preload-helper.Dl3SYHUk.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.DybJngn3.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/nodes/0.DFrBQYc1.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.rV6zwFgL.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/VennDiagram.svelte_svelte_type_style_lang.kF5V66Qb.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/setTrackProxy.DjIbdjlZ.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/stores.BCqDmflJ.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.CfGtgL9-.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/scroll.BFwkwWN-.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/button.DqC8WKxp.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/AccordionItem.g1ikbYcn.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/checkRequiredProps.o_C_V3S5.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/nodes/4.CFbhoV1c.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/BigValue.CLQVM3TY.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/AreaChart.BRcqEyOn.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/LineChart.CgFo0qsH.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/ReferenceLine.BpQGWwBL.js"><title>Supply chain fundamentals</title><!-- HEAD_svelte-2igo1p_START --> <meta property="og:title" content="Supply chain fundamentals"> <meta name="twitter:title" content="Supply chain fundamentals"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@evidence_dev"> <!-- HEAD_svelte-2igo1p_END -->
+	</head>
+	<body>
+		<script>
+			
+		</script>
+		<div>
+			<!-- SvelteKit Hydrated Content -->
+			   <div class="z-[1] fixed right-0 bottom-0 mx-10 my-6 w-80"></div> <div data-sveltekit-preload-data="hover" class="antialiased"> <header class="fixed w-full top-0 z-40 flex h-12 shrink-0 justify-start items-center gap-x-4 border-b border-base-300/50 bg-base-100/90 backdrop-blur print:hidden"><div class=" max-w-7xl mx-auto px-5 sm:px-6 md:px-12 flex flex-1 items-center justify-between" style="max-width:undefinedpx;"><div class="flex gap-x-4 items-center"><button type="button" class="text-base-content hover:bg-base-200 rounded-lg p-1 -ml-1 transition-all duration-500 md:hidden"><span class="sr-only" data-svelte-h="svelte-73kebv">Open sidebar</span> <svg class="w-5 h-5" width="100%" height="100%" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"></path></svg></button> <a href="/supply-chain-planning/" class="text-sm font-bold text-base-content hidden md:block"><img src="/supply-chain-planning/_app/immutable/assets/wordmark-black.rfl-FBgf.png" alt="Home" class="h-5 aspect-auto block dark:hidden" href="/supply-chain-planning/"> <img src="/supply-chain-planning/_app/immutable/assets/wordmark-white.C8ZS96Ri.png" alt="Home" class="h-5 aspect-auto hidden dark:block" href="/supply-chain-planning/"></a></div> <div class="flex gap-2 text-sm items-center"> <div class="flex gap-2 items-center">   </div> <div class="relative"> <button type="button" tabindex="0" aria-controls="HoJdXQ52J6" aria-expanded="false" data-state="closed" id="SufPp8emsR" data-melt-dropdown-menu-trigger="" data-menu-trigger="" class="inline-flex items-center justify-center font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-base-content-muted disabled:pointer-events-none disabled:opacity-50 hover:text-base-content h-8 rounded-md text-xs px-1 hover:bg-base-200 shadow-base-200" aria-label="Menu" data-button-root=""><svg class="h-6 w-6" width="100%" height="100%" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M19 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path></svg></button> </div></div></div></header> <div class=" max-w-7xl print:w-[650px] print:md:w-[841px] mx-auto print:md:px-0 print:px-0 px-6 sm:px-8 md:px-12 flex justify-start" style="max-width:undefinedpx;"><div class="print:hidden">  <aside class="w-48 flex-none hidden md:flex"><div class="hidden: md:block fixed w-48 top-20 bottom-8 overflow-y-auto flex-1 text-sm pretty-scrollbar"><div class="flex flex-col pb-6"><a class="sticky top-0 bg-base-100 shadow shadow-base-100 font-semibold pb-1 mb-1 group inline-block capitalize hover:underline text-base-heading" href="/supply-chain-planning/">Home</a>  <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/service">Customer service  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/purchasing">Purchasing  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/inventory">Inventory  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/finance">Finance  </a></div> </div> <div class="fixed bottom-0 text-xs py-2" data-svelte-h="svelte-fworv4"><a href="https://www.evidence.dev" class="bg-gradient-to-r inline-block antialiased font-medium">Built with Evidence</a></div></aside></div> <main class="md:pl-8 md:pr-8  mt-16 sm:mt-20 flex-grow overflow-x-hidden print:px-0 print:mt-8"><div class="print:hidden"><div class="flex items-start mt-0 whitespace-nowrap overflow-auto"><div class="inline-flex items-center text-sm capitalize gap-1 text-base-content-muted mb-2 sm:mb-4"><a href="/supply-chain-planning/" class="hover:underline">Home </a></div></div></div> <article id="evidence-main-article" class="select-text markdown pb-10">  <h1 class="title">Supply chain fundamentals</h1>     <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <p class="markdown">A <strong class="markdown" data-svelte-h="svelte-djs19c">mock</strong> precision-fermentation plant making whey protein powder. Three years of
+weekly operations recorded in an Odoo ERP. Data as of
+<strong class="markdown"> <span style="color: ">November 28, 2026 </span></strong> (ERP database  <span style="color: ">pps_live </span>).</p>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Revenue, last 12 months </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">$19.4M </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Customer OTIF, last 12 months </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">95.3% </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Forecast error (monthly MAPE) </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">12.8% </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Finished-goods turns, last 52 weeks </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">27.5 </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Weeks of supply (latest) </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">1.6 </span>    <div class="inline-block align-baseline" style="width: 50px; height: 15px;"><!-- HTML_TAG_START --><svg width="50" height="15" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" baseProfile="full" viewBox="0 0 50 15">
+<rect width="50" height="15" x="0" y="0" fill="none"></rect>
+<path d="M0 15.5L50 15.5" fill="none" pointer-events="visible" stroke="#d6d6d6" stroke-width="0.75" stroke-linecap="round" class="zr1-cls-4"></path>
+<g clip-path="url(#zr1-c0)">
+<path d="M1 6.9L1.3 3.4L1.6 2.7L1.9 1.4L2.3 6.6L2.6 2.5L2.9 5.1L3.2 0.7L3.5 3.6L3.9 2.9L4.2 5.2L4.5 3.6L5.2 1.3L5.5 3.5L5.8 2L6.1 3.6L6.4 6.2L6.8 4.2L7.1 2.5L7.4 4.8L7.7 3.7L8.1 2.2L8.4 1.1L8.7 5.2L9 2.5L9.4 1.6L9.7 4.2L10 6.6L10.3 3L11 2.2L11.3 5.2L11.6 2.2L12.3 5.1L12.6 7.6L12.9 4.4L13.9 7.1L14.2 3.9L15.2 6.6L15.5 3.9L15.8 4.7L16.4 7.5L16.8 4.7L17.1 2.2L17.7 5.4L18.1 2.7L18.7 3.2L19 8.6L19.4 2.4L20 4.8L20.3 7.2L20.6 3.6L21 1.6L21.3 8.3L21.6 4.6L21.9 3.1L22.3 3.7L22.9 6.1L23.2 2.5L23.5 1.6L24.2 7.6L24.5 4.2L25.5 7.1L25.8 3.9L26.1 2.6L26.8 5.3L27.1 3.9L27.7 1.6L28.1 7.9L28.4 5.6L28.7 8.5L29 6.4L29.4 7.3L29.7 3.6L30 5.8L30.3 3.8L30.6 8.2L31 5.1L31.6 4L31.9 7.7L32.3 6.1L32.6 9.6L32.9 5L33.2 8.5L33.6 6.5L34.2 4.9L34.5 8L34.8 3.1L35.2 4.4L35.8 6.3L36.1 3.6L36.5 5.6L37.1 7.3L37.4 8L37.7 5.6L38.1 3.2L38.4 6.3L38.7 3.5L39.4 4L39.7 7.1L40 4.4L40.6 4.8L41 8.4L41.3 6L41.6 3.9L42.3 8.2L42.6 6L42.9 6.8L43.2 3.3L43.6 7.6L43.9 4.9L44.2 5.5L44.8 8.9L45.2 4.7L45.5 3.8L45.8 5.6L46.1 7.2L46.5 3.8L46.8 5.5L47.1 6.5L47.4 8.5L47.7 6.3L48.1 5.6L48.4 4.9L48.7 8.8L49 5.4L49 15L48.1 15L47.1 15L46.1 15L45.2 15L44.2 15L43.2 15L42.3 15L41.3 15L40.3 15L39.4 15L38.4 15L37.4 15L36.5 15L35.5 15L34.5 15L33.6 15L32.6 15L31.6 15L30.6 15L29.7 15L28.7 15L27.7 15L26.8 15L25.8 15L24.8 15L23.9 15L22.9 15L21.9 15L21 15L20 15L19 15L18.1 15L17.1 15L16.1 15L15.2 15L14.2 15L13.2 15L12.3 15L11.3 15L10.3 15L9.4 15L8.4 15L7.4 15L6.4 15L5.5 15L4.5 15L3.5 15L2.6 15L1.6 15Z" fill="none" pointer-events="visible" fill-opacity="0.7" class="zr1-cls-6"></path>
+<path d="M1 6.9L1.3 3.4L1.6 2.7L1.9 1.4L2.3 6.6L2.6 2.5L2.9 5.1L3.2 0.7L3.5 3.6L3.9 2.9L4.2 5.2L4.5 3.6L5.2 1.3L5.5 3.5L5.8 2L6.1 3.6L6.4 6.2L6.8 4.2L7.1 2.5L7.4 4.8L7.7 3.7L8.1 2.2L8.4 1.1L8.7 5.2L9 2.5L9.4 1.6L9.7 4.2L10 6.6L10.3 3L11 2.2L11.3 5.2L11.6 2.2L12.3 5.1L12.6 7.6L12.9 4.4L13.9 7.1L14.2 3.9L15.2 6.6L15.5 3.9L15.8 4.7L16.4 7.5L16.8 4.7L17.1 2.2L17.7 5.4L18.1 2.7L18.7 3.2L19 8.6L19.4 2.4L20 4.8L20.3 7.2L20.6 3.6L21 1.6L21.3 8.3L21.6 4.6L21.9 3.1L22.3 3.7L22.9 6.1L23.2 2.5L23.5 1.6L24.2 7.6L24.5 4.2L25.5 7.1L25.8 3.9L26.1 2.6L26.8 5.3L27.1 3.9L27.7 1.6L28.1 7.9L28.4 5.6L28.7 8.5L29 6.4L29.4 7.3L29.7 3.6L30 5.8L30.3 3.8L30.6 8.2L31 5.1L31.6 4L31.9 7.7L32.3 6.1L32.6 9.6L32.9 5L33.2 8.5L33.6 6.5L34.2 4.9L34.5 8L34.8 3.1L35.2 4.4L35.8 6.3L36.1 3.6L36.5 5.6L37.1 7.3L37.4 8L37.7 5.6L38.1 3.2L38.4 6.3L38.7 3.5L39.4 4L39.7 7.1L40 4.4L40.6 4.8L41 8.4L41.3 6L41.6 3.9L42.3 8.2L42.6 6L42.9 6.8L43.2 3.3L43.6 7.6L43.9 4.9L44.2 5.5L44.8 8.9L45.2 4.7L45.5 3.8L45.8 5.6L46.1 7.2L46.5 3.8L46.8 5.5L47.1 6.5L47.4 8.5L47.7 6.3L48.1 5.6L48.4 4.9L48.7 8.8L49 5.4" fill="none" pointer-events="visible" stroke="#717171" stroke-linejoin="bevel" class="zr1-cls-7"></path>
+</g>
+<path d="M-5 -5l10 0l0 10l-10 0Z" transform="translate(5 5)" fill="rgb(0,0,0)" fill-opacity="0" stroke="#ccc" stroke-width="0" class="zr1-cls-4"></path>
+<defs >
+<clipPath id="zr1-c0">
+<path d="M-1 -0.5l52 0l0 16l-52 0Z" fill="#000" class="zr1-cls-5"></path>
+</clipPath>
+</defs>
+<style ><![CDATA[
+.zr1-cls-4:hover {
+pointer-events:none;
+}
+.zr1-cls-5:hover {
+cursor:pointer;
+fill:rgba(0,0,0,1);
+}
+.zr1-cls-6:hover {
+cursor:pointer;
+fill:rgba(0,0,0,0);
+}
+.zr1-cls-7:hover {
+cursor:pointer;
+}
+
+]]>
+
+</style>
+</svg><!-- HTML_TAG_END --></div></div> </div> <p class="markdown" data-svelte-h="svelte-w8a1tt"><strong class="markdown">Explore:</strong> <a href="/supply-chain-planning/service" class="markdown">Customer service</a> · <a href="/supply-chain-planning/purchasing" class="markdown">Purchasing</a> ·
+<a href="/supply-chain-planning/inventory" class="markdown">Inventory</a> · <a href="/supply-chain-planning/finance" class="markdown">Finance</a></p> <h2 class="markdown" id="is-supply-keeping-up-with-demand" data-svelte-h="svelte-czhm6z"><a href="#is-supply-keeping-up-with-demand">Is supply keeping up with demand?</a></h2> <p class="markdown">Customer orders by month against the statistical forecast the plant planned on.
+About one order in 25 ships a week late: rush orders placed inside the lead time, and
+shipments held for a carrier or quality release. Forecast bias: <strong class="markdown"> <span style="color: ">-1.4% </span></strong>
+(positive = demand above forecast).</p> <div class="over-container svelte-1p12lev"> </div>       <div role="none" class="chart-container mt-2 mb-3 svelte-19r8f8"><div role="status" class="animate-pulse"><span class="sr-only" data-svelte-h="svelte-1wtojot">Loading...</span> <div class="bg-base-100 rounded-md max-w-[100%]" style="height:237px; margin-top: 15px; margin-bottom: 31px;"></div></div>  <div class="chart-footer svelte-19r8f8"> </div> </div>  <h2 class="markdown" id="is-inventory-where-it-should-be" data-svelte-h="svelte-1am6khd"><a href="#is-inventory-where-it-should-be">Is inventory where it should be?</a></h2> <p class="markdown">Finished-goods powder on hand at each week&#39;s end, against the safety stock set in the
+ERP&#39;s reorder rule. The weekly saw-tooth is batch production: whole batches of about 13.6 tonnes of powder
+arrive, then ship out over the week. Forward weeks of supply (on hand ÷ the next four
+weeks&#39; forecast) averaged <strong class="markdown"> <span style="color: ">1.9 </span> weeks</strong>
+over the last 52 weeks.</p>           <div role="none" class="chart-container mt-2 mb-3 svelte-19r8f8"><div role="status" class="animate-pulse"><span class="sr-only" data-svelte-h="svelte-1wtojot">Loading...</span> <div class="bg-base-100 rounded-md max-w-[100%]" style="height:222px; margin-top: 15px; margin-bottom: 31px;"></div></div>  <div class="chart-footer svelte-19r8f8"> </div> </div>  <hr class="markdown"> <small data-svelte-h="svelte-8m8jpb">Mock company, customers, suppliers and demand (all fictional). Commodity prices behind
+costs and revenue are cited: IMF Primary Commodity Prices and US BLS Producer Price
+Indices, via FRED (Federal Reserve Bank of St. Louis). Source and method:
+github.com/ariel-salvador/supply-chain-planning.</small></article></main> <div class="print:hidden"><aside class="hidden lg:block w-48"><div class="fixed w-48 top-20 bottom-20 pl-4 px-3 overflow-auto pretty-scrollbar"></div></aside></div></div></div>  
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api/customFormattingSettings.json/GET.json">{"status":200,"statusText":"","headers":{},"body":"{\"customFormattingSettings\":{\"version\":\"1.0\",\"customFormats\":[]}}"}</script>
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api///evidencemeta.json">{"status":200,"statusText":"","headers":{},"body":"{\"queries\":[{\"id\":\"kpis\",\"compiledQueryString\":\"select * from pps.kpis\",\"inputQueryString\":\"select * from pps.kpis\",\"compiled\":false,\"inline\":true},{\"id\":\"fg\",\"compiledQueryString\":\"select * from pps.fg_weekly\",\"inputQueryString\":\"select * from pps.fg_weekly\",\"compiled\":false,\"inline\":true},{\"id\":\"demand\",\"compiledQueryString\":\"select * from pps.demand_monthly\",\"inputQueryString\":\"select * from pps.demand_monthly\",\"compiled\":false,\"inline\":true},{\"id\":\"accuracy\",\"compiledQueryString\":\"select avg(abs(forecast_error_pct)) as mape,\\n       avg(forecast_error_pct)      as bias\\nfrom (select * from pps.demand_monthly)\",\"inputQueryString\":\"select avg(abs(forecast_error_pct)) as mape,\\n       avg(forecast_error_pct)      as bias\\nfrom ${demand}\",\"compiled\":true,\"inline\":true},{\"id\":\"wos\",\"compiledQueryString\":\"select week, weeks_of_supply from (select * from pps.fg_weekly) where weeks_of_supply is not null order by week\",\"inputQueryString\":\"select week, weeks_of_supply from ${fg} where weeks_of_supply is not null order by week\",\"compiled\":true,\"inline\":true},{\"id\":\"turns\",\"compiledQueryString\":\"-- finished-goods turns, trailing 52 weeks: kg shipped / average kg on hand\\nselect sum(shipped_kg) / avg(on_hand_kg) as fg_turns,\\n       avg(weeks_of_supply)              as avg_weeks_of_supply\\nfrom (select * from (select * from pps.fg_weekly) order by week desc limit 52)\",\"inputQueryString\":\"-- finished-goods turns, trailing 52 weeks: kg shipped / average kg on hand\\nselect sum(shipped_kg) / avg(on_hand_kg) as fg_turns,\\n       avg(weeks_of_supply)              as avg_weeks_of_supply\\nfrom (select * from ${fg} order by week desc limit 52)\",\"compiled\":true,\"inline\":true},{\"id\":\"demand_chart\",\"compiledQueryString\":\"select month, ordered_kg as customer_orders, forecast_kg as forecast from (select * from pps.demand_monthly)\",\"inputQueryString\":\"select month, ordered_kg as customer_orders, forecast_kg as forecast from ${demand}\",\"compiled\":true,\"inline\":true}]}"}</script>
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api/pagesManifest.json">{"status":200,"statusText":"","headers":{},"body":"{\"label\":\"Home\",\"href\":\"/\",\"children\":{\"finance\":{\"label\":\"finance\",\"href\":\"/finance\",\"children\":{},\"frontMatter\":{\"sidebar_position\":4,\"title\":\"Finance\"},\"isTemplated\":false,\"isPage\":true},\"inventory\":{\"label\":\"inventory\",\"href\":\"/inventory\",\"children\":{},\"frontMatter\":{\"sidebar_position\":3,\"title\":\"Inventory\"},\"isTemplated\":false,\"isPage\":true},\"purchasing\":{\"label\":\"purchasing\",\"href\":\"/purchasing\",\"children\":{},\"frontMatter\":{\"sidebar_position\":2,\"title\":\"Purchasing\"},\"isTemplated\":false,\"isPage\":true},\"service\":{\"label\":\"service\",\"href\":\"/service\",\"children\":{},\"frontMatter\":{\"sidebar_position\":1,\"title\":\"Customer service\"},\"isTemplated\":false,\"isPage\":true}},\"frontMatter\":{\"title\":\"Supply chain fundamentals\"},\"isTemplated\":false,\"isPage\":true}"}</script>
+			<script>
+				{
+					__sveltekit_1wz0cbc = {
+						base: "/supply-chain-planning",
+						assets: "/supply-chain-planning"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("/supply-chain-planning/_app/immutable/entry/start.vDdUcuYB.js"),
+						import("/supply-chain-planning/_app/immutable/entry/app.ClioEexf.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 4],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		
+
+			<!-- SplashScreen -->
+			<div
+				aria-disabled
+				id="__evidence_project_splash"
+				data-test-id="__evidence_project_splash"
+				style="visibility: hidden"
+			>
+				<svg width="100" height="100" viewBox="-8 -8 588 588" xmlns="http://www.w3.org/2000/svg">
+					<path
+						d="M7.19462e-05 74.3583C109.309 74.3583 195.795 86.2578 286.834 37.825C377.872 -10.6077 466.416 1.29174 573.667 1.29175L573.667 126.549C466.416 126.549 377.373 114.91 286.834 163.082C196.294 211.254 109.309 199.615 6.11417e-05 199.615L7.19462e-05 74.3583Z"
+						class="draw-path"
+					/>
+					<path
+						d="M573.669 499.31C464.36 499.31 377.874 487.411 286.835 535.843C195.797 584.276 107.252 572.377 0.0014801 572.377V447.12C107.252 447.12 196.295 458.758 286.835 410.586C377.375 362.415 464.36 374.053 573.669 374.053V499.31Z"
+						class="draw-path"
+					/>
+					<path
+						d="M452.896 186.499C395.028 187.686 341.581 194.947 286.835 224.074C211.396 264.212 136.995 262.826 52.2355 261.247C35.2696 260.931 17.8887 260.608 0.0014801 260.608V385.865C18.1032 385.865 35.6721 386.204 52.81 386.534C137.212 388.162 211.162 389.589 286.835 349.331C341.838 320.07 395.18 312.831 452.896 311.685V186.499Z"
+						class="draw-path"
+					/>
+				</svg>
+			</div>
+		</div>
+	</body>
+</html>
+
+<style>
+	#__evidence_project_splash {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background-color: #ffffff;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 9999;
+	}
+
+	[data-theme='dark'] #__evidence_project_splash {
+		background-color: #000000;
+	}
+
+	.draw-path {
+		fill: #000000;
+		animation: blinking-logo 2s;
+		animation-fill-mode: both;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+	}
+
+	[data-theme='dark'] .draw-path {
+		fill: #ffffff;
+	}
+
+	@keyframes blinking-logo {
+		0% {
+			fill-opacity: 1;
+		}
+		50% {
+			fill-opacity: 0.2;
+		}
+		100% {
+			fill-opacity: 1;
+		}
+	}
+</style>

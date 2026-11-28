@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" href="/supply-chain-planning/favicon.ico" sizes="32x32" />
+		<link rel="icon" href="/supply-chain-planning/icon.svg" type="image/svg+xml" />
+		<link rel="apple-touch-icon" href="/supply-chain-planning/apple-touch-icon.png" />
+		<link rel="manifest" href="/supply-chain-planning/manifest.webmanifest" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<script>
+			try {
+				/** @type {'light' | 'dark' | 'system'} */
+				const savedTheme = localStorage.getItem('evidence-theme') ?? 'system';
+				const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+				const theme = savedTheme === 'system' ? (prefersDark ? 'dark' : 'light') : savedTheme;
+				document.documentElement.setAttribute('data-theme', theme);
+			} catch (e) {}
+		</script>
+		
+		<link href="/supply-chain-planning/_app/immutable/assets/0.CxtZmWHu.css" rel="stylesheet">
+		<link href="/supply-chain-planning/_app/immutable/assets/VennDiagram.BCpuTJYF.css" rel="stylesheet">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/entry/start.vDdUcuYB.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/entry._2xH9Zkd.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/scheduler.v3ijTZs9.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/entry/app.ClioEexf.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/preload-helper.Dl3SYHUk.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.DybJngn3.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/nodes/0.DFrBQYc1.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.rV6zwFgL.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/VennDiagram.svelte_svelte_type_style_lang.kF5V66Qb.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/setTrackProxy.DjIbdjlZ.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/stores.BCqDmflJ.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/index.CfGtgL9-.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/scroll.BFwkwWN-.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/button.DqC8WKxp.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/AccordionItem.g1ikbYcn.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/checkRequiredProps.o_C_V3S5.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/nodes/9.BiFnSdm7.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/BigValue.CLQVM3TY.js">
+		<link rel="modulepreload" href="/supply-chain-planning/_app/immutable/chunks/BarChart.CSpocMPq.js"><title>Purchasing</title><!-- HEAD_svelte-2igo1p_START --> <meta property="og:title" content="Purchasing"> <meta name="twitter:title" content="Purchasing"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:site" content="@evidence_dev"> <!-- HEAD_svelte-2igo1p_END -->
+	</head>
+	<body>
+		<script>
+			
+		</script>
+		<div>
+			<!-- SvelteKit Hydrated Content -->
+			   <div class="z-[1] fixed right-0 bottom-0 mx-10 my-6 w-80"></div> <div data-sveltekit-preload-data="hover" class="antialiased"> <header class="fixed w-full top-0 z-40 flex h-12 shrink-0 justify-start items-center gap-x-4 border-b border-base-300/50 bg-base-100/90 backdrop-blur print:hidden"><div class=" max-w-7xl mx-auto px-5 sm:px-6 md:px-12 flex flex-1 items-center justify-between" style="max-width:undefinedpx;"><div class="flex gap-x-4 items-center"><button type="button" class="text-base-content hover:bg-base-200 rounded-lg p-1 -ml-1 transition-all duration-500 md:hidden"><span class="sr-only" data-svelte-h="svelte-73kebv">Open sidebar</span> <svg class="w-5 h-5" width="100%" height="100%" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M4 6l16 0"></path><path d="M4 12l16 0"></path><path d="M4 18l16 0"></path></svg></button> <a href="/supply-chain-planning/" class="text-sm font-bold text-base-content hidden md:block"><img src="/supply-chain-planning/_app/immutable/assets/wordmark-black.rfl-FBgf.png" alt="Home" class="h-5 aspect-auto block dark:hidden" href="/supply-chain-planning/"> <img src="/supply-chain-planning/_app/immutable/assets/wordmark-white.C8ZS96Ri.png" alt="Home" class="h-5 aspect-auto hidden dark:block" href="/supply-chain-planning/"></a></div> <div class="flex gap-2 text-sm items-center"> <div class="flex gap-2 items-center">   </div> <div class="relative"> <button type="button" tabindex="0" aria-controls="LFI8I9d_5u" aria-expanded="false" data-state="closed" id="uTt7rIspWP" data-melt-dropdown-menu-trigger="" data-menu-trigger="" class="inline-flex items-center justify-center font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-base-content-muted disabled:pointer-events-none disabled:opacity-50 hover:text-base-content h-8 rounded-md text-xs px-1 hover:bg-base-200 shadow-base-200" aria-label="Menu" data-button-root=""><svg class="h-6 w-6" width="100%" height="100%" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M5 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M12 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path><path d="M19 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0 -2 0"></path></svg></button> </div></div></div></header> <div class=" max-w-7xl print:w-[650px] print:md:w-[841px] mx-auto print:md:px-0 print:px-0 px-6 sm:px-8 md:px-12 flex justify-start" style="max-width:undefinedpx;"><div class="print:hidden">  <aside class="w-48 flex-none hidden md:flex"><div class="hidden: md:block fixed w-48 top-20 bottom-8 overflow-y-auto flex-1 text-sm pretty-scrollbar"><div class="flex flex-col pb-6"><a class="sticky top-0 bg-base-100 shadow shadow-base-100 font-semibold pb-1 mb-1 group inline-block capitalize hover:underline text-base-heading" href="/supply-chain-planning/">Home</a>  <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/service">Customer service  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/purchasing">Purchasing  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/inventory">Inventory  </a> <a class="group inline-block py-1 capitalize transition-all duration-100 text-base-content-muted hover:text-base-content" href="/supply-chain-planning/finance">Finance  </a></div> </div> <div class="fixed bottom-0 text-xs py-2" data-svelte-h="svelte-fworv4"><a href="https://www.evidence.dev" class="bg-gradient-to-r inline-block antialiased font-medium">Built with Evidence</a></div></aside></div> <main class="md:pl-8 md:pr-8  mt-16 sm:mt-20 flex-grow overflow-x-hidden print:px-0 print:mt-8"><div class="print:hidden"><div class="flex items-start mt-0 whitespace-nowrap overflow-auto"><div class="inline-flex items-center text-sm capitalize gap-1 text-base-content-muted mb-2 sm:mb-4"><a href="/supply-chain-planning/" class="hover:underline">Home </a><svg class="icon icon-tabler icon-tabler-chevron-right" width="12px" height="12px" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round" xmlns="http://www.w3.org/2000/svg"><path stroke="none" d="M0 0h24v24H0z" fill="none"></path><path d="M9 6l6 6l-6 6"></path></svg> <a href="/supply-chain-planning/purchasing" class="hover:underline">Purchasing</a></div></div></div> <article id="evidence-main-article" class="select-text markdown pb-10">  <h1 class="title">Purchasing</h1>    <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <div class="over-container svelte-1p12lev"> </div> <p class="markdown" data-svelte-h="svelte-z9xs20">What the plant buys, from whom, and how prices and suppliers performed. Seven
+suppliers: four <strong class="markdown">preferred</strong> partners that win the business by default, and three
+<strong class="markdown">approved</strong> backups.</p>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Spend, Jan 2024 to Nov 2026 </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">$8.4M </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Spend with preferred partners </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">96.1% </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Price variance vs standard </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">$12k </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Supplier on time and in full </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">96.6% </span> </div> </div> <h2 class="markdown" id="who-do-we-buy-from-and-do-they-deliver" data-svelte-h="svelte-vyv5z3"><a href="#who-do-we-buy-from-and-do-they-deliver">Who do we buy from, and do they deliver?</a></h2>              <div data-testid="DataTable-by_supplier" role="none" class="table-container mt-2 mb-2 svelte-1vxfjlq">  <div class="scrollbox pretty-scrollbar svelte-1vxfjlq"><table class="svelte-1vxfjlq"><thead> <tr class="border-b border-base-content-muted/60">   </tr> </thead> <tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr> </table></div> <div class="noresults svelte-1vxfjlq" data-svelte-h="svelte-l3t0gi">No Results</div> <div class="table-footer mt-3 svelte-1vxfjlq"> </div></div>  <p class="markdown" data-svelte-h="svelte-1xgez4g">The glucose mill carries most of the spend and misses about one delivery in ten. The
+packaging converter is the cheapest bag supplier but the least reliable (about four in
+five on time, some short shipments). The chemicals distributor costs more and is never
+late. That trade-off is why it is the preferred partner rather than the cheaper broadline
+distributor.</p> <h2 class="markdown" id="are-we-paying-more-or-less-than-planned" data-svelte-h="svelte-tp1tov"><a href="#are-we-paying-more-or-less-than-planned">Are we paying more or less than planned?</a></h2> <p class="markdown" data-svelte-h="svelte-kaxd0i">Purchase price variance = (price paid − standard cost) × quantity received. Standard costs
+are set each January from December&#39;s market prices, so variance shows how markets moved
+during the year. Above zero = paid more than planned.</p>     <div role="none" class="chart-container mt-2 mb-3 svelte-19r8f8"><div role="status" class="animate-pulse"><span class="sr-only" data-svelte-h="svelte-1wtojot">Loading...</span> <div class="bg-base-100 rounded-md max-w-[100%]" style="height:237px; margin-top: 15px; margin-bottom: 31px;"></div></div>  <div class="chart-footer svelte-19r8f8"> </div> </div>  <p class="markdown" data-svelte-h="svelte-1encx6a">In 2024 corn fell after the standard was set, so glucose came in under plan. In 2026
+nitrogen chemicals rose all year with the fertilizer market (US producer price index),
+and variance turned unfavorable.</p> <h2 class="markdown" id="what-did-the-august-2025-glucose-outage-cost" data-svelte-h="svelte-aidwjf"><a href="#what-did-the-august-2025-glucose-outage-cost">What did the August 2025 glucose outage cost?</a></h2> <p class="markdown" data-svelte-h="svelte-9cw17a">The preferred mill could not deliver for four weeks. Production never stopped: the buyer
+placed emergency orders with the backup supplier, who delivered in a week at a premium.</p>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Premium paid to the backup </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">$12k </span> </div> </div>   <div class="inline-block font-sans pt-2 pb-3 pl-0 mr-3 items-center align-top" style="
+        min-width: 18%;
+        max-width: none;
+		"><p class="text-sm align-top leading-none">Glucose bought in the outage (kg) </p> <div class="relative text-xl font-medium mt-1.5">   <span style="color: ">750,000 </span> </div> </div>              <div data-testid="DataTable-outage" role="none" class="table-container mt-2 mb-2 svelte-1vxfjlq">  <div class="scrollbox pretty-scrollbar svelte-1vxfjlq"><table class="svelte-1vxfjlq"><thead> <tr class="border-b border-base-content-muted/60">   </tr> </thead> <tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr><tr class="border-b border-base-content-muted/20 svelte-orfja7">   </tr> </table></div> <div class="noresults svelte-1vxfjlq" data-svelte-h="svelte-l3t0gi">No Results</div> <div class="table-footer mt-3 svelte-1vxfjlq"> </div></div>  <p class="markdown" data-svelte-h="svelte-z5edou">Against the yearly standard these orders even look favorable, because corn had fallen
+below the January standard. The real cost of the outage is the premium over what the
+preferred mill was charging at the time.</p></article></main> <div class="print:hidden"><aside class="hidden lg:block w-48"><div class="fixed w-48 top-20 bottom-20 pl-4 px-3 overflow-auto pretty-scrollbar"></div></aside></div></div></div>  
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api/customFormattingSettings.json/GET.json">{"status":200,"statusText":"","headers":{},"body":"{\"customFormattingSettings\":{\"version\":\"1.0\",\"customFormats\":[]}}"}</script>
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api/pagesManifest.json">{"status":200,"statusText":"","headers":{},"body":"{\"label\":\"Home\",\"href\":\"/\",\"children\":{\"finance\":{\"label\":\"finance\",\"href\":\"/finance\",\"children\":{},\"frontMatter\":{\"sidebar_position\":4,\"title\":\"Finance\"},\"isTemplated\":false,\"isPage\":true},\"inventory\":{\"label\":\"inventory\",\"href\":\"/inventory\",\"children\":{},\"frontMatter\":{\"sidebar_position\":3,\"title\":\"Inventory\"},\"isTemplated\":false,\"isPage\":true},\"purchasing\":{\"label\":\"purchasing\",\"href\":\"/purchasing\",\"children\":{},\"frontMatter\":{\"sidebar_position\":2,\"title\":\"Purchasing\"},\"isTemplated\":false,\"isPage\":true},\"service\":{\"label\":\"service\",\"href\":\"/service\",\"children\":{},\"frontMatter\":{\"sidebar_position\":1,\"title\":\"Customer service\"},\"isTemplated\":false,\"isPage\":true}},\"frontMatter\":{\"title\":\"Supply chain fundamentals\"},\"isTemplated\":false,\"isPage\":true}"}</script>
+			<script type="application/json" data-sveltekit-fetched data-url="/supply-chain-planning/api//purchasing/evidencemeta.json">{"status":200,"statusText":"","headers":{},"body":"{\"queries\":[{\"id\":\"lines\",\"compiledQueryString\":\"select * from pps.purchase_lines\",\"inputQueryString\":\"select * from pps.purchase_lines\",\"compiled\":false,\"inline\":true},{\"id\":\"by_supplier\",\"compiledQueryString\":\"select supplier, supplier_status,\\n       sum(spend_usd)                         as spend_usd,\\n       count(distinct order_ref)              as orders,\\n       avg(case when on_time then 1.0 else 0 end) as on_time_pct,\\n       avg(case when in_full then 1.0 else 0 end) as in_full_pct,\\n       avg(case when on_time and in_full then 1.0 else 0 end) as otif_pct,\\n       sum(ppv_usd)                           as ppv_usd\\nfrom (select * from pps.purchase_lines) group by 1, 2 order by spend_usd desc\",\"inputQueryString\":\"select supplier, supplier_status,\\n       sum(spend_usd)                         as spend_usd,\\n       count(distinct order_ref)              as orders,\\n       avg(case when on_time then 1.0 else 0 end) as on_time_pct,\\n       avg(case when in_full then 1.0 else 0 end) as in_full_pct,\\n       avg(case when on_time and in_full then 1.0 else 0 end) as otif_pct,\\n       sum(ppv_usd)                           as ppv_usd\\nfrom ${lines} group by 1, 2 order by spend_usd desc\",\"compiled\":true,\"inline\":true},{\"id\":\"totals\",\"compiledQueryString\":\"select sum(spend_usd) as spend_usd,\\n       sum(case when supplier_status = 'preferred' then spend_usd else 0 end) / sum(spend_usd) as preferred_share,\\n       sum(ppv_usd) as ppv_usd,\\n       avg(case when on_time and in_full then 1.0 else 0 end) as otif_pct\\nfrom (select * from pps.purchase_lines)\",\"inputQueryString\":\"select sum(spend_usd) as spend_usd,\\n       sum(case when supplier_status = 'preferred' then spend_usd else 0 end) / sum(spend_usd) as preferred_share,\\n       sum(ppv_usd) as ppv_usd,\\n       avg(case when on_time and in_full then 1.0 else 0 end) as otif_pct\\nfrom ${lines}\",\"compiled\":true,\"inline\":true},{\"id\":\"ppv_quarter\",\"compiledQueryString\":\"select quarter,\\n       case when product_code = 'GLUCOSE' then 'Glucose (corn index)'\\n            when product_code in ('NH3', 'AMSULF') then 'Nitrogen chemicals'\\n            else 'Other materials' end as material_group,\\n       sum(ppv_usd) as ppv_usd\\nfrom (select * from pps.purchase_lines) group by 1, 2 order by 1\",\"inputQueryString\":\"select quarter,\\n       case when product_code = 'GLUCOSE' then 'Glucose (corn index)'\\n            when product_code in ('NH3', 'AMSULF') then 'Nitrogen chemicals'\\n            else 'Other materials' end as material_group,\\n       sum(ppv_usd) as ppv_usd\\nfrom ${lines} group by 1, 2 order by 1\",\"compiled\":true,\"inline\":true},{\"id\":\"outage\",\"compiledQueryString\":\"-- what the outage cost: the backup's price vs the preferred mill's most recent price\\nwith preferred as (\\n    select date_order, price_unit as preferred_price from (select * from pps.purchase_lines)\\n    where product_code = 'GLUCOSE' and supplier_status = 'preferred'\\n), em as (\\n    select * from (select * from pps.purchase_lines) where emergency\\n)\\nselect em.order_ref, em.supplier, em.date_order, em.qty_received, em.price_unit, p.preferred_price,\\n       (em.price_unit - p.preferred_price) * em.qty_received as premium_usd,\\n       em.ppv_usd\\nfrom em asof join preferred p on em.date_order >= p.date_order\\norder by em.date_order\",\"inputQueryString\":\"-- what the outage cost: the backup's price vs the preferred mill's most recent price\\nwith preferred as (\\n    select date_order, price_unit as preferred_price from ${lines}\\n    where product_code = 'GLUCOSE' and supplier_status = 'preferred'\\n), em as (\\n    select * from ${lines} where emergency\\n)\\nselect em.order_ref, em.supplier, em.date_order, em.qty_received, em.price_unit, p.preferred_price,\\n       (em.price_unit - p.preferred_price) * em.qty_received as premium_usd,\\n       em.ppv_usd\\nfrom em asof join preferred p on em.date_order >= p.date_order\\norder by em.date_order\",\"compiled\":true,\"inline\":true},{\"id\":\"outage_total\",\"compiledQueryString\":\"select sum(premium_usd) as premium_usd, sum(qty_received) as kg from (-- what the outage cost: the backup's price vs the preferred mill's most recent price\\nwith preferred as (\\n    select date_order, price_unit as preferred_price from (select * from pps.purchase_lines)\\n    where product_code = 'GLUCOSE' and supplier_status = 'preferred'\\n), em as (\\n    select * from (select * from pps.purchase_lines) where emergency\\n)\\nselect em.order_ref, em.supplier, em.date_order, em.qty_received, em.price_unit, p.preferred_price,\\n       (em.price_unit - p.preferred_price) * em.qty_received as premium_usd,\\n       em.ppv_usd\\nfrom em asof join preferred p on em.date_order >= p.date_order\\norder by em.date_order)\",\"inputQueryString\":\"select sum(premium_usd) as premium_usd, sum(qty_received) as kg from ${outage}\",\"compiled\":true,\"inline\":true}]}"}</script>
+			<script>
+				{
+					__sveltekit_1wz0cbc = {
+						base: "/supply-chain-planning",
+						assets: "/supply-chain-planning"
+					};
+
+					const element = document.currentScript.parentElement;
+
+					const data = [null,null];
+
+					Promise.all([
+						import("/supply-chain-planning/_app/immutable/entry/start.vDdUcuYB.js"),
+						import("/supply-chain-planning/_app/immutable/entry/app.ClioEexf.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 9],
+							data,
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		
+
+			<!-- SplashScreen -->
+			<div
+				aria-disabled
+				id="__evidence_project_splash"
+				data-test-id="__evidence_project_splash"
+				style="visibility: hidden"
+			>
+				<svg width="100" height="100" viewBox="-8 -8 588 588" xmlns="http://www.w3.org/2000/svg">
+					<path
+						d="M7.19462e-05 74.3583C109.309 74.3583 195.795 86.2578 286.834 37.825C377.872 -10.6077 466.416 1.29174 573.667 1.29175L573.667 126.549C466.416 126.549 377.373 114.91 286.834 163.082C196.294 211.254 109.309 199.615 6.11417e-05 199.615L7.19462e-05 74.3583Z"
+						class="draw-path"
+					/>
+					<path
+						d="M573.669 499.31C464.36 499.31 377.874 487.411 286.835 535.843C195.797 584.276 107.252 572.377 0.0014801 572.377V447.12C107.252 447.12 196.295 458.758 286.835 410.586C377.375 362.415 464.36 374.053 573.669 374.053V499.31Z"
+						class="draw-path"
+					/>
+					<path
+						d="M452.896 186.499C395.028 187.686 341.581 194.947 286.835 224.074C211.396 264.212 136.995 262.826 52.2355 261.247C35.2696 260.931 17.8887 260.608 0.0014801 260.608V385.865C18.1032 385.865 35.6721 386.204 52.81 386.534C137.212 388.162 211.162 389.589 286.835 349.331C341.838 320.07 395.18 312.831 452.896 311.685V186.499Z"
+						class="draw-path"
+					/>
+				</svg>
+			</div>
+		</div>
+	</body>
+</html>
+
+<style>
+	#__evidence_project_splash {
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100vw;
+		height: 100vh;
+		background-color: #ffffff;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		z-index: 9999;
+	}
+
+	[data-theme='dark'] #__evidence_project_splash {
+		background-color: #000000;
+	}
+
+	.draw-path {
+		fill: #000000;
+		animation: blinking-logo 2s;
+		animation-fill-mode: both;
+		animation-iteration-count: infinite;
+		animation-timing-function: ease-in-out;
+	}
+
+	[data-theme='dark'] .draw-path {
+		fill: #ffffff;
+	}
+
+	@keyframes blinking-logo {
+		0% {
+			fill-opacity: 1;
+		}
+		50% {
+			fill-opacity: 0.2;
+		}
+		100% {
+			fill-opacity: 1;
+		}
+	}
+</style>
