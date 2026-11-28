@@ -21,6 +21,7 @@ cited to FRED. No real supplier appears anywhere.
 """
 from __future__ import annotations
 
+import math
 from typing import Dict, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
@@ -42,6 +43,24 @@ def periods_per_year(freq: str) -> float:
         if key.startswith(k):
             return v
     raise ValueError(f"unsupported frequency for annualising: {freq!r}")
+
+
+def order_lot(cfg: ProductConfig, iid: str) -> float:
+    """Smallest quantity that can actually be bought: the item's shipping lot (tanker,
+    pallet) if set, else its lot-sizing multiple, else one whole unit / kilogram."""
+    lots = cfg.sourcing.order_lots if cfg.sourcing else {}
+    if lots.get(iid):
+        return float(lots[iid])
+    mult = cfg.items[iid].planning.lot_sizing.multiple
+    return float(mult) if mult and mult > 0 else 1.0
+
+
+def buyable(cfg: ProductConfig, iid: str, qty: float) -> float:
+    """Round a quantity up to a whole number of order lots (0 stays 0)."""
+    if qty <= 0:
+        return 0.0
+    lot = order_lot(cfg, iid)
+    return math.ceil(qty / lot - 1e-9) * lot
 
 
 # ---------------------------------------------------------------------------
@@ -143,7 +162,7 @@ def quote_table(cfg: ProductConfig, should_cost_df: pd.DataFrame, usage: pd.Data
                 "quoted_usd_per_uom": price,
                 "lead_time_weeks": lt,
                 "lead_time_sigma": q.lead_time_sigma,
-                "moq_qty": q.moq_weeks * per_bucket,
+                "moq_qty": buyable(cfg, iid, q.moq_weeks * per_bucket),   # whole lots, never a sliver
                 "moq_weeks": q.moq_weeks,
                 "quality_ppm": q.quality_ppm,
                 "otif": q.otif,

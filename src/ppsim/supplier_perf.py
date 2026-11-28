@@ -281,3 +281,41 @@ def forward_buy(cfg: ProductConfig, awards: pd.DataFrame, should_cost_df: pd.Dat
                 "forward_wins": spot_per_uom > forward_per_uom,
             })
     return pd.DataFrame(rows)
+
+
+def reorder_levels(cfg: ProductConfig, quotes: pd.DataFrame, awards: pd.DataFrame, usage: pd.DataFrame) -> pd.DataFrame:
+    """Kanban-style (two-bin) reorder levels per purchased item, from the awarded supplier.
+
+    - safety stock = z x sqrt(L x (cv x d)^2 + d^2 x sigma_L^2): demand variability over the
+      lead time plus lead-time variability, never below the item's planning safety stock
+    - min (reorder point) = d x L + safety stock
+    - order quantity = the awarded minimum order or the fixed lot, whichever is larger
+    - max = min + order quantity: when stock falls to the min, one standard order is due
+    Every quantity is rounded up to a buyable lot. ``d`` is the plan's weekly usage.
+    """
+    from .sourcing import buyable
+
+    s = cfg.sourcing
+    cv = cfg.demand.noise_cv
+    rows = []
+    for iid, aw in awards.iterrows():
+        if iid not in usage.index:
+            continue
+        d = float(usage.loc[iid, "per_bucket"])
+        if d <= 0:
+            continue
+        q = quotes[(quotes["item"] == iid) & (quotes["supplier"] == aw["awarded_to"])].iloc[0]
+        L, sigma_l = float(q["lead_time_weeks"]), float(q["lead_time_sigma"])
+        ss_calc = s.service_level_z * math.sqrt(L * (cv * d) ** 2 + (d * sigma_l) ** 2)
+        ss = max(cfg.items[iid].planning.safety_stock, ss_calc)
+        lot = cfg.items[iid].planning.lot_sizing
+        foq = lot.quantity if lot.rule == "fixed_order_quantity" else 0.0
+        order_qty = buyable(cfg, iid, max(float(q["moq_qty"]), foq, 1e-9))
+        rop = buyable(cfg, iid, d * L + ss)
+        rows.append({
+            "item": iid, "uom": cfg.items[iid].uom, "supplier": aw["awarded_to"],
+            "weekly_usage": d, "lead_time_weeks": L, "lead_time_sigma": sigma_l,
+            "safety_stock": ss, "min_qty": rop, "order_qty": order_qty, "max_qty": rop + order_qty,
+            "weeks_of_cover_at_min": rop / d, "orders_per_year": d * 52 / order_qty,
+        })
+    return pd.DataFrame(rows).set_index("item")

@@ -4,6 +4,14 @@ How the project grew, one entry per merged milestone. Work before 2026-11-24 hap
 a private repository; its commits carried over unchanged (same dates and messages), and
 these entries summarise the pull requests that merged them.
 
+## 2026-11-27: Consolidated suppliers, buyable minimums, kanban reorder levels
+- 12 suppliers → 7, named for what they sell: four preferred partners and three approved
+  backups covering several families. Status and traits are Odoo contact tags.
+- Minimum order quantities round up to buyable lots (whole membrane sets, pallets of bags,
+  tankers of glucose); kanban min/max reorder levels for every purchased item.
+- Migrated in the live ERP with a reviewed, rehearsed script: three years of history kept
+  and still verified to the cent.
+
 ## 2026-11-25: Three years of operating history in the live ERP
 - `src/ppsim/history.py`: a weekly mock ledger, 2024-01 to 2026-11. Demand grows into the
   plan, whole fermentation batches run within capacity, reorder-point buying uses the

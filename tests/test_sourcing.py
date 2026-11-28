@@ -9,7 +9,7 @@ import pandas as pd
 import pytest
 
 from ppsim import sourcing as src
-from ppsim.config import ConfigError, parse_config
+from ppsim.config import ConfigError, load_config, parse_config
 from ppsim.pipeline import run
 from conftest import BLG
 
@@ -193,8 +193,8 @@ def test_tco_flags_items_where_the_cheapest_price_is_not_the_cheapest_cost():
     res = run(BLG, fetch_prices=False)
     t = res.tco.set_index(["item", "supplier"])
     # the cheap import bid for glucose carries freight, duty, a 6-week MOQ and 4,500 ppm
-    assert t.loc[("GLUCOSE", "s_sugar_b"), "price_rank"] == 1
-    assert t.loc[("GLUCOSE", "s_sugar_b"), "tco_rank"] > 1
+    assert t.loc[("GLUCOSE", "s_broadline"), "price_rank"] == 1
+    assert t.loc[("GLUCOSE", "s_broadline"), "tco_rank"] > 1
     assert any(n.startswith("GLUCOSE: lowest price is") for n in res.tco_notes)
 
 
@@ -269,7 +269,7 @@ def test_suppliers_and_sourcing_come_together(sourcing_raw, sourcing_registry):
 def test_blg_supplier_master_is_complete_and_fictional():
     res = run(BLG, fetch_prices=False)
     cfg = res.cfg
-    assert all("fictional" in s.name for s in cfg.suppliers.values())
+    # fictional by flag (the loader rejects a supplier without `fictional: true`, ADR 0019)
     purchased_in_bom = {b.component for b in cfg.bom if cfg.items[b.component].type == "purchased"}
     quoted = {i for s in cfg.suppliers.values() for i in s.supplies}
     assert purchased_in_bom <= quoted                      # nothing bought without an RFQ
@@ -280,9 +280,9 @@ def test_tco_says_when_an_item_has_no_planned_usage():
     """SUCROSE is only in the variant BOM, so the base run cannot carry MOQ stock for it."""
     res = run(BLG, fetch_prices=False)
     t = res.tco.set_index(["item", "supplier"])
-    assert np.isnan(t.loc[("SUCROSE", "s_sugar_a"), "moq_carrying_usd"])
-    assert "no MOQ carrying cost" in t.loc[("SUCROSE", "s_sugar_a"), "tco_basis"]
-    assert t.loc[("GLUCOSE", "s_sugar_a"), "tco_basis"] == "landed + MOQ carrying + defect cost"
+    assert np.isnan(t.loc[("SUCROSE", "s_sweeteners"), "moq_carrying_usd"])
+    assert "no MOQ carrying cost" in t.loc[("SUCROSE", "s_sweeteners"), "tco_basis"]
+    assert t.loc[("GLUCOSE", "s_sweeteners"), "tco_basis"] == "landed + MOQ carrying + defect cost"
     note = next(n for n in res.tco_notes if n.startswith("SUCROSE"))
     assert "MOQ carrying cost is excluded" in note
 
@@ -304,3 +304,34 @@ def test_moq_check_flags_a_plan_that_cannot_reach_the_awarded_supplier():
     # sourcing problem, so the line is flagged in the data but not raised as a note
     assert res.po_lines[res.po_lines["item"] == "NH3"]["below_awarded_moq"].any()
     assert not any(n.startswith("NH3:") for n in res.sourcing_notes)
+
+
+def test_minimums_are_buyable_quantities():
+    res = run(BLG, fetch_prices=False)
+    q = res.quotes.set_index(["item", "supplier"])["moq_qty"]
+    assert (q.xs("UFDF-MEMBRANE-SET") == 1.0).all()              # a sliver of a set rounds up to one set
+    assert (q.xs("BAG-25KG") % 1000 == 0).all()                  # whole pallets
+    assert (q.xs("GLUCOSE") % 25000 == 0).all()                  # whole tankers
+    assert (q.xs("NH3") % 1 == 0).all()                          # everything else: whole kg
+
+
+def test_buyable_rounds_up_to_the_lot():
+    cfg = load_config(BLG)
+    assert src.buyable(cfg, "GLUCOSE", 25000.0) == 25000.0
+    assert src.buyable(cfg, "GLUCOSE", 25000.1) == 50000.0
+    assert src.buyable(cfg, "UFDF-MEMBRANE-SET", 0.04) == 1.0
+    assert src.buyable(cfg, "NH3", 0.0) == 0.0
+
+
+def test_consolidated_supplier_master():
+    cfg = load_config(BLG)
+    sup = cfg.suppliers
+    preferred = {s.id for s in sup.values() if s.status == "preferred"}
+    assert len(sup) == 7 and len(preferred) == 4
+    purchased = {i for i, it in cfg.items.items() if it.type == "purchased"}
+    for iid in purchased:
+        bidders = [s for s in sup.values() if iid in s.supplies]
+        assert len(bidders) >= 2, f"{iid} needs a competitive comparison"
+        assert sum(s.status == "preferred" for s in bidders) == 1, f"{iid}: exactly one preferred partner"
+    res = run(BLG, fetch_prices=False)
+    assert set(res.awards["awarded_to"]) == preferred                   # the preferred partners win the RFQ

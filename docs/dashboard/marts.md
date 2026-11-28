@@ -13,7 +13,7 @@ bucket). `created_by` on every document: `script` (pps-bot or a stable `x_pps_ke
 | Table | Grain (one row per…) | Key columns | Main measures | Date / week from |
 |---|---|---|---|---|
 | `dim_product` | product | `product_id`, `product_code`, `name`, `uom_id`, `uom_name` | `sale_ok`, `purchase_ok`, `is_storable` | — |
-| `dim_partner` | company partner | `partner_id`, `name`, `role` (supplier / customer / other) | `supplier_rank`, `customer_rank`, `created_by` | — |
+| `dim_partner` | company partner (archived ones too) | `partner_id`, `name`, `role` (supplier / customer / other), `supplier_status` (preferred / approved), `tags`, `active` | `supplier_rank`, `customer_rank`, `created_by` | — |
 | `fact_sales` | sales order line | `line_id`, `order_ref`, `product_id`, `customer_id`, `state`, `created_by` | `qty_ordered`, `qty_delivered`, `price_unit`, `amount` | `date_order`, `date_promised` → `week`, `date_delivered` |
 | `fact_purchases` | purchase order line | `line_id`, `order_ref`, `product_id`, `vendor_id`, `state`, `origin`, `created_by` | `qty_ordered`, `qty_received`, `price_unit`, `amount` | `date_order`, `date_planned` (promised) → `week`, `date_received` |
 | `fact_production` | manufacturing order | `mo_id`, `mo_ref`, `product_id`, `state`, `origin`, `created_by` | `product_qty`, `qty_produced` | `date_start`, `date_finished` → `week` |

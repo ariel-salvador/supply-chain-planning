@@ -27,6 +27,13 @@ prec = env["decimal.precision"].search([("name", "=", "Product Unit")], limit=1)
 if prec and prec.digits < 4:
     prec.digits = 4
 
+# --- contact tags for the supplier master (ADR 0019) ------------------------------
+# Creating tags needs "Contact Creation" rights, which the bot deliberately lacks; the
+# bot only attaches them. Names come from the product config (PPS_PARTNER_TAGS).
+for tag in json.loads(os.environ.get("PPS_PARTNER_TAGS") or "[]"):
+    if not env["res.partner.category"].search([("name", "=", tag)], limit=1):
+        env["res.partner.category"].create({"name": tag})
+
 # --- x_pps_key: the stable key of every record a script creates -------------------
 # A manual (x_) field, indexed, NOT copied on duplicate, so a record duplicated in the
 # UI never inherits a script's key. Only on models the scripts write to.
@@ -88,7 +95,7 @@ READ_MODELS = [
     "mrp.production", "stock.warehouse", "stock.location", "stock.quant", "stock.move",
     "stock.picking", "stock.warehouse.orderpoint", "sale.order", "sale.order.line",
     "purchase.order", "purchase.order.line", "account.move", "account.move.line",
-    "account.payment", "account.journal", "stock.scrap",
+    "account.payment", "account.journal", "stock.scrap", "res.partner.category",
 ]
 reader_group = env["res.groups"].search([("name", "=", "PPS Reader (read-only)")], limit=1)
 if not reader_group:

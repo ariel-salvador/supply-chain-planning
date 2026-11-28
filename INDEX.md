@@ -29,6 +29,7 @@ One line per doc: what it is, and when to read it. Start with `docs/status.md`.
 - `docs/decisions/0016-odoo-sourcing-mirror.md`: multi-vendor price lists and draft RFQs in Odoo Community (unverified).
 - `docs/decisions/0017-odoo-system-of-record.md`: two databases, guarded ops, pps-bot, append-only `ensure()`, backups. Read before writing to Odoo.
 - `docs/decisions/0018-mock-operating-history.md`: the 3-year history: how it's simulated, priced (real indices) and written into Odoo.
+- `docs/decisions/0019-supplier-consolidation-and-kanban.md`: 7 suppliers (preferred / approved tags), buyable minimums, kanban reorder levels, live migration.
 - `docs/odoo/README.md`: Odoo demo: run it, config→Odoo mapping, screens, lessons.
 - `docs/odoo/comparison.md`: generated Odoo vs engine plan comparison.
 - `LICENSE`, `LICENSE-docs`: license texts and scope.

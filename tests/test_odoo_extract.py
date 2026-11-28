@@ -73,3 +73,9 @@ def test_write_produces_csv_and_duckdb(tmp_path):
 def test_stock_move_kind_and_on_hand_sign(src, dst, kind, sign):
     assert ox.move_kind(src, dst) == kind
     assert ox.on_hand_sign(src, dst) == sign
+
+
+def test_supplier_status_from_tags():
+    assert ox.supplier_status(["Domestic", "Preferred supplier"]) == "preferred"
+    assert ox.supplier_status(["Approved supplier", "Low cost"]) == "approved"
+    assert ox.supplier_status(["Low cost"]) is None

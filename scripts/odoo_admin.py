@@ -21,6 +21,7 @@ rebuilds it), ``pps_live`` is the user's system of record. The rules enforced he
 from __future__ import annotations
 
 import argparse
+import json
 import datetime as dt
 import os
 import re
@@ -273,10 +274,13 @@ def cmd_bootstrap_live(env: Dict[str, str]) -> None:
     if not db_exists(live, env):
         raise AdminError(f"{live} does not exist: run `make odoo-live-init`")
     company, horizon_days = _config_settings()
+    tags = json.dumps(_partner_tags())
     script = (ROOT / "odoo" / "bootstrap_live.py").read_text()
     r = _run(compose(env) + ["run", "--rm", "-T", "-e", "ODOO_ADMIN_PASSWORD", "-e", "PPS_COMPANY_NAME",
-                             "-e", "PPS_HORIZON_DAYS", "odoo", "odoo", "shell", "-d", live, "--no-http"],
-             {**env, "PPS_COMPANY_NAME": company, "PPS_HORIZON_DAYS": str(horizon_days)},
+                             "-e", "PPS_HORIZON_DAYS", "-e", "PPS_PARTNER_TAGS",
+                             "odoo", "odoo", "shell", "-d", live, "--no-http"],
+             {**env, "PPS_COMPANY_NAME": company, "PPS_HORIZON_DAYS": str(horizon_days),
+              "PPS_PARTNER_TAGS": tags},
              input=script, capture_output=True, text=True)
     key = re.search(r"^PPS_BOT_API_KEY=(\S+)$", r.stdout, re.M)
     reader = re.search(r"^PPS_READER_API_KEY=(\S+)$", r.stdout, re.M)
@@ -333,6 +337,19 @@ def cmd_nuke(env: Dict[str, str], outdir: Path) -> None:
         raise AdminError("docker compose down -v failed")
     print("all Odoo volumes deleted. Restore pps_live with "
           "`odoo db load` from the latest zip in backups/.")
+
+
+def partner_tag_names(cfg) -> List[str]:
+    """Every contact tag the supplier master uses: its status tags and descriptive traits."""
+    names = {f"{s.status.capitalize()} supplier" for s in cfg.suppliers.values()}
+    names |= {t for s in cfg.suppliers.values() for t in s.tags}
+    return sorted(names)
+
+
+def _partner_tags() -> List[str]:
+    sys.path.insert(0, str(ROOT / "src"))
+    from ppsim.config import load_config
+    return partner_tag_names(load_config(ROOT / "products" / "blg_whey_protein.yaml"))
 
 
 def _config_settings() -> tuple:

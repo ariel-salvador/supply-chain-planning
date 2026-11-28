@@ -22,3 +22,11 @@ odoo/data/
 odoo/filestore/
 *.dump
 *.sql.gz
+
+# Evidence dashboard build artefacts (also in dashboard/evidence/.gitignore)
+dashboard/evidence/node_modules/
+dashboard/evidence/.evidence/template/
+dashboard/evidence/.evidence/meta/
+dashboard/evidence/.svelte-kit/
+dashboard/evidence/build/
+dashboard/evidence/static/data/

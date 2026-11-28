@@ -54,6 +54,12 @@ class XRef:
 
 
 @dataclass(frozen=True)
+class TagRef:
+    """A contact tag by name (created by the admin bootstrap; the bot only attaches it)."""
+    name: str
+
+
+@dataclass(frozen=True)
 class Variant:
     """The product.product of a planned product.template."""
     template_key: str
@@ -82,11 +88,14 @@ class Report:
 
 
 def plan(cfg, res, days_per_week: float, trigger: str = "manual",
-         costs: Optional[Dict[str, float]] = None, list_price: Optional[float] = None) -> List[Spec]:
+         costs: Optional[Dict[str, float]] = None, list_price: Optional[float] = None,
+         levels=None) -> List[Spec]:
     """Ordered master-data specs for the config: dependencies always come first.
 
     ``costs`` (standard cost per item) and ``list_price`` (the finished item's selling
     price), when given, are set on the products and diffed like any other field.
+    ``levels`` (``supplier_perf.reorder_levels``) sets kanban min/max on purchased items;
+    without it, min = max = the planning safety stock.
     """
     costs = costs or {}
     root = cfg.demand.item
@@ -115,8 +124,13 @@ def plan(cfg, res, days_per_week: float, trigger: str = "manual",
     # partners: the supplier master (or the M3 vendor list) and the customers
     bidders = cfg.suppliers or cfg.vendors
     for p in bidders.values():
-        specs.append(Spec("res.partner", f"partner:{p.id}", {"name": p.name, "is_company": True, "supplier_rank": 1},
-                          compare=("name",)))
+        vals = {"name": p.name, "is_company": True, "supplier_rank": 1}
+        compare = ("name",)
+        if getattr(p, "status", None):           # supplier master: status + trait tags (ADR 0019)
+            tags = [f"{p.status.capitalize()} supplier", *p.tags]
+            vals["category_id"] = [[6, 0, [TagRef(t) for t in tags]]]
+            compare = ("name", "category_id")
+        specs.append(Spec("res.partner", f"partner:{p.id}", vals, compare=compare))
     for p in cfg.customers.values():
         specs.append(Spec("res.partner", f"partner:{p.id}", {"name": p.name, "is_company": True, "customer_rank": 1},
                           compare=("name",)))
@@ -181,11 +195,14 @@ def plan(cfg, res, days_per_week: float, trigger: str = "manual",
         }, compare=("product_qty", "produce_delay"),
             note="component lines are set on creation; later line edits are not diffed"))
 
-    # reorder rules: min = max = safety stock, lot / batch unit as the multiple
+    # reorder rules: kanban min/max for purchased items when given, else min = max = safety stock
     for iid in planned:
         ss = cfg.items[iid].planning.safety_stock
+        lo, hi = ss, ss
+        if levels is not None and iid in levels.index:
+            lo, hi = float(levels.loc[iid, "min_qty"]), float(levels.loc[iid, "max_qty"])
         vals: Dict[str, Any] = {"product_id": Variant(f"product:{iid}"), "location_id": XRef(STOCK_XMLID),
-                                "product_min_qty": ss, "product_max_qty": ss, "trigger": trigger}
+                                "product_min_qty": lo, "product_max_qty": hi, "trigger": trigger}
         if iid in lot_uom:
             vals["replenishment_uom_id"] = Ref("uom.uom", lot_uom[iid])
         specs.append(Spec("stock.warehouse.orderpoint", f"orderpoint:{iid}", vals,
@@ -209,6 +226,11 @@ def resolve(value: Any, ids: Dict[str, int], variants: Dict[str, int], o: Odoo) 
         return variants[value.template_key]
     if isinstance(value, XRef):
         return o.ref(value.xmlid)
+    if isinstance(value, TagRef):
+        rows = o.search_read("res.partner.category", [["name", "=", value.name]], ["id"], limit=1)
+        if not rows:
+            raise OdooError(f"contact tag {value.name!r} missing: run `make odoo-live-bootstrap`")
+        return rows[0]["id"]
     if isinstance(value, dict):
         return {k: resolve(v, ids, variants, o) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
@@ -236,7 +258,14 @@ def apply(o: Odoo, specs: Sequence[Spec], apply_diffs: bool = False) -> Report:
             report.unchanged.append(spec)
             continue
         current = o.search_read(spec.model, [["id", "=", rid]], list(spec.compare))[0]
-        diff = pending_changes(current, {f: vals[f] for f in spec.compare if f in vals}, float_tol=FLOAT_TOL)
+        want = {f: vals[f] for f in spec.compare if f in vals}
+        for f, v in list(want.items()):                     # many2many "replace" command vs id list
+            if isinstance(v, list) and v and isinstance(v[0], list) and v[0][:2] == [6, 0]:
+                if sorted(current.get(f) or []) == sorted(v[0][2]):
+                    want.pop(f)
+                else:
+                    current[f] = sorted(current.get(f) or [])
+        diff = pending_changes(current, want, float_tol=FLOAT_TOL)
         if not diff:
             report.unchanged.append(spec)
             continue
@@ -312,7 +341,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("warning: no FRED prices; vendor prices use the mock fallback bases", file=sys.stderr)
     days_per_week = load_registry(ROOT / "knowledge" / "assumptions.csv")["days_per_week"].value
     costs, asp = current_costs(cfg, res)
-    specs = plan(cfg, res, days_per_week, trigger=args.trigger, costs=costs, list_price=asp)
+    from ppsim.supplier_perf import reorder_levels
+    levels = reorder_levels(cfg, res.quotes, res.awards, res.usage) if res.awards is not None else None
+    specs = plan(cfg, res, days_per_week, trigger=args.trigger, costs=costs, list_price=asp, levels=levels)
     o = Odoo.live()
     print(f"{o.db}: {len(specs)} master-data records planned from {args.config}")
     report = apply(o, specs, apply_diffs=args.apply_diffs)
